@@ -3,7 +3,7 @@ import { MediaPlayer, MediaOutlet } from '@vidstack/react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
-// 同源调用：nginx 把 /extract 反代到内部的 m3u8-extractor（dev 由 vite proxy 转发）
+// 同源调用：nginx 把 /extract 反代到内部的 grab 服务（dev 由 vite proxy 转发）
 interface PlayerProps {
   match: Match | null;
   selectedIframeUrl: string;

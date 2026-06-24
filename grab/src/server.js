@@ -143,7 +143,7 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === "/") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ service: "m3u8-extractor", usage: "/extract?url=<embed_url>" }));
+    res.end(JSON.stringify({ service: "grab", usage: "/extract?url=<embed_url>" }));
     return;
   }
 
@@ -179,7 +179,7 @@ const server = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: "not found" }));
 });
 
-server.listen(port, () => console.log(`m3u8-extractor listening on :${port}`));
+server.listen(port, () => console.log(`grab listening on :${port}`));
 
 process.on("SIGTERM", async () => { await browser?.close(); process.exit(0); });
 process.on("SIGINT", async () => { await browser?.close(); process.exit(0); });

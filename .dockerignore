@@ -4,5 +4,5 @@ dist
 .claude
 .superpowers
 docs
-m3u8-extractor
+grab
 **/*.md

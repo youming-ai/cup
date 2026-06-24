@@ -8,11 +8,11 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - extractor
+      - grab
     restart: unless-stopped
 
-  extractor:
-    build: ./m3u8-extractor
+  grab:
+    build: ./grab
     environment:
       - PORT=8081
     expose:
