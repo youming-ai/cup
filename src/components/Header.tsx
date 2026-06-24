@@ -42,21 +42,23 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
         <LanguageSwitcher />
       </div>
 
-      {/* 移动端导航 */}
-      <nav className="flex sm:hidden items-center gap-2 px-5 h-12 border-t border-line overflow-x-auto no-scrollbar">
-        {VIEWS.map((v) => (
-          <button
-            key={v.key}
-            onClick={() => setView(v.key)}
-            aria-pressed={view === v.key}
-            className={`shrink-0 px-3 py-1 rounded-full font-display font-semibold text-sm whitespace-nowrap transition-colors ${
-              view === v.key ? 'bg-pitch text-night' : 'text-chalkdim'
-            }`}
-          >
-            <span className="mr-1">{v.icon}</span>
-            {t(`nav.${v.key}`)}
-          </button>
-        ))}
+      {/* 移动端导航：占满宽度的分段控件，每段 ~50%、py-2.5 触控友好 */}
+      <nav className="sm:hidden px-4 pb-3">
+        <div className="flex gap-1 p-1 rounded-full border border-line bg-night">
+          {VIEWS.map((v) => (
+            <button
+              key={v.key}
+              onClick={() => setView(v.key)}
+              aria-pressed={view === v.key}
+              className={`flex-1 py-2.5 rounded-full font-display font-semibold tracking-wide text-sm transition-colors ${
+                view === v.key ? 'bg-pitch text-night' : 'text-chalkdim'
+              }`}
+            >
+              <span className="mr-1">{v.icon}</span>
+              {t(`nav.${v.key}`)}
+            </button>
+          ))}
+        </div>
       </nav>
     </header>
   );

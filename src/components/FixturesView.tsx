@@ -44,7 +44,7 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
             key={k}
             onClick={() => setTab(k)}
             aria-pressed={tab === k}
-            className={`px-4 py-1.5 rounded-full font-display font-semibold text-sm transition-colors ${
+            className={`px-4 py-2 rounded-full font-display font-semibold text-sm transition-colors ${
               tab === k ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
             }`}
           >
@@ -63,7 +63,7 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
                 key={s}
                 onClick={() => setStage(s)}
                 aria-pressed={stage === s}
-                className={`shrink-0 px-3 py-1 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
                   stage === s ? 'border-pitch text-chalk' : 'border-transparent text-chalkdim hover:text-chalk'
                 }`}
               >

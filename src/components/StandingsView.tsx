@@ -47,9 +47,9 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                 <tr className="text-chalkdim font-mono text-[10px] uppercase">
                   <th className="text-left font-medium px-4 py-2">{t('st.team')}</th>
                   <th className="px-1 font-medium">{t('st.mp')}</th>
-                  <th className="px-1 font-medium">{t('st.w')}</th>
-                  <th className="px-1 font-medium">{t('st.d')}</th>
-                  <th className="px-1 font-medium">{t('st.l')}</th>
+                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.w')}</th>
+                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.d')}</th>
+                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.l')}</th>
                   <th className="px-1 font-medium">{t('st.gd')}</th>
                   <th className="px-2 font-medium">{t('st.pts')}</th>
                 </tr>
@@ -89,9 +89,9 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                         </div>
                       </td>
                       <td className="text-center text-chalkdim tabular-nums">{s.mp}</td>
-                      <td className="text-center text-chalkdim tabular-nums">{s.w}</td>
-                      <td className="text-center text-chalkdim tabular-nums">{s.d}</td>
-                      <td className="text-center text-chalkdim tabular-nums">{s.l}</td>
+                      <td className="text-center text-chalkdim tabular-nums hidden sm:table-cell">{s.w}</td>
+                      <td className="text-center text-chalkdim tabular-nums hidden sm:table-cell">{s.d}</td>
+                      <td className="text-center text-chalkdim tabular-nums hidden sm:table-cell">{s.l}</td>
                       <td className="text-center text-chalkdim tabular-nums">{s.gd > 0 ? `+${s.gd}` : s.gd}</td>
                       <td className="text-center font-bold text-chalk tabular-nums">{s.pts}</td>
                     </tr>
