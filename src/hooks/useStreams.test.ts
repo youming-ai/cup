@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useStreams } from './useStreams';
 
 const fetchMock = vi.fn();
@@ -52,5 +52,37 @@ describe('useStreams (football only)', () => {
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe('Failed to fetch streams');
+  });
+
+  it('aborts the in-flight request when refetch is called', async () => {
+    let firstSignal: AbortSignal | undefined;
+    fetchMock.mockImplementation((_url, options) => {
+      if (!firstSignal) firstSignal = options?.signal;
+      return new Promise(() => {}); // never resolves
+    });
+
+    const { result } = renderHook(() => useStreams());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(firstSignal?.aborted).toBe(false);
+
+    act(() => {
+      result.current.refetch();
+    });
+    expect(firstSignal?.aborted).toBe(true);
+  });
+
+  it('aborts the in-flight request on unmount', async () => {
+    let firstSignal: AbortSignal | undefined;
+    fetchMock.mockImplementation((_url, options) => {
+      if (!firstSignal) firstSignal = options?.signal;
+      return new Promise(() => {}); // never resolves
+    });
+
+    const { unmount } = renderHook(() => useStreams());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(firstSignal?.aborted).toBe(false);
+
+    unmount();
+    expect(firstSignal?.aborted).toBe(true);
   });
 });
