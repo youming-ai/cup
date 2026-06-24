@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Match, Substream } from '../types';
 import { slugify } from '../utils/helpers';
-import { TEST_LIVE_STREAMS } from '../dev/testStreams';
 
 interface APISub {
   id: number; name: string; source_tag: string; locale: string; iframe: string;
@@ -65,9 +64,7 @@ export function useStreams() {
       }));
 
       if (signal.aborted) return;
-      // dev-server only (not test/prod): prepend always-live 24/7 test streams so there is a live card to click
-      const devSeed = import.meta.env.MODE === 'development';
-      setMatches(devSeed ? [...TEST_LIVE_STREAMS, ...flat] : flat);
+      setMatches(flat);
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
       console.error('Failed to fetch streams:', err);

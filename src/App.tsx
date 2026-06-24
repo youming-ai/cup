@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
 import FixturesView from './components/FixturesView';
+import Footer from './components/Footer';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
@@ -70,10 +71,13 @@ export default function App() {
       )}
 
       {view === 'fixtures' && (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night">
-          {wc.loading ? <Loading /> :
-            wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
-            <FixturesView matches={wc.matches} groups={wc.groups} />}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
+          <div className="flex-1">
+            {wc.loading ? <Loading /> :
+              wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
+              <FixturesView matches={wc.matches} groups={wc.groups} />}
+          </div>
+          <Footer />
         </div>
       )}
     </div>

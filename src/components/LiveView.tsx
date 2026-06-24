@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CaretLeft } from '@phosphor-icons/react';
 import Player from './Player';
+import Footer from './Footer';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
@@ -172,8 +173,8 @@ export default function LiveView({ matches }: { matches: Match[] }) {
   // 播放页
   if (selected) {
     return (
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night">
-        <div className="max-w-5xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
+        <div className="flex-1 max-w-5xl mx-auto w-full">
           <button
             onClick={backToList}
             className="mb-4 inline-flex items-center gap-1.5 font-mono text-xs tracking-wider text-chalkdim hover:text-chalk transition-colors"
@@ -183,14 +184,15 @@ export default function LiveView({ matches }: { matches: Match[] }) {
           </button>
           <Player match={selected} selectedIframeUrl={iframeUrl} setSelectedIframeUrl={setIframeUrl} />
         </div>
+        <Footer />
       </div>
     );
   }
 
   // 列表页
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
+      <div className="flex-1 max-w-6xl mx-auto w-full space-y-8">
         {live.length === 0 && upcoming.length === 0 ? (
           <div className="py-20 text-center">
             <p className="font-mono text-xs tracking-wider text-chalkdim">{t('live.empty')}</p>
@@ -214,6 +216,7 @@ export default function LiveView({ matches }: { matches: Match[] }) {
           </>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
