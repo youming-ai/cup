@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MediaPlayer, MediaOutlet } from '@vidstack/react';
+import Hls from 'hls.js';
 import { Play, Pause, SpeakerHigh, SpeakerSimpleX, CornersOut } from '@phosphor-icons/react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
@@ -71,10 +71,8 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     return () => controller.abort();
   }, [selectedIframeUrl]);
 
-  // Keep a clean loading overlay over the player until the <video> actually has
-  // a frame — hides Vidstack's bare native-controls box during extraction/buffering.
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null); // fullscreen target
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(true);
   const [muted, setMuted] = useState(true);
@@ -83,45 +81,43 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     setStarted(false);
   }, [selectedIframeUrl]);
 
-  // Wire the underlying <video>: reveal on first frame, mirror play/mute state.
+  // Load the (proxied) m3u8 into the <video> via hls.js, and mirror play/mute state.
+  const m3u8 = extract.status === 'ready' ? extract.m3u8 : null;
   useEffect(() => {
-    if (extract.status !== 'ready') return;
-    const root = wrapRef.current;
-    if (!root) return;
-    let video: HTMLVideoElement | null = null;
+    const video = videoRef.current;
+    if (!video || !m3u8) return;
+
+    let hls: Hls | null = null;
+    if (Hls.isSupported()) {
+      hls = new Hls({ enableWorker: true });
+      hls.loadSource(m3u8);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (data.fatal) setExtract({ status: 'error', message: data.details || 'playback error' });
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = m3u8; // Safari / iOS native HLS
+    }
+
     const reveal = () => setStarted(true);
     const onPlay = () => setPaused(false);
     const onPause = () => setPaused(true);
-    const onVol = () => video && setMuted(video.muted);
-    const attach = () => {
-      const v = root.querySelector('video');
-      if (v && v !== video) {
-        video = v;
-        videoRef.current = v;
-        v.addEventListener('playing', reveal);
-        v.addEventListener('canplay', reveal);
-        v.addEventListener('play', onPlay);
-        v.addEventListener('pause', onPause);
-        v.addEventListener('volumechange', onVol);
-        if (v.readyState >= 2) reveal();
-        setPaused(v.paused);
-        setMuted(v.muted);
-      }
-    };
-    attach();
-    const id = window.setInterval(attach, 200);
+    const onVol = () => setMuted(video.muted);
+    video.addEventListener('canplay', reveal);
+    video.addEventListener('playing', reveal);
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('volumechange', onVol);
+
     return () => {
-      window.clearInterval(id);
-      if (video) {
-        video.removeEventListener('playing', reveal);
-        video.removeEventListener('canplay', reveal);
-        video.removeEventListener('play', onPlay);
-        video.removeEventListener('pause', onPause);
-        video.removeEventListener('volumechange', onVol);
-      }
-      videoRef.current = null;
+      hls?.destroy();
+      video.removeEventListener('canplay', reveal);
+      video.removeEventListener('playing', reveal);
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('volumechange', onVol);
     };
-  }, [extract.status]);
+  }, [m3u8]);
 
   const togglePlay = () => {
     const v = videoRef.current;
@@ -167,16 +163,13 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
         )}
 
         {extract.status === 'ready' && (
-          <MediaPlayer
-            title={match.name}
-            src={{ src: extract.m3u8, type: 'application/x-mpegurl' }}
+          <video
+            ref={videoRef}
             autoPlay
             muted
             playsInline
-            className="absolute inset-0 w-full h-full"
-          >
-            <MediaOutlet />
-          </MediaPlayer>
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+          />
         )}
 
         {/* live-stream controls — no timeline (it's a live feed) */}

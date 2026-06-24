@@ -41,19 +41,6 @@
   }
 }
 
-/* Vidstack 0.6 是无皮肤版——把播放器与内部 video 撑满 16:9 容器，黑底居中 */
-media-player {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-media-player video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #000;
-}
-
 /* 横向类目导轨隐藏滚动条 */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
