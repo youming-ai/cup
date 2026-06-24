@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Match, Channel, Substream } from '../types';
 import { slugify } from '../utils/helpers';
 
@@ -46,13 +46,28 @@ export function useStreams() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchAllData = useCallback(async () => {
+  const fetchAllData = useCallback(async (externalSignal?: AbortSignal) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const localController = new AbortController();
+    abortControllerRef.current = localController;
+    const signal = externalSignal || localController.signal;
+
     setLoading(true);
     setError(null);
+
+    let sportsError: string | null = null;
+    let tvError: string | null = null;
+    let sportsSuccess = false;
+    let tvSuccess = false;
+
+    // 1. Fetch Sports Streams (CORS-friendly)
     try {
-      // 1. Fetch Sports Streams (CORS-friendly)
-      const sportsRes = await fetch('https://api.ppv.to/api/streams');
+      const sportsRes = await fetch('https://api.ppv.to/api/streams', { signal });
       if (!sportsRes.ok) throw new Error('Failed to fetch sports streams');
       const sportsData = (await sportsRes.json()) as APISportsCategory[] | APISportsEnvelope;
       
@@ -87,12 +102,23 @@ export function useStreams() {
           });
         }
       });
-      setMatches(flatMatches);
 
-      // 2. Fetch TV Streams and Channel Metadata
+      if (signal.aborted) return;
+      setMatches(flatMatches);
+      sportsSuccess = true;
+    } catch (err: unknown) {
+      if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        return;
+      }
+      console.error('Failed to fetch sports streams:', err);
+      sportsError = err instanceof Error ? err.message : 'Failed to fetch sports streams';
+    }
+
+    // 2. Fetch TV Streams and Channel Metadata
+    try {
       const [tvStreamsRes, tvChannelsRes] = await Promise.all([
-        fetch('https://iptv-org.github.io/api/streams.json'),
-        fetch('https://iptv-org.github.io/api/channels.json'),
+        fetch('https://iptv-org.github.io/api/streams.json', { signal }),
+        fetch('https://iptv-org.github.io/api/channels.json', { signal }),
       ]);
 
       if (!tvStreamsRes.ok || !tvChannelsRes.ok) {
@@ -130,20 +156,38 @@ export function useStreams() {
           };
         });
 
+      if (signal.aborted) return;
       setChannels(processedChannels);
+      tvSuccess = true;
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unknown error occurred');
+      if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        return;
       }
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch TV channels data:', err);
+      tvError = err instanceof Error ? err.message : 'Failed to fetch TV channels data';
     }
+
+    if (signal.aborted) return;
+
+    // Determine error state: if both failed, set error. If only one failed, log it and keep error as null.
+    if (!sportsSuccess && !tvSuccess) {
+      if (sportsError && tvError) {
+        setError(`${sportsError} | ${tvError}`);
+      } else {
+        setError(sportsError || tvError || 'An unknown error occurred');
+      }
+    } else {
+      setError(null);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchAllData();
+    const controller = new AbortController();
+    fetchAllData(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [fetchAllData]);
 
   return { matches, channels, loading, error, refetch: fetchAllData };

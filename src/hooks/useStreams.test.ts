@@ -129,20 +129,51 @@ describe('useStreams Hook', () => {
     expect(result.current.channels[0].title).toBe('CCTV 1');
   });
 
-  it('should handle error when sports API fetch fails', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false });
+  it('should handle error when both sports and TV API fetches fail', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: false });
 
     const { result } = renderHook(() => useStreams());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.error).toBe('Failed to fetch sports streams');
+    expect(result.current.error).toContain('Failed to fetch sports streams');
     expect(result.current.matches).toHaveLength(0);
     expect(result.current.channels).toHaveLength(0);
   });
 
-  it('should handle error when TV API fetch fails', async () => {
-    const mockSports: unknown[] = [];
+  it('should handle partial failure where sports API fails but TV API succeeds', async () => {
+    const mockTvStreams = [
+      { channel: 'test.cn', title: 'CCTV 1', url: 'https://live.m3u8' },
+    ];
+    const mockTvChannels = [
+      { id: 'test.cn', logo: 'logo-url', categories: ['general'] },
+    ];
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true, json: async () => mockTvStreams })
+      .mockResolvedValueOnce({ ok: true, json: async () => mockTvChannels });
+
+    const { result } = renderHook(() => useStreams());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.matches).toHaveLength(0);
+    expect(result.current.channels).toHaveLength(1);
+    expect(result.current.channels[0].title).toBe('CCTV 1');
+  });
+
+  it('should handle partial failure where TV API fails but sports API succeeds', async () => {
+    const mockSports = [
+      {
+        category: 'Football',
+        streams: [{ id: 1, name: 'Colombia vs Congo DR', iframe: 'https://embed.st/1' }],
+      },
+    ];
+
     fetchMock
       .mockResolvedValueOnce({ ok: true, json: async () => mockSports })
       .mockResolvedValueOnce({ ok: false })
@@ -152,9 +183,25 @@ describe('useStreams Hook', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.error).toBe('Failed to fetch TV channels data');
-    expect(result.current.matches).toHaveLength(0);
+    expect(result.current.error).toBeNull();
+    expect(result.current.matches).toHaveLength(1);
+    expect(result.current.matches[0].name).toBe('Colombia vs Congo DR');
     expect(result.current.channels).toHaveLength(0);
+  });
+
+  it('should pass abort signal to fetch calls', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
+
+    const { result } = renderHook(() => useStreams());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(fetchMock).toHaveBeenCalled();
+    for (const mockCall of fetchMock.mock.calls) {
+      const options = mockCall[1];
+      expect(options).toBeDefined();
+      expect(options?.signal).toBeInstanceOf(AbortSignal);
+    }
   });
 
   it('should trigger refetch successfully', async () => {
