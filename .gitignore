@@ -103,3 +103,6 @@ dist-ssr/
 
 # Vitest
 .vitest/
+
+# Wrangler local artifacts
+.wrangler/

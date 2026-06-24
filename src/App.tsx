@@ -1,153 +1,85 @@
-import { useState, useEffect, useMemo } from 'react';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import Player from './components/Player';
+import { useState, useEffect } from 'react';
+import Header, { type View } from './components/Header';
+import LiveView from './components/LiveView';
+import FixturesView from './components/FixturesView';
+import StadiumsView from './components/StadiumsView';
+import FormatGuide from './components/FormatGuide';
 import { useStreams } from './hooks/useStreams';
-import { Match, Channel } from './types';
+import { useWorldCup } from './hooks/useWorldCup';
+import { translate, useLang, useT } from './i18n';
 
-type StreamItem = Match | Channel;
+const KNOWN_VIEWS: View[] = ['live', 'fixtures', 'stadiums', 'format'];
+
+function initialView(): View {
+  const v = new URLSearchParams(window.location.search).get('view');
+  return v && (KNOWN_VIEWS as string[]).includes(v) ? (v as View) : 'live';
+}
+
+function Loading() {
+  const t = useT();
+  return (
+    <div className="flex flex-col items-center justify-center h-full bg-night gap-4">
+      <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
+        {t('common.loading')}
+      </span>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const t = useT();
+  return (
+    <div className="flex flex-col items-center justify-center h-full bg-night p-6 text-center gap-3">
+      <div className="font-mono text-xs tracking-[0.3em] text-live">{t('common.signalLost')}</div>
+      <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">{t('common.error')}</h2>
+      <p className="font-body text-sm text-chalkdim max-w-sm">{message}</p>
+      <button
+        onClick={onRetry}
+        className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide rounded hover:brightness-110 transition"
+      >
+        {t('common.retry')}
+      </button>
+    </div>
+  );
+}
 
 export default function App() {
-  const { matches, channels, loading, error } = useStreams();
+  const [view, setViewState] = useState<View>(initialView);
+  const { lang } = useLang();
+  const streams = useStreams();
+  const wc = useWorldCup();
 
-  const [mode, setMode] = useState<'events' | 'channels'>('events');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-
-  const [selectedItem, setSelectedItem] = useState<StreamItem | null>(null);
-  const [selectedIframeUrl, setSelectedIframeUrl] = useState<string>('');
-
-  // 1. 提取当前模式下所有分类项以供 Header Tabs 渲染
-  const categories = useMemo(() => {
-    if (mode === 'events') {
-      return Array.from(new Set(matches.map((m) => m.category_name)));
-    }
-    return Array.from(new Set(channels.map((c) => c.category)));
-  }, [mode, matches, channels]);
-
-  // 2. 根据搜索词与大/细分类过滤列表项
-  const filteredItems = useMemo<StreamItem[]>(() => {
-    const list: StreamItem[] = mode === 'events' ? matches : channels;
-    return list.filter((item) => {
-      const name = mode === 'events' ? (item as Match).name : (item as Channel).title;
-      const cat = mode === 'events' ? (item as Match).category_name : (item as Channel).category;
-
-      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || cat === selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [mode, matches, channels, searchQuery, selectedCategory]);
-
-  // 3. 处理 URL 路由初始化匹配 (e.g. ?match=colombia-vs-congo-dr)
   useEffect(() => {
-    if (loading) return;
+    document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
+  }, [lang]);
 
+  const setView = (v: View) => {
+    setViewState(v);
+    // 保留既有查询参数（尤其是 ?match），仅更新 view，避免切 tab 丢失直播深链
     const params = new URLSearchParams(window.location.search);
-    const matchSlug = params.get('match');
-    const channelSlug = params.get('channel');
-
-    if (matchSlug) {
-      const match = matches.find((m) => m.slug === matchSlug);
-      if (match) {
-        setMode('events');
-        setSelectedItem(match);
-        setSelectedIframeUrl(match.iframe);
-      }
-    } else if (channelSlug) {
-      const channel = channels.find((c) => c.slug === channelSlug);
-      if (channel) {
-        setMode('channels');
-        setSelectedItem(channel);
-      }
-    }
-  }, [loading, matches, channels]);
-
-  // 4. 点击选择某项时，更新 URL 参数以供分享
-  const handleSelectItem = (item: StreamItem) => {
-    setSelectedItem(item);
-
-    const newParams = new URLSearchParams();
-    if (mode === 'events') {
-      newParams.set('match', (item as Match).slug);
-      setSelectedIframeUrl((item as Match).iframe);
-    } else {
-      newParams.set('channel', (item as Channel).slug);
-    }
-
-    window.history.replaceState(null, '', `?${newParams.toString()}`);
+    params.set('view', v);
+    window.history.replaceState(null, '', `?${params.toString()}`);
   };
-
-  // 5. 大类目切换时清空选择并重置 URL
-  const handleModeChange = (newMode: 'events' | 'channels') => {
-    setMode(newMode);
-    setSelectedItem(null);
-    setSearchQuery('');
-    window.history.replaceState(null, '', '/');
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-night gap-4">
-        <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
-          TUNING SIGNAL…
-        </span>
-        <p className="font-body text-sm text-chalkdim">正在载入流媒体源</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-night p-6 text-center gap-3">
-        <div className="font-mono text-xs tracking-[0.3em] text-live">SIGNAL LOST</div>
-        <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">接口数据加载失败</h2>
-        <p className="font-body text-sm text-chalkdim max-w-sm">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide rounded hover:brightness-110 transition"
-        >
-          重新尝试
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-night">
-      {/* 顶部 Header */}
-      <Header
-        mode={mode}
-        setMode={handleModeChange}
-        category={selectedCategory}
-        setCategory={setSelectedCategory}
-        categories={categories}
-      />
+      <Header view={view} setView={setView} />
 
-      {/* 主体分栏 */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* 左/上侧：列表展示 (Sidebar) */}
-        <div className="w-full md:w-80 flex-shrink-0 h-1/2 md:h-full">
-          <Sidebar
-            items={filteredItems}
-            selectedItem={selectedItem}
-            onSelectItem={handleSelectItem}
-            mode={mode}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
-        </div>
+      {view === 'live' && (
+        streams.loading ? <Loading /> :
+        streams.error ? <ErrorState message={streams.error} onRetry={streams.refetch} /> :
+        <LiveView matches={streams.matches} />
+      )}
 
-        {/* 右/下侧：核心播放器与流详情 */}
-        <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-night">
-          <Player
-            selectedItem={selectedItem}
-            mode={mode}
-            selectedIframeUrl={selectedIframeUrl}
-            setSelectedIframeUrl={setSelectedIframeUrl}
-          />
+      {view !== 'live' && (
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night">
+          {wc.loading ? <Loading /> :
+            wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
+            view === 'fixtures' ? <FixturesView matches={wc.matches} groups={wc.groups} /> :
+            view === 'stadiums' ? <StadiumsView stadiums={wc.stadiums} /> :
+            <FormatGuide />}
         </div>
-      </div>
+      )}
     </div>
   );
 }
