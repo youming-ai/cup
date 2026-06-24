@@ -45,9 +45,9 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     <div className="space-y-4">
       <div className="relative aspect-video w-full rounded-2xl border border-white/10 bg-black overflow-hidden">
         <CornerTicks />
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2 py-1 rounded bg-night/80 backdrop-blur-sm border border-white/10">
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-md bg-night/80 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgba(255,68,56,0.35)]">
           <span className="live-dot" />
-          <span className="font-mono text-[10px] tracking-widest text-live">{t('status.live')}</span>
+          <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
         </div>
         <iframe
           src={selectedIframeUrl}
@@ -81,7 +81,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
             className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
               selectedIframeUrl === match.iframe
                 ? 'bg-pitch text-night border-pitch'
-                : 'border-white/10 text-chalkdim hover:text-chalk hover:border-chalkdim'
+                : 'border-pitch/30 text-chalkdim/90 hover:text-chalk hover:border-pitch/60'
             }`}
           >
             {t('live.source')} 01
@@ -94,7 +94,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
               className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
                 selectedIframeUrl === sub.iframe
                   ? 'bg-pitch text-night border-pitch'
-                  : 'border-white/10 text-chalkdim hover:text-chalk hover:border-chalkdim'
+                  : 'border-pitch/30 text-chalkdim/90 hover:text-chalk hover:border-pitch/60'
               }`}
             >
               {t('live.source')} {String(i + 2).padStart(2, '0')}

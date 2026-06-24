@@ -49,16 +49,12 @@ describe('useWorldCup', () => {
       { id: '1', name_en: 'Mexico', flag: 'mex.png' },
       { id: '2', name_en: 'South Africa', flag: 'rsa.png' },
     ];
-    const stadiums = [
-      { id: '1', name_en: 'Estadio Azteca', fifa_name: 'Mexico City Stadium', city_en: 'Mexico City', country_en: 'Mexico', capacity: 87000, region: 'Central' },
-    ];
 
     // worldcup26.ir wraps each payload under a key — mirror that exact shape
     fetchMock
       .mockResolvedValueOnce(ok({ games }))
       .mockResolvedValueOnce(ok({ groups }))
-      .mockResolvedValueOnce(ok({ teams }))
-      .mockResolvedValueOnce(ok({ stadiums }));
+      .mockResolvedValueOnce(ok({ teams }));
 
     const { result } = renderHook(() => useWorldCup());
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -84,13 +80,11 @@ describe('useWorldCup', () => {
     expect(live.homeScore).toBe(1); // live scores are retained, not nulled
 
     expect(result.current.groups[0].standings[0].name).toBe('Mexico');
-    expect(result.current.stadiums[0].name).toBe('Estadio Azteca');
   });
 
   it('sets error when a request fails', async () => {
     fetchMock
       .mockResolvedValueOnce({ ok: false })
-      .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok([]));
     const { result } = renderHook(() => useWorldCup());

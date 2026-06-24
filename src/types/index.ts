@@ -17,6 +17,10 @@ export interface Match {
   slug: string;
   poster?: string;
   colors?: string[];
+  tag?: string;
+  startsAt?: number; // unix seconds
+  endsAt?: number; // unix seconds
+  alwaysLive?: boolean;
 }
 
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
@@ -54,14 +58,4 @@ export interface WCStanding {
 export interface WCGroup {
   name: string;
   standings: WCStanding[];
-}
-
-export interface WCStadium {
-  id: string;
-  name: string;
-  fifaName: string;
-  city: string;
-  country: string;
-  capacity: number;
-  region: string;
 }

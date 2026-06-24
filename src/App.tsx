@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
 import FixturesView from './components/FixturesView';
-import StadiumsView from './components/StadiumsView';
-import FormatGuide from './components/FormatGuide';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
 
-const KNOWN_VIEWS: View[] = ['live', 'fixtures', 'stadiums', 'format'];
+const KNOWN_VIEWS: View[] = ['live', 'fixtures'];
 
 function initialView(): View {
   const v = new URLSearchParams(window.location.search).get('view');
@@ -71,13 +69,11 @@ export default function App() {
         <LiveView matches={streams.matches} />
       )}
 
-      {view !== 'live' && (
+      {view === 'fixtures' && (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night">
           {wc.loading ? <Loading /> :
             wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
-            view === 'fixtures' ? <FixturesView matches={wc.matches} groups={wc.groups} /> :
-            view === 'stadiums' ? <StadiumsView stadiums={wc.stadiums} /> :
-            <FormatGuide />}
+            <FixturesView matches={wc.matches} groups={wc.groups} />}
         </div>
       )}
     </div>

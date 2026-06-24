@@ -8,6 +8,7 @@ interface APISub {
 interface APIStream {
   id: number; name: string; category_name?: string; iframe: string; viewers?: string;
   poster?: string; colors?: string[]; substreams?: APISub[];
+  tag?: string; starts_at?: number; ends_at?: number; always_live?: number;
 }
 interface APICategory {
   category?: string; streams?: APIStream[];
@@ -46,6 +47,10 @@ export function useStreams() {
         viewers: s.viewers || '0',
         poster: s.poster,
         colors: s.colors,
+        tag: s.tag,
+        startsAt: s.starts_at,
+        endsAt: s.ends_at,
+        alwaysLive: s.always_live === 1,
         substreams: (s.substreams || []).map(
           (sub): Substream => ({
             id: sub.id,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WCMatch, WCGroup, WCStadium, WCStanding } from '../types';
+import type { WCMatch, WCGroup, WCStanding } from '../types';
 import { parseScore, deriveStatus, parseKickoff, sortStandings } from '../utils/wc';
 
 const BASE = 'https://worldcup26.ir';
@@ -46,20 +46,10 @@ interface RawGroup {
   name: string;
   teams: RawStandingTeam[];
 }
-interface RawStadium {
-  id: string;
-  name_en: string;
-  fifa_name: string;
-  city_en: string;
-  country_en: string;
-  capacity: number;
-  region: string;
-}
 
 export function useWorldCup() {
   const [matches, setMatches] = useState<WCMatch[]>([]);
   const [groups, setGroups] = useState<WCGroup[]>([]);
-  const [stadiums, setStadiums] = useState<WCStadium[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -73,27 +63,24 @@ export function useWorldCup() {
     setError(null);
 
     try {
-      const [gRes, grRes, tRes, sRes] = await Promise.all([
+      const [gRes, grRes, tRes] = await Promise.all([
         fetch(`${BASE}/get/games`, { signal }),
         fetch(`${BASE}/get/groups`, { signal }),
         fetch(`${BASE}/get/teams`, { signal }),
-        fetch(`${BASE}/get/stadiums`, { signal }),
       ]);
-      if (!gRes.ok || !grRes.ok || !tRes.ok || !sRes.ok) {
+      if (!gRes.ok || !grRes.ok || !tRes.ok) {
         throw new Error('Failed to load World Cup data');
       }
-      const [gamesJson, groupsJson, teamsJson, stadiumsJson] = await Promise.all([
+      const [gamesJson, groupsJson, teamsJson] = await Promise.all([
         gRes.json(),
         grRes.json(),
         tRes.json(),
-        sRes.json(),
       ]);
       // worldcup26.ir wraps each payload in an object ({ games: [...] }, { teams: [...] }, …);
       // unwrap by key, tolerating a bare array too.
       const games = unwrap<RawGame>(gamesJson, 'games');
       const rawGroups = unwrap<RawGroup>(groupsJson, 'groups');
       const teams = unwrap<RawTeam>(teamsJson, 'teams');
-      const rawStadiums = unwrap<RawStadium>(stadiumsJson, 'stadiums');
 
       const teamMap = new Map<string, { name: string; flag: string }>();
       teams.forEach((t) => teamMap.set(t.id, { name: t.name_en, flag: t.flag || '' }));
@@ -141,20 +128,9 @@ export function useWorldCup() {
         }))
         .sort((a, b) => a.name.localeCompare(b.name));
 
-      const st: WCStadium[] = rawStadiums.map((s) => ({
-        id: s.id,
-        name: s.name_en,
-        fifaName: s.fifa_name,
-        city: s.city_en,
-        country: s.country_en,
-        capacity: s.capacity,
-        region: s.region,
-      }));
-
       if (signal.aborted) return;
       setMatches(ms);
       setGroups(gr);
-      setStadiums(st);
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
       console.error('useWorldCup fetch failed:', err);
@@ -169,5 +145,5 @@ export function useWorldCup() {
     return () => abortRef.current?.abort();
   }, [fetchAll]);
 
-  return { matches, groups, stadiums, loading, error, refetch: fetchAll };
+  return { matches, groups, loading, error, refetch: fetchAll };
 }
