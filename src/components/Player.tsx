@@ -70,6 +70,41 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     return () => controller.abort();
   }, [selectedIframeUrl]);
 
+  // Keep a clean loading overlay over the player until the <video> actually has
+  // a frame — hides Vidstack's bare native-controls box during extraction/buffering.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    setStarted(false);
+  }, [selectedIframeUrl]);
+
+  useEffect(() => {
+    if (extract.status !== 'ready') return;
+    const root = wrapRef.current;
+    if (!root) return;
+    let video: HTMLVideoElement | null = null;
+    const reveal = () => setStarted(true);
+    const attach = () => {
+      const v = root.querySelector('video');
+      if (v && v !== video) {
+        video = v;
+        v.addEventListener('playing', reveal);
+        v.addEventListener('canplay', reveal);
+        if (v.readyState >= 2) reveal();
+      }
+    };
+    attach();
+    const id = window.setInterval(attach, 200);
+    return () => {
+      window.clearInterval(id);
+      if (video) {
+        video.removeEventListener('playing', reveal);
+        video.removeEventListener('canplay', reveal);
+      }
+    };
+  }, [extract.status]);
+
   if (!match) {
     return (
       <div className="relative h-full min-h-[60vh] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden flex items-center justify-center">
@@ -89,14 +124,16 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video w-full rounded-2xl border border-white/10 bg-black overflow-hidden">
+      <div ref={wrapRef} className="relative aspect-video w-full rounded-2xl border border-white/10 bg-black overflow-hidden">
         <CornerTicks />
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-md bg-night/80 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgba(255,68,56,0.35)]">
-          <span className="live-dot" />
-          <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
-        </div>
+        {started && (
+          <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-md bg-night/80 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgba(255,68,56,0.35)]">
+            <span className="live-dot" />
+            <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
+          </div>
+        )}
 
-        {extract.status === 'ready' ? (
+        {extract.status === 'ready' && (
           <MediaPlayer
             title={match.name}
             src={{ src: extract.m3u8, type: 'application/x-mpegurl' }}
@@ -108,19 +145,23 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
           >
             <MediaOutlet />
           </MediaPlayer>
-        ) : extract.status === 'error' ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-night">
+        )}
+
+        {extract.status === 'error' ? (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-night">
             <div className="font-mono text-xs tracking-[0.3em] text-live mb-2">{t('common.signalLost')}</div>
             <p className="font-display font-semibold text-lg text-chalk">{t('player.extractFailed')}</p>
             <p className="font-body text-sm text-chalkdim mt-1">{t('player.tryAnother')}</p>
             <p className="font-mono text-[10px] text-chalkdim/60 mt-3 max-w-sm break-words">{extract.message}</p>
           </div>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-night">
-            <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
-              {t('player.extracting')}
-            </span>
-          </div>
+          (extract.status === 'loading' || (extract.status === 'ready' && !started)) && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-night">
+              <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
+                {t('player.extracting')}
+              </span>
+            </div>
+          )
         )}
       </div>
 
