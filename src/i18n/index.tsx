@@ -12,10 +12,16 @@ export function translate(lang: Lang, key: string, vars?: Record<string, string 
 }
 
 function detectLang(): Lang {
+  // an explicit choice (from the switcher) always wins
   const stored = localStorage.getItem('lang');
   if (stored && (LANGS as string[]).includes(stored)) return stored as Lang;
-  const nav = navigator.language.slice(0, 2).toLowerCase();
-  return (LANGS as string[]).includes(nav) ? (nav as Lang) : 'en';
+  // otherwise default to the first system/browser language we support, else English
+  const prefs = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const pref of prefs) {
+    const code = pref.slice(0, 2).toLowerCase();
+    if ((LANGS as string[]).includes(code)) return code as Lang;
+  }
+  return 'en';
 }
 
 interface LangCtx {

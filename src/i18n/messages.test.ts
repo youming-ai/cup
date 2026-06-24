@@ -23,6 +23,6 @@ describe('translate', () => {
 
   it('interpolates {var} placeholders', () => {
     expect(translate('en', 'common.watching', { n: 42 })).toBe('42 watching');
-    expect(translate('zh', 'common.watching', { n: 3 })).toBe('3 在看');
+    expect(translate('zh', 'common.watching', { n: 3 })).toBe('3 人正在观看');
   });
 });

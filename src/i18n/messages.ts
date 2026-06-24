@@ -60,7 +60,7 @@ const zh: Dict = {
   'common.error': '数据加载失败',
   'common.retry': '重试',
   'common.empty': '暂无数据',
-  'common.watching': '{n} 在看',
+  'common.watching': '{n} 人正在观看',
   'common.group': '小组',
   'common.tbd': '待定',
   'common.standby': '待机',
@@ -82,7 +82,7 @@ const zh: Dict = {
   'standings.advanceTop2': '前两名直接出线',
   'standings.advanceThird': '8 个成绩最好的小组第三名出线',
   'st.team': '球队',
-  'st.mp': '场',
+  'st.mp': '已赛',
   'st.w': '胜',
   'st.d': '平',
   'st.l': '负',
@@ -97,7 +97,7 @@ const zh: Dict = {
   'live.back': '返回列表',
   'player.extracting': '正在解析直播流…',
   'player.extractFailed': '无法加载此直播流',
-  'player.tryAnother': '可尝试下方其它线路。',
+  'player.tryAnother': '请尝试下方其他线路。',
 };
 
 const ja: Dict = {
@@ -186,14 +186,14 @@ const ko: Dict = {
   'st.pts': '승점',
   'live.standbyTitle': '신호 대기 중',
   'live.standbyBody': '목록에서 경기를 선택하면 시청을 시작합니다.',
-  'live.source': '회선',
+  'live.source': '채널',
   'live.empty': '현재 라이브 경기가 없습니다',
   'live.sectionLive': '라이브',
   'live.sectionUpcoming': '예정 경기',
   'live.back': '목록으로',
   'player.extracting': '스트림을 불러오는 중…',
   'player.extractFailed': '이 스트림을 불러오지 못했습니다',
-  'player.tryAnother': '아래 다른 회선을 시도해 보세요.',
+  'player.tryAnother': '아래 다른 채널을 시도해 보세요.',
 };
 
 export const messages: Record<Lang, Dict> = { en, zh, ja, ko };
