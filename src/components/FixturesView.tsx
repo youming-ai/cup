@@ -26,8 +26,8 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
         arr.push(m);
         map.set(m.matchday, arr);
       });
-    // 比赛日倒序：最新的比赛日排在最前
-    return [...map.entries()].sort((a, b) => b[0] - a[0]);
+    // 比赛日正序：从第 1 个比赛日开始
+    return [...map.entries()].sort((a, b) => a[0] - b[0]);
   }, [matches, stage]);
 
   return (
