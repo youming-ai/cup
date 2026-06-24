@@ -1,22 +1,17 @@
-FROM node:20-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    fonts-liberation \
-    libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 \
-    libgbm1 libasound2 libxcomposite1 libxdamage1 \
-    libxrandr2 libpango-1.0-0 libcairo2 libcups2 libgtk-3-0 \
-    ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV CHROMIUM_PATH=/usr/bin/chromium
+FROM python:3.12-slim
 
 WORKDIR /app
-COPY package.json ./
-RUN npm install --production
-COPY src/ src/
 
-ENV PORT=8081
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && playwright install --with-deps chromium
+
+# Xvfb: run a real headed Chromium under a virtual display. The ad player only
+# initialises its stream under the full browser engine (not headless-shell).
+RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY server.py ./
+
 EXPOSE 8081
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "xvfb-run -a uvicorn server:app --host 0.0.0.0 --port 8081"]

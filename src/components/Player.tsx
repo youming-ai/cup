@@ -101,6 +101,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
             title={match.name}
             src={{ src: extract.m3u8, type: 'application/x-mpegurl' }}
             autoPlay
+            muted
             playsInline
             controls
             className="absolute inset-0 w-full h-full"
