@@ -2,13 +2,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const EXTRACTOR_URL = process.env.EXTRACTOR_URL || 'http://localhost:8081';
+
 export default defineConfig({
   plugins: [react()],
-  // dev: forward /extract to the local grab service (prod uses nginx same-origin proxy)
   server: {
     proxy: {
-      '/extract': 'http://localhost:8081',
-      '/proxy': 'http://localhost:8081',
+      '/extract': EXTRACTOR_URL,
+      '/proxy': EXTRACTOR_URL,
     },
   },
   test: {
