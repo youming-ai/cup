@@ -3,9 +3,7 @@ import { MediaPlayer, MediaOutlet } from '@vidstack/react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
-// m3u8-extractor 服务基址（dev 默认本地 :3000；生产用 VITE_EXTRACTOR_URL 配置）
-const EXTRACTOR = import.meta.env.VITE_EXTRACTOR_URL || 'http://localhost:3000';
-
+// 同源调用：nginx 把 /extract 反代到内部的 m3u8-extractor（dev 由 vite proxy 转发）
 interface PlayerProps {
   match: Match | null;
   selectedIframeUrl: string;
@@ -54,7 +52,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
 
     (async () => {
       try {
-        const res = await fetch(`${EXTRACTOR}/extract?url=${encodeURIComponent(selectedIframeUrl)}`, {
+        const res = await fetch(`/extract?url=${encodeURIComponent(selectedIframeUrl)}`, {
           signal: controller.signal,
         });
         const data = (await res.json()) as ExtractResponse;

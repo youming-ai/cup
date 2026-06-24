@@ -19,7 +19,7 @@ describe('MatchCard', () => {
     });
     expect(screen.getByText('Mexico')).toBeInTheDocument();
     expect(screen.getByText('2 : 0')).toBeInTheDocument();
-    expect(screen.getByText('FT')).toBeInTheDocument();
+    expect(screen.getByText('Final')).toBeInTheDocument();
   });
 
   it('shows the kickoff time for an upcoming match', () => {
@@ -29,7 +29,7 @@ describe('MatchCard', () => {
       kickoff: new Date(2026, 5, 24, 18, 0),
     });
     expect(screen.getByText('Upcoming')).toBeInTheDocument();
-    expect(screen.queryByText('FT')).not.toBeInTheDocument();
+    expect(screen.queryByText('Final')).not.toBeInTheDocument();
   });
 
   it('shows the LIVE status pill for a live match', () => {

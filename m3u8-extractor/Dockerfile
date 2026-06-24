@@ -17,5 +17,6 @@ COPY package.json ./
 RUN npm install --production
 COPY src/ src/
 
-EXPOSE 3000
+ENV PORT=8081
+EXPOSE 8081
 CMD ["node", "src/server.js"]

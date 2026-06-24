@@ -126,7 +126,7 @@ async function extract(embedUrl) {
   return result;
 }
 
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT) || 8081;
 
 const server = http.createServer(async (req, res) => {
   // CORS: allow the browser SPA (any origin) to call /extract
