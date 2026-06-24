@@ -259,4 +259,72 @@ describe('useStreams Hook', () => {
     expect(result.current.matches[0].name).toBe('Match 2');
     expect(result.current.channels[0].title).toBe('CCTV 1 Refetched');
   });
+
+  it('should use default title and slug when TV channel title is missing', async () => {
+    const mockSports: unknown[] = [];
+    const mockTvStreams = [
+      { channel: 'test.cn', url: 'https://live.m3u8' }, // No title
+    ];
+    const mockTvChannels = [
+      { id: 'test.cn', logo: 'logo-url', categories: ['general'] },
+    ];
+
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => mockSports })
+      .mockResolvedValueOnce({ ok: true, json: async () => mockTvStreams })
+      .mockResolvedValueOnce({ ok: true, json: async () => mockTvChannels });
+
+    const { result } = renderHook(() => useStreams());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.channels).toHaveLength(1);
+    expect(result.current.channels[0].title).toBe('Unnamed Channel');
+    expect(result.current.channels[0].slug).toBe('unnamed-channel');
+  });
+
+  it('should abort the previous request when refetch is called', async () => {
+    let firstCallSignal: AbortSignal | undefined;
+    fetchMock.mockImplementation((url, options) => {
+      if (!firstCallSignal) {
+        firstCallSignal = options?.signal;
+      }
+      return new Promise(() => {}); // Never resolves
+    });
+
+    const { result } = renderHook(() => useStreams());
+
+    // Wait for the fetchMock to be called (the first one)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(firstCallSignal).toBeDefined();
+    expect(firstCallSignal?.aborted).toBe(false);
+
+    // Call refetch
+    act(() => {
+      result.current.refetch();
+    });
+
+    expect(firstCallSignal?.aborted).toBe(true);
+  });
+
+  it('should abort the active request when component unmounts', async () => {
+    let firstCallSignal: AbortSignal | undefined;
+    fetchMock.mockImplementation((url, options) => {
+      if (!firstCallSignal) {
+        firstCallSignal = options?.signal;
+      }
+      return new Promise(() => {}); // Never resolves
+    });
+
+    const { unmount } = renderHook(() => useStreams());
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(firstCallSignal).toBeDefined();
+    expect(firstCallSignal?.aborted).toBe(false);
+
+    unmount();
+
+    expect(firstCallSignal?.aborted).toBe(true);
+  });
 });

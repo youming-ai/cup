@@ -48,14 +48,14 @@ export function useStreams() {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchAllData = useCallback(async (externalSignal?: AbortSignal) => {
+  const fetchAllData = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    const localController = new AbortController();
-    abortControllerRef.current = localController;
-    const signal = externalSignal || localController.signal;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const signal = controller.signal;
 
     setLoading(true);
     setError(null);
@@ -152,7 +152,7 @@ export function useStreams() {
             url: stream.url,
             logo: meta.logo,
             category: meta.category,
-            slug: slugify(stream.title || ''),
+            slug: slugify(stream.title || 'Unnamed Channel'),
           };
         });
 
@@ -183,10 +183,11 @@ export function useStreams() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchAllData(controller.signal);
+    fetchAllData();
     return () => {
-      controller.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [fetchAllData]);
 
