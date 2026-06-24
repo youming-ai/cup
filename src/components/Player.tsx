@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { ShieldAlert, Radio } from 'lucide-react';
-import Hls from 'hls.js';
-import { Match, Channel } from '../types';
+import { useT } from '../i18n';
+import type { Match } from '../types';
 
 interface PlayerProps {
-  selectedItem: Match | Channel | null;
-  mode: 'events' | 'channels';
+  match: Match | null;
   selectedIframeUrl: string;
   setSelectedIframeUrl: (url: string) => void;
 }
 
-// 转播摄像取景角标 —— 本设计的签名元素
 function CornerTicks() {
   const base = 'absolute w-4 h-4 border-pitch/70 pointer-events-none z-10';
   return (
@@ -23,232 +19,88 @@ function CornerTicks() {
   );
 }
 
-// 导播机位选择器
-function FeedButton({
-  active,
-  onClick,
-  label,
-  sub,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  sub?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
-        active
-          ? 'bg-pitch text-night border-pitch'
-          : 'border-line text-chalkdim hover:text-chalk hover:border-chalkdim'
-      }`}
-    >
-      {label}
-      {sub && <span className="ml-1 opacity-70">{sub}</span>}
-    </button>
-  );
-}
+// 注：iframe 默认线路由 LiveView 在选中/初始化时设置；Player 仅渲染当前 selectedIframeUrl，
+// 不在此 useEffect 重置 url，避免 refetch 导致 match 对象身份变化时把用户选的线路弹回主线路。
+export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl }: PlayerProps) {
+  const t = useT();
 
-export default function Player({
-  selectedItem,
-  mode,
-  selectedIframeUrl,
-  setSelectedIframeUrl,
-}: PlayerProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const hlsRef = useRef<Hls | null>(null);
-  const [playError, setPlayError] = useState<string | null>(null);
-
-  // 初始化信源（赛事模式选中主线路 iframe）
-  useEffect(() => {
-    if (mode === 'events' && selectedItem) {
-      setSelectedIframeUrl((selectedItem as Match).iframe);
-      setPlayError(null);
-    }
-  }, [selectedItem, mode, setSelectedIframeUrl]);
-
-  // HLS 视频流加载逻辑（用于 24/7 电视直播）
-  useEffect(() => {
-    if (mode !== 'channels' || !selectedItem) {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-      return;
-    }
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    setPlayError(null);
-    const m3u8Url = (selectedItem as Channel).url;
-
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    if (Hls.isSupported()) {
-      const hls = new Hls({
-        maxMaxBufferLength: 10,
-        enableWorker: true,
-      });
-      hlsRef.current = hls;
-
-      hls.loadSource(m3u8Url);
-      hls.attachMedia(video);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {
-          // 浏览器自动播放拦截，忽略
-        });
-      });
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              setPlayError('直播源离线，或因跨域（CORS）被浏览器拦截');
-              hls.destroy();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hls.recoverMediaError();
-              break;
-            default:
-              setPlayError('播放器内部致命错误，无法加载此直播流');
-              hls.destroy();
-              break;
-          }
-        }
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari 原生支持
-      video.src = m3u8Url;
-      video.addEventListener('error', () => {
-        setPlayError('Safari 原生加载失败，可能流已失效或受 CORS 限制');
-      });
-    } else {
-      setPlayError('您的浏览器不支持 HLS（.m3u8）播放格式');
-    }
-
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [selectedItem, mode]);
-
-  // 待机画面（未选中任何信源）
-  if (!selectedItem) {
+  if (!match) {
     return (
-      <div className="relative h-full min-h-[60vh] rounded-lg border border-line bg-panel overflow-hidden flex items-center justify-center">
+      <div className="relative h-full min-h-[60vh] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden flex items-center justify-center">
         <CornerTicks />
         <div className="text-center px-8">
-          <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">STANDBY · 待机</div>
+          <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">{t('common.standby')}</div>
           <h2 className="font-display font-bold text-3xl text-chalk tracking-wide mb-3">
-            等待信号接入
+            {t('live.standbyTitle')}
           </h2>
           <p className="font-body text-sm text-chalkdim max-w-sm mx-auto leading-relaxed">
-            从左侧选择一场世界杯赛事或全球 24/7 电视频道，即可开始即时观赛。
+            {t('live.standbyBody')}
           </p>
         </div>
       </div>
     );
   }
 
-  const match = selectedItem as Match;
-  const channel = selectedItem as Channel;
-
   return (
     <div className="space-y-4">
-      {/* 画面取景区 */}
-      <div className="relative aspect-video w-full rounded-lg border border-line bg-black overflow-hidden">
+      <div className="relative aspect-video w-full rounded-2xl border border-white/10 bg-black overflow-hidden">
         <CornerTicks />
-
-        {/* 左上角直播 bug */}
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2 py-1 rounded bg-night/80 backdrop-blur-sm border border-line">
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2 py-1 rounded bg-night/80 backdrop-blur-sm border border-white/10">
           <span className="live-dot" />
-          <span className="font-mono text-[10px] tracking-widest text-live">LIVE</span>
+          <span className="font-mono text-[10px] tracking-widest text-live">{t('status.live')}</span>
         </div>
-
-        {mode === 'events' ? (
-          // 赛事：沙箱 iframe，防止广告劫持顶层导航
-          <iframe
-            src={selectedIframeUrl}
-            allowFullScreen
-            allow="autoplay; encrypted-media"
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-            className="absolute inset-0 w-full h-full border-0"
-            title={match.name}
-          />
-        ) : playError ? (
-          // 信号中断
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-night">
-            <ShieldAlert className="w-10 h-10 text-live mb-3" />
-            <p className="font-display font-semibold text-lg text-chalk mb-1">信号中断</p>
-            <p className="font-body text-sm text-chalkdim max-w-sm">{playError}</p>
-            <p className="font-mono text-[10px] tracking-wider text-chalkdim/70 mt-3">
-              SIGNAL LOST · 源可能离线或受 CORS 限制
-            </p>
-          </div>
-        ) : (
-          <video
-            ref={videoRef}
-            controls
-            playsInline
-            className="absolute inset-0 w-full h-full object-contain"
-          />
-        )}
+        <iframe
+          src={selectedIframeUrl}
+          allowFullScreen
+          allow="autoplay; encrypted-media"
+          className="absolute inset-0 w-full h-full border-0"
+          title={match.name}
+        />
       </div>
 
-      {/* 转播下沿条 / score bug */}
-      <div className="rounded-lg border border-line bg-panel">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-3 mb-1.5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
-                {mode === 'events' ? match.category_name : channel.category}
-              </span>
-              {mode === 'events' ? (
-                <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-pitch" />
-                  {match.viewers} 在看
-                </span>
-              ) : (
-                <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
-                  <Radio className="w-3 h-3" />
-                  24/7
-                </span>
-              )}
-            </div>
-            <h1 className="font-display font-bold text-2xl md:text-3xl text-chalk tracking-wide truncate">
-              {mode === 'events' ? match.name : channel.title}
-            </h1>
+      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
+              {match.category_name}
+            </span>
+            <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-pitch" />
+              {t('common.watching', { n: match.viewers })}
+            </span>
           </div>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-chalk tracking-wide truncate">
+            {match.name}
+          </h1>
+        </div>
 
-          {/* 信源切换（仅赛事） */}
-          {mode === 'events' && (
-            <div className="flex flex-wrap gap-2 shrink-0">
-              <FeedButton
-                active={selectedIframeUrl === match.iframe}
-                onClick={() => setSelectedIframeUrl(match.iframe)}
-                label="FEED 01"
-                sub="PPV"
-              />
-              {match.substreams?.map((sub, i) => (
-                <FeedButton
-                  key={sub.id}
-                  active={selectedIframeUrl === sub.iframe}
-                  onClick={() => setSelectedIframeUrl(sub.iframe)}
-                  label={`FEED ${String(i + 2).padStart(2, '0')}`}
-                  sub={sub.locale ? sub.locale.toUpperCase() : sub.source_tag || sub.name}
-                />
-              ))}
-            </div>
-          )}
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button
+            onClick={() => setSelectedIframeUrl(match.iframe)}
+            aria-pressed={selectedIframeUrl === match.iframe}
+            className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
+              selectedIframeUrl === match.iframe
+                ? 'bg-pitch text-night border-pitch'
+                : 'border-white/10 text-chalkdim hover:text-chalk hover:border-chalkdim'
+            }`}
+          >
+            {t('live.source')} 01
+          </button>
+          {match.substreams?.map((sub, i) => (
+            <button
+              key={sub.id}
+              onClick={() => setSelectedIframeUrl(sub.iframe)}
+              aria-pressed={selectedIframeUrl === sub.iframe}
+              className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
+                selectedIframeUrl === sub.iframe
+                  ? 'bg-pitch text-night border-pitch'
+                  : 'border-white/10 text-chalkdim hover:text-chalk hover:border-chalkdim'
+              }`}
+            >
+              {t('live.source')} {String(i + 2).padStart(2, '0')}
+              <span className="ml-1 opacity-70">{sub.source_tag || sub.name}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

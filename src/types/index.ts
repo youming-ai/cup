@@ -19,15 +19,6 @@ export interface Match {
   colors?: string[];
 }
 
-export interface Channel {
-  channel: string;
-  title: string;
-  url: string;
-  logo: string;
-  category: string;
-  slug: string;
-}
-
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
 
 export interface WCMatch {
