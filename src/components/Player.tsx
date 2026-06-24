@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, CardBody, Button, Chip } from '@heroui/react';
-import { ShieldAlert, Radio, Users } from 'lucide-react';
+import { ShieldAlert, Radio } from 'lucide-react';
 import Hls from 'hls.js';
 import { Match, Channel } from '../types';
 
@@ -9,6 +8,47 @@ interface PlayerProps {
   mode: 'events' | 'channels';
   selectedIframeUrl: string;
   setSelectedIframeUrl: (url: string) => void;
+}
+
+// 转播摄像取景角标 —— 本设计的签名元素
+function CornerTicks() {
+  const base = 'absolute w-4 h-4 border-pitch/70 pointer-events-none z-10';
+  return (
+    <>
+      <span className={`${base} top-2 left-2 border-t-2 border-l-2`} />
+      <span className={`${base} top-2 right-2 border-t-2 border-r-2`} />
+      <span className={`${base} bottom-2 left-2 border-b-2 border-l-2`} />
+      <span className={`${base} bottom-2 right-2 border-b-2 border-r-2`} />
+    </>
+  );
+}
+
+// 导播机位选择器
+function FeedButton({
+  active,
+  onClick,
+  label,
+  sub,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  sub?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
+        active
+          ? 'bg-pitch text-night border-pitch'
+          : 'border-line text-chalkdim hover:text-chalk hover:border-chalkdim'
+      }`}
+    >
+      {label}
+      {sub && <span className="ml-1 opacity-70">{sub}</span>}
+    </button>
+  );
 }
 
 export default function Player({
@@ -70,7 +110,7 @@ export default function Player({
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              setPlayError('网络错误：直播源离线或因跨域（CORS）被浏览器拦截');
+              setPlayError('直播源离线，或因跨域（CORS）被浏览器拦截');
               hls.destroy();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
@@ -101,19 +141,21 @@ export default function Player({
     };
   }, [selectedItem, mode]);
 
+  // 待机画面（未选中任何信源）
   if (!selectedItem) {
     return (
-      <Card className="w-full h-full bg-neutral-900 border-neutral-800 flex items-center justify-center text-center p-8">
-        <div className="max-w-md">
-          <div className="w-16 h-16 rounded-full bg-yellow-500/10 text-yellow-500 flex items-center justify-center mx-auto mb-4 text-2xl">
-            ⚽
-          </div>
-          <h2 className="text-xl font-bold text-neutral-200 mb-2">欢迎来到 StreamCup</h2>
-          <p className="text-sm text-neutral-500">
-            请在右侧选择感兴趣的世界杯球赛直播或全球 24/7 直播频道，开启即时高清观赛体验。
+      <div className="relative h-full min-h-[60vh] rounded-lg border border-line bg-panel overflow-hidden flex items-center justify-center">
+        <CornerTicks />
+        <div className="text-center px-8">
+          <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">STANDBY · 待机</div>
+          <h2 className="font-display font-bold text-3xl text-chalk tracking-wide mb-3">
+            等待信号接入
+          </h2>
+          <p className="font-body text-sm text-chalkdim max-w-sm mx-auto leading-relaxed">
+            从左侧选择一场世界杯赛事或全球 24/7 电视频道，即可开始即时观赛。
           </p>
         </div>
-      </Card>
+      </div>
     );
   }
 
@@ -122,103 +164,92 @@ export default function Player({
 
   return (
     <div className="space-y-4">
-      {/* 播放器渲染区 */}
-      <Card className="bg-black border border-neutral-850 overflow-hidden shadow-lg">
-        <CardBody className="p-0">
-          <div className="relative aspect-video w-full bg-neutral-950 flex items-center justify-center">
-            {mode === 'events' ? (
-              // 赛事直播：沙箱 iframe，防止广告劫持顶层导航
-              <iframe
-                src={selectedIframeUrl}
-                allowFullScreen
-                allow="autoplay; encrypted-media"
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-                className="absolute inset-0 w-full h-full border-0"
-                title={match.name}
-              />
-            ) : (
-              // 电视直播：原生 Video + Hls.js
-              <>
-                {playError ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-neutral-900 text-neutral-300">
-                    <ShieldAlert className="w-12 h-12 text-red-500 mb-3" />
-                    <p className="font-bold text-sm max-w-sm">{playError}</p>
-                    <p className="text-xs text-neutral-500 mt-2">
-                      提示：某些源不支持 HTTPS 播放，或服务器限制了外部域名的请求。
-                    </p>
-                  </div>
-                ) : (
-                  <video
-                    ref={videoRef}
-                    controls
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
-                )}
-              </>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+      {/* 画面取景区 */}
+      <div className="relative aspect-video w-full rounded-lg border border-line bg-black overflow-hidden">
+        <CornerTicks />
 
-      {/* 赛事/频道元信息展示 */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Chip
-              size="sm"
-              color={mode === 'events' ? 'warning' : 'default'}
-              variant="flat"
-              className="h-5"
-            >
-              {mode === 'events' ? match.category_name : channel.category}
-            </Chip>
-            {mode === 'events' && (
-              <span className="text-xs text-neutral-400 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" />
-                {match.viewers} 在看
-              </span>
-            )}
-            {mode === 'channels' && (
-              <span className="text-xs text-emerald-500 flex items-center gap-1 animate-pulse">
-                <Radio className="w-3.5 h-3.5" />
-                24/7 实时直播
-              </span>
-            )}
-          </div>
-          <h1 className="text-lg font-bold text-white">
-            {mode === 'events' ? match.name : channel.title}
-          </h1>
+        {/* 左上角直播 bug */}
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2 py-1 rounded bg-night/80 backdrop-blur-sm border border-line">
+          <span className="live-dot" />
+          <span className="font-mono text-[10px] tracking-widest text-live">LIVE</span>
         </div>
 
-        {/* 体育线路切换 */}
-        {mode === 'events' && (
-          <div className="flex flex-wrap gap-2">
-            {/* 主线路 */}
-            <Button
-              size="sm"
-              variant={selectedIframeUrl === match.iframe ? 'solid' : 'bordered'}
-              color="warning"
-              onPress={() => setSelectedIframeUrl(match.iframe)}
-              className="font-bold"
-            >
-              主线路 (PPV)
-            </Button>
-            {/* 分支信源（Substreams） */}
-            {match.substreams?.map((sub) => (
-              <Button
-                key={sub.id}
-                size="sm"
-                variant={selectedIframeUrl === sub.iframe ? 'solid' : 'bordered'}
-                color="warning"
-                onPress={() => setSelectedIframeUrl(sub.iframe)}
-                className="font-bold"
-              >
-                线路 ({sub.source_tag || sub.name}) {sub.locale ? `[${sub.locale.toUpperCase()}]` : ''}
-              </Button>
-            ))}
+        {mode === 'events' ? (
+          // 赛事：沙箱 iframe，防止广告劫持顶层导航
+          <iframe
+            src={selectedIframeUrl}
+            allowFullScreen
+            allow="autoplay; encrypted-media"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            className="absolute inset-0 w-full h-full border-0"
+            title={match.name}
+          />
+        ) : playError ? (
+          // 信号中断
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-night">
+            <ShieldAlert className="w-10 h-10 text-live mb-3" />
+            <p className="font-display font-semibold text-lg text-chalk mb-1">信号中断</p>
+            <p className="font-body text-sm text-chalkdim max-w-sm">{playError}</p>
+            <p className="font-mono text-[10px] tracking-wider text-chalkdim/70 mt-3">
+              SIGNAL LOST · 源可能离线或受 CORS 限制
+            </p>
           </div>
+        ) : (
+          <video
+            ref={videoRef}
+            controls
+            playsInline
+            className="absolute inset-0 w-full h-full object-contain"
+          />
         )}
+      </div>
+
+      {/* 转播下沿条 / score bug */}
+      <div className="rounded-lg border border-line bg-panel">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 mb-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
+                {mode === 'events' ? match.category_name : channel.category}
+              </span>
+              {mode === 'events' ? (
+                <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-pitch" />
+                  {match.viewers} 在看
+                </span>
+              ) : (
+                <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
+                  <Radio className="w-3 h-3" />
+                  24/7
+                </span>
+              )}
+            </div>
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-chalk tracking-wide truncate">
+              {mode === 'events' ? match.name : channel.title}
+            </h1>
+          </div>
+
+          {/* 信源切换（仅赛事） */}
+          {mode === 'events' && (
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <FeedButton
+                active={selectedIframeUrl === match.iframe}
+                onClick={() => setSelectedIframeUrl(match.iframe)}
+                label="FEED 01"
+                sub="PPV"
+              />
+              {match.substreams?.map((sub, i) => (
+                <FeedButton
+                  key={sub.id}
+                  active={selectedIframeUrl === sub.iframe}
+                  onClick={() => setSelectedIframeUrl(sub.iframe)}
+                  label={`FEED ${String(i + 2).padStart(2, '0')}`}
+                  sub={sub.locale ? sub.locale.toUpperCase() : sub.source_tag || sub.name}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

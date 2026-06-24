@@ -1,5 +1,4 @@
-import { Input, Card, CardBody, Chip } from '@heroui/react';
-import { Search, Users, Tv } from 'lucide-react';
+import { Search, Tv } from 'lucide-react';
 import { Match, Channel } from '../types';
 
 type StreamItem = Match | Channel;
@@ -22,94 +21,119 @@ export default function Sidebar({
   setSearchQuery,
 }: SidebarProps) {
   return (
-    <div className="flex flex-col h-full bg-neutral-900 border-r border-neutral-800 p-4">
-      {/* 搜索框 */}
-      <Input
-        isClearable
-        placeholder={mode === 'events' ? '搜索赛事（如 Colombia）...' : '搜索频道...'}
-        startContent={<Search className="text-neutral-400 w-4 h-4" />}
-        value={searchQuery}
-        onValueChange={setSearchQuery}
-        variant="bordered"
-        className="mb-4 text-white"
-        classNames={{
-          inputWrapper:
-            'border-neutral-700 bg-neutral-800 hover:border-neutral-600 focus-within:!border-yellow-500',
-          input: 'text-neutral-200',
-        }}
-      />
+    <div className="flex flex-col h-full bg-panel border-r border-line">
+      {/* 板块标签 + 计数 */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+        <span className="font-mono text-xs tracking-[0.25em] text-chalkdim">
+          {mode === 'events' ? 'FIXTURES' : 'CHANNELS'}
+        </span>
+        <span className="font-mono text-xs text-pitch tabular-nums">
+          {String(items.length).padStart(2, '0')}
+        </span>
+      </div>
 
-      {/* 滚动卡片列表 */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+      {/* 搜索：转播式下划线输入 */}
+      <div className="px-4 pb-3">
+        <div className="flex items-center gap-2 border-b border-line focus-within:border-pitch transition-colors pb-2">
+          <Search className="w-4 h-4 text-chalkdim shrink-0" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={mode === 'events' ? '搜索赛事…' : '搜索频道…'}
+            className="w-full bg-transparent outline-none text-sm text-chalk placeholder:text-chalkdim/60 font-body"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="font-mono text-xs text-chalkdim hover:text-chalk shrink-0"
+            >
+              CLR
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 赛程列表 */}
+      <div className="flex-1 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="text-center py-8 text-neutral-500">没有找到相关内容</div>
+          <div className="px-4 py-14 text-center">
+            <p className="font-mono text-xs tracking-wider text-chalkdim">未找到内容</p>
+          </div>
         ) : (
-          items.map((item) => {
-            const isSelected =
-              !!selectedItem &&
-              (mode === 'events'
-                ? (item as Match).id === (selectedItem as Match).id
-                : (item as Channel).channel === (selectedItem as Channel).channel);
+          <ul className="divide-y divide-line/60">
+            {items.map((item) => {
+              const isSelected =
+                !!selectedItem &&
+                (mode === 'events'
+                  ? (item as Match).id === (selectedItem as Match).id
+                  : (item as Channel).channel === (selectedItem as Channel).channel);
 
-            return (
-              <Card
-                key={mode === 'events' ? (item as Match).id : (item as Channel).channel}
-                isPressable
-                onPress={() => onSelectItem(item)}
-                className={`w-full bg-neutral-800 border transition-all hover:bg-neutral-750 ${
-                  isSelected
-                    ? 'border-yellow-500 bg-neutral-800 shadow-md shadow-yellow-500/10'
-                    : 'border-neutral-750'
-                }`}
-              >
-                <CardBody className="p-3 flex flex-row items-center gap-3">
-                  {mode === 'channels' ? (
-                    // 电视 LOGO 或者占位符
-                    <div className="w-10 h-10 rounded bg-neutral-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {(item as Channel).logo ? (
-                        <img
-                          src={(item as Channel).logo}
-                          alt={(item as Channel).title}
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <Tv className="w-5 h-5 text-neutral-400" />
-                      )}
-                    </div>
-                  ) : (
-                    // 赛事占位徽章
-                    <div className="w-10 h-10 rounded bg-yellow-600/20 text-yellow-500 flex items-center justify-center font-extrabold flex-shrink-0 text-lg">
-                      ⚽
-                    </div>
-                  )}
+              const name = mode === 'events' ? (item as Match).name : (item as Channel).title;
+              const cat =
+                mode === 'events' ? (item as Match).category_name : (item as Channel).category;
 
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="font-bold text-sm text-neutral-200 truncate">
-                      {mode === 'events' ? (item as Match).name : (item as Channel).title}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={mode === 'events' ? 'warning' : 'default'}
-                        className="h-5 text-[10px]"
+              return (
+                <li key={mode === 'events' ? (item as Match).id : (item as Channel).channel}>
+                  <button
+                    onClick={() => onSelectItem(item)}
+                    aria-pressed={isSelected}
+                    className={`group w-full flex items-center gap-3 px-4 py-3 text-left border-l-2 transition-colors ${
+                      isSelected
+                        ? 'border-live bg-pitch/[0.06]'
+                        : 'border-transparent hover:bg-panel2'
+                    }`}
+                  >
+                    {/* 频道 LOGO 或赛事徽章 */}
+                    {mode === 'channels' ? (
+                      <div className="w-9 h-9 rounded bg-night border border-line flex items-center justify-center overflow-hidden shrink-0">
+                        {(item as Channel).logo ? (
+                          <img
+                            src={(item as Channel).logo}
+                            alt={(item as Channel).title}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <Tv className="w-4 h-4 text-chalkdim" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded bg-night border border-line flex items-center justify-center shrink-0 text-base">
+                        ⚽
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`font-display font-semibold text-[15px] leading-tight truncate transition-colors ${
+                          isSelected ? 'text-chalk' : 'text-chalk/90 group-hover:text-chalk'
+                        }`}
                       >
-                        {mode === 'events'
-                          ? (item as Match).category_name
-                          : (item as Channel).category}
-                      </Chip>
-                      {mode === 'events' && (
-                        <span className="text-[11px] text-neutral-400 flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {(item as Match).viewers}
+                        {name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-chalkdim truncate">
+                          {cat}
                         </span>
-                      )}
+                        {mode === 'events' && (
+                          <span className="font-mono text-[10px] text-pitch flex items-center gap-1 shrink-0">
+                            <span className="w-1 h-1 rounded-full bg-pitch" />
+                            {(item as Match).viewers}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardBody>
-              </Card>
-            );
-          })
+
+                    {isSelected && (
+                      <span className="font-mono text-[9px] tracking-wider text-live flex items-center gap-1 shrink-0">
+                        <span className="live-dot" />
+                        LIVE
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Spinner } from '@heroui/react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Player from './components/Player';
@@ -89,24 +88,24 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-neutral-950 text-white gap-4">
-        <Spinner size="lg" color="warning" />
-        <p className="text-sm text-neutral-400 font-bold">载入流媒体源中，请稍候...</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-night gap-4">
+        <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
+          TUNING SIGNAL…
+        </span>
+        <p className="font-body text-sm text-chalkdim">正在载入流媒体源</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-neutral-950 text-white p-6 text-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-red-600/10 text-red-500 flex items-center justify-center text-3xl">
-          ⚠️
-        </div>
-        <h2 className="text-lg font-bold text-red-500">接口数据加载失败</h2>
-        <p className="text-sm text-neutral-400 max-w-sm">{error}</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-night p-6 text-center gap-3">
+        <div className="font-mono text-xs tracking-[0.3em] text-live">SIGNAL LOST</div>
+        <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">接口数据加载失败</h2>
+        <p className="font-body text-sm text-chalkdim max-w-sm">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="mt-2 px-4 py-2 bg-yellow-500 text-neutral-950 font-bold rounded-lg hover:bg-yellow-400 transition"
+          className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide rounded hover:brightness-110 transition"
         >
           重新尝试
         </button>
@@ -115,7 +114,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-neutral-950">
+    <div className="flex flex-col h-screen overflow-hidden bg-night">
       {/* 顶部 Header */}
       <Header
         mode={mode}
@@ -140,7 +139,7 @@ export default function App() {
         </div>
 
         {/* 右/下侧：核心播放器与流详情 */}
-        <div className="flex-1 p-4 overflow-y-auto bg-neutral-950">
+        <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-night">
           <Player
             selectedItem={selectedItem}
             mode={mode}

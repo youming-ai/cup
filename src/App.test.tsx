@@ -5,6 +5,6 @@ import App from './App'
 describe('App', () => {
   it('renders the loading state on initial mount', () => {
     render(<App />)
-    expect(screen.getByText('载入流媒体源中，请稍候...')).toBeInTheDocument()
+    expect(screen.getByText('正在载入流媒体源')).toBeInTheDocument()
   })
 })
