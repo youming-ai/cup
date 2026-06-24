@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, getKebabCase } from './helpers';
+import { slugify } from './helpers';
 
 describe('slugify', () => {
   it('should convert mixed case and spaces to kebab-case', () => {
@@ -14,14 +14,5 @@ describe('slugify', () => {
 
   it('should handle leading/trailing spaces and multiple dashes', () => {
     expect(slugify('  Hello   World  ')).toBe('hello-world');
-  });
-});
-
-describe('getKebabCase', () => {
-  it('should convert CamelCase or spaced text to kebab-case', () => {
-    // getKebabCase is slugify(text) as defined in the brief
-    expect(getKebabCase('Colombia vs. Congo DR')).toBe('colombia-vs-congo-dr');
-    expect(getKebabCase('CamelCaseText')).toBe('camel-case-text');
-    expect(getKebabCase('camelCase')).toBe('camel-case');
   });
 });

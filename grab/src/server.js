@@ -92,17 +92,14 @@ async function extract(embedUrl) {
   await Promise.race([firstM3u8, new Promise((r) => setTimeout(r, M3U8_WAIT))]);
 
   let result = null;
-  // jwplayer exposes the main file + audio track when present (cleaner than guessing)
+  // jwplayer exposes the main file directly (cleaner than guessing from network)
   try {
     const item = await page.evaluate(() => {
       const p = window.jwplayer?.();
       if (!p) return null;
       const it = p.getPlaylistItem?.();
       if (!it?.file) return null;
-      const audio = (it.allSources || []).find(
-        (s) => s.file?.includes("tracks-v1a1") || s.file?.includes("/audio/")
-      );
-      return { m3u8: it.file, type: it.type, audio: audio?.file };
+      return { m3u8: it.file, type: it.type };
     });
     if (item) {
       result = item;
@@ -114,10 +111,7 @@ async function extract(embedUrl) {
 
   if (!result?.m3u8 && m3u8Urls.length > 0) {
     const main = m3u8Urls.find((u) => u.includes("index.m3u8")) || m3u8Urls[0];
-    const audio = m3u8Urls.find(
-      (u) => u.includes("tracks-v1a1") || u.includes("/audio/")
-    );
-    result = { m3u8: main, audio };
+    result = { m3u8: main };
     console.log(`[extract] network OK`);
   }
 
@@ -166,7 +160,6 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         m3u8: result.m3u8,
         ...(result.type ? { type: result.type } : {}),
-        ...(result.audio ? { audio: result.audio } : {}),
       }));
     } catch (err) {
       res.writeHead(500, { "Content-Type": "application/json" });

@@ -10,7 +10,6 @@ interface MatchCardProps {
   awayScore: number | null;
   status: MatchStatus;
   kickoff: Date | null;
-  colors?: string[];
 }
 
 function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => string }) {
@@ -35,16 +34,9 @@ function Flag({ src, alt }: { src?: string; alt: string }) {
 
 export default function MatchCard(p: MatchCardProps) {
   const t = useT();
-  const grad =
-    p.colors && p.colors.length >= 2
-      ? { background: `linear-gradient(160deg, ${p.colors[0]}cc, ${p.colors[1]}88 45%, #0A0F0D 100%)` }
-      : undefined;
 
   return (
-    <div
-      className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden"
-      style={grad}
-    >
+    <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 p-4">
         <div className="flex flex-col items-center gap-2 min-w-0">
           <Flag src={p.homeFlag} alt={p.homeName || t('common.tbd')} />

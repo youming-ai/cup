@@ -3,7 +3,7 @@ import type { Match, Substream } from '../types';
 import { slugify } from '../utils/helpers';
 
 interface APISub {
-  id: number; name: string; tag: string; source_tag: string; locale: string; iframe: string;
+  id: number; name: string; source_tag: string; locale: string; iframe: string;
 }
 interface APIStream {
   id: number; name: string; category_name?: string; iframe: string; viewers?: string;
@@ -34,8 +34,8 @@ export function useStreams() {
     try {
       const res = await fetch('https://api.ppv.to/api/streams', { signal });
       if (!res.ok) throw new Error('Failed to fetch streams');
-      const data = (await res.json()) as APICategory[] | APIEnvelope;
-      const cats: APICategory[] = Array.isArray(data) ? data : data.streams || [];
+      const data = (await res.json()) as APIEnvelope;
+      const cats: APICategory[] = data.streams ?? [];
       // 精确匹配 Football（避免 American/Australian Football）
       const football = cats.find((c) => (c.category || '').toLowerCase() === 'football');
 
@@ -55,7 +55,6 @@ export function useStreams() {
           (sub): Substream => ({
             id: sub.id,
             name: sub.name,
-            tag: sub.tag,
             source_tag: sub.source_tag,
             locale: sub.locale,
             iframe: sub.iframe,
