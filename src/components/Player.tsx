@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MediaPlayer, MediaOutlet } from '@vidstack/react';
+import { Play, Pause, SpeakerHigh, SpeakerSimpleX, CornersOut } from '@phosphor-icons/react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
@@ -73,25 +74,38 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
   // Keep a clean loading overlay over the player until the <video> actually has
   // a frame — hides Vidstack's bare native-controls box during extraction/buffering.
   const wrapRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [started, setStarted] = useState(false);
+  const [paused, setPaused] = useState(true);
+  const [muted, setMuted] = useState(true);
 
   useEffect(() => {
     setStarted(false);
   }, [selectedIframeUrl]);
 
+  // Wire the underlying <video>: reveal on first frame, mirror play/mute state.
   useEffect(() => {
     if (extract.status !== 'ready') return;
     const root = wrapRef.current;
     if (!root) return;
     let video: HTMLVideoElement | null = null;
     const reveal = () => setStarted(true);
+    const onPlay = () => setPaused(false);
+    const onPause = () => setPaused(true);
+    const onVol = () => video && setMuted(video.muted);
     const attach = () => {
       const v = root.querySelector('video');
       if (v && v !== video) {
         video = v;
+        videoRef.current = v;
         v.addEventListener('playing', reveal);
         v.addEventListener('canplay', reveal);
+        v.addEventListener('play', onPlay);
+        v.addEventListener('pause', onPause);
+        v.addEventListener('volumechange', onVol);
         if (v.readyState >= 2) reveal();
+        setPaused(v.paused);
+        setMuted(v.muted);
       }
     };
     attach();
@@ -101,9 +115,28 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
       if (video) {
         video.removeEventListener('playing', reveal);
         video.removeEventListener('canplay', reveal);
+        video.removeEventListener('play', onPlay);
+        video.removeEventListener('pause', onPause);
+        video.removeEventListener('volumechange', onVol);
       }
+      videoRef.current = null;
     };
   }, [extract.status]);
+
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (v) (v.paused ? v.play() : v.pause());
+  };
+  const toggleMute = () => {
+    const v = videoRef.current;
+    if (v) v.muted = !v.muted;
+  };
+  const toggleFullscreen = () => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else el.requestFullscreen?.();
+  };
 
   if (!match) {
     return (
@@ -140,11 +173,37 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
             autoPlay
             muted
             playsInline
-            controls
             className="absolute inset-0 w-full h-full"
           >
             <MediaOutlet />
           </MediaPlayer>
+        )}
+
+        {/* live-stream controls — no timeline (it's a live feed) */}
+        {started && (
+          <div className="absolute bottom-0 inset-x-0 z-20 flex items-center gap-4 px-4 py-3 bg-gradient-to-t from-night/90 via-night/40 to-transparent">
+            <button
+              onClick={togglePlay}
+              aria-label={paused ? 'Play' : 'Pause'}
+              className="text-chalk hover:text-pitch transition-colors"
+            >
+              {paused ? <Play weight="fill" className="w-5 h-5" /> : <Pause weight="fill" className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={toggleMute}
+              aria-label={muted ? 'Unmute' : 'Mute'}
+              className="text-chalk hover:text-pitch transition-colors"
+            >
+              {muted ? <SpeakerSimpleX className="w-5 h-5" /> : <SpeakerHigh className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Fullscreen"
+              className="ml-auto text-chalk hover:text-pitch transition-colors"
+            >
+              <CornersOut className="w-5 h-5" />
+            </button>
+          </div>
         )}
 
         {extract.status === 'error' ? (
