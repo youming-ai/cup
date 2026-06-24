@@ -69,7 +69,7 @@ const en: Dict = {
 const zh: Dict = {
   'brand.subtitle': '2026 世界杯',
   'nav.live': '直播',
-  'nav.fixtures': '赛程',
+  'nav.fixtures': '赛事',
   'nav.stadiums': '球场',
   'nav.format': '赛制',
   'common.loading': '加载中…',
@@ -131,7 +131,7 @@ const zh: Dict = {
 const ja: Dict = {
   'brand.subtitle': 'ワールドカップ2026',
   'nav.live': 'ライブ',
-  'nav.fixtures': '日程',
+  'nav.fixtures': '試合',
   'nav.stadiums': 'スタジアム',
   'nav.format': '大会方式',
   'common.loading': '読み込み中…',
@@ -193,7 +193,7 @@ const ja: Dict = {
 const ko: Dict = {
   'brand.subtitle': '2026 월드컵',
   'nav.live': '라이브',
-  'nav.fixtures': '일정',
+  'nav.fixtures': '경기',
   'nav.stadiums': '경기장',
   'nav.format': '대회 방식',
   'common.loading': '불러오는 중…',
