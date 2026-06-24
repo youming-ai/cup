@@ -4,6 +4,17 @@ import { parseScore, deriveStatus, parseKickoff, sortStandings } from '../utils/
 
 const BASE = 'https://worldcup26.ir';
 
+// Each endpoint returns the array wrapped under a key, e.g. { games: [...] };
+// accept a bare array too in case the shape ever changes.
+function unwrap<T>(json: unknown, key: string): T[] {
+  if (Array.isArray(json)) return json as T[];
+  if (json && typeof json === 'object') {
+    const v = (json as Record<string, unknown>)[key];
+    if (Array.isArray(v)) return v as T[];
+  }
+  return [];
+}
+
 interface RawGame {
   id: string;
   home_team_id: string;
@@ -71,12 +82,18 @@ export function useWorldCup() {
       if (!gRes.ok || !grRes.ok || !tRes.ok || !sRes.ok) {
         throw new Error('Failed to load World Cup data');
       }
-      const [games, rawGroups, teams, rawStadiums] = (await Promise.all([
+      const [gamesJson, groupsJson, teamsJson, stadiumsJson] = await Promise.all([
         gRes.json(),
         grRes.json(),
         tRes.json(),
         sRes.json(),
-      ])) as [RawGame[], RawGroup[], RawTeam[], RawStadium[]];
+      ]);
+      // worldcup26.ir wraps each payload in an object ({ games: [...] }, { teams: [...] }, …);
+      // unwrap by key, tolerating a bare array too.
+      const games = unwrap<RawGame>(gamesJson, 'games');
+      const rawGroups = unwrap<RawGroup>(groupsJson, 'groups');
+      const teams = unwrap<RawTeam>(teamsJson, 'teams');
+      const rawStadiums = unwrap<RawStadium>(stadiumsJson, 'stadiums');
 
       const teamMap = new Map<string, { name: string; flag: string }>();
       teams.forEach((t) => teamMap.set(t.id, { name: t.name_en, flag: t.flag || '' }));

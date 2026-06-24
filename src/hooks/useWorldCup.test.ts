@@ -53,11 +53,12 @@ describe('useWorldCup', () => {
       { id: '1', name_en: 'Estadio Azteca', fifa_name: 'Mexico City Stadium', city_en: 'Mexico City', country_en: 'Mexico', capacity: 87000, region: 'Central' },
     ];
 
+    // worldcup26.ir wraps each payload under a key — mirror that exact shape
     fetchMock
-      .mockResolvedValueOnce(ok(games))
-      .mockResolvedValueOnce(ok(groups))
-      .mockResolvedValueOnce(ok(teams))
-      .mockResolvedValueOnce(ok(stadiums));
+      .mockResolvedValueOnce(ok({ games }))
+      .mockResolvedValueOnce(ok({ groups }))
+      .mockResolvedValueOnce(ok({ teams }))
+      .mockResolvedValueOnce(ok({ stadiums }));
 
     const { result } = renderHook(() => useWorldCup());
     await waitFor(() => expect(result.current.loading).toBe(false));
