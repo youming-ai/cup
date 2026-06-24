@@ -286,7 +286,7 @@ describe('useStreams Hook', () => {
 
   it('should abort the previous request when refetch is called', async () => {
     let firstCallSignal: AbortSignal | undefined;
-    fetchMock.mockImplementation((url, options) => {
+    fetchMock.mockImplementation((_url, options) => {
       if (!firstCallSignal) {
         firstCallSignal = options?.signal;
       }
@@ -310,7 +310,7 @@ describe('useStreams Hook', () => {
 
   it('should abort the active request when component unmounts', async () => {
     let firstCallSignal: AbortSignal | undefined;
-    fetchMock.mockImplementation((url, options) => {
+    fetchMock.mockImplementation((_url, options) => {
       if (!firstCallSignal) {
         firstCallSignal = options?.signal;
       }
