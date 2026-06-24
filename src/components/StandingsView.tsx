@@ -5,7 +5,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
   const t = useT();
 
   if (groups.length === 0) {
-    return <p className="font-mono text-xs tracking-wider text-chalkdim">{t('common.empty')}</p>;
+    return <p className="font-mono text-xs tracking-wider text-chalkdim">{t('standings.empty')}</p>;
   }
 
   return (

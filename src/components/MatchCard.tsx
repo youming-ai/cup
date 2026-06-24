@@ -62,6 +62,7 @@ export default function MatchCard(p: MatchCardProps) {
                     day: '2-digit',
                     hour: '2-digit',
                     minute: '2-digit',
+                    timeZoneName: 'short',
                   })
                 : t('common.tbd')}
             </span>
