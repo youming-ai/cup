@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { CaretLeft } from '@phosphor-icons/react';
+import { CaretLeft, Play } from '@phosphor-icons/react';
 import Player from './Player';
 import Footer from './Footer';
 import { useT } from '../i18n';
@@ -66,6 +66,13 @@ function LiveCard({ m, kind, onSelect, t }: {
             </span>
           )}
         </div>
+        {kind === 'live' && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="flex items-center justify-center w-12 h-12 rounded-full bg-night/70 backdrop-blur-sm border border-white/25">
+              <Play weight="fill" className="w-5 h-5 text-chalk ml-0.5" />
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-3">
@@ -80,6 +87,9 @@ function LiveCard({ m, kind, onSelect, t }: {
           </p>
         )}
       </div>
+
+      {/* thin accent line in the stream's own brand colour */}
+      <div className="h-0.5 w-full" style={{ background: m.colors?.[0] || '#2BD96B' }} aria-hidden />
     </>
   );
 
