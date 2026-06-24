@@ -1,4 +1,4 @@
-import { Globe } from 'lucide-react';
+import { Globe } from '@phosphor-icons/react';
 import { useLang } from '../i18n';
 import type { Lang } from '../i18n/messages';
 

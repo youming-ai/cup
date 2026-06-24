@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { MagnifyingGlass } from '@phosphor-icons/react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
@@ -29,7 +29,7 @@ export default function Sidebar({
 
       <div className="px-4 pb-3">
         <div className="flex items-center gap-2 border-b border-line focus-within:border-pitch transition-colors pb-2">
-          <Search className="w-4 h-4 text-chalkdim shrink-0" />
+          <MagnifyingGlass className="w-4 h-4 text-chalkdim shrink-0" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

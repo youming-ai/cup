@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@heroui/react": "^2.2.0",
+    "@phosphor-icons/react": "^2.1.10",
     "framer-motion": "^11.0.0",
-    "lucide-react": "^0.300.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
