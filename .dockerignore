@@ -4,5 +4,4 @@ dist
 .claude
 .superpowers
 docs
-grab
 **/*.md

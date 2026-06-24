@@ -47,9 +47,6 @@ const en: Dict = {
   'live.sectionLive': 'Live',
   'live.sectionUpcoming': 'Upcoming matches',
   'live.back': 'Back to matches',
-  'player.extracting': 'Loading stream…',
-  'player.extractFailed': "Couldn't load this stream",
-  'player.tryAnother': 'Try another feed below.',
   'footer.disclaimer': 'Disclaimer: We only link to streams available on the internet. We do not host any content.',
 };
 
@@ -96,9 +93,6 @@ const zh: Dict = {
   'live.sectionLive': '正在直播',
   'live.sectionUpcoming': '即将开赛',
   'live.back': '返回列表',
-  'player.extracting': '正在解析直播流…',
-  'player.extractFailed': '无法加载此直播流',
-  'player.tryAnother': '请尝试下方其他线路。',
   'footer.disclaimer': '免责声明：本站仅提供互联网公开直播源的链接，不托管、存储或上传任何视频内容。',
 };
 
@@ -145,9 +139,6 @@ const ja: Dict = {
   'live.sectionLive': 'ライブ',
   'live.sectionUpcoming': '開催予定',
   'live.back': '一覧へ戻る',
-  'player.extracting': 'ストリームを取得中…',
-  'player.extractFailed': 'このストリームを読み込めませんでした',
-  'player.tryAnother': '下の別回線をお試しください。',
   'footer.disclaimer': '免責事項：当サイトはインターネット上で公開されている配信へのリンクのみを提供しており、コンテンツのホストや保存は行っておりません。',
 };
 
@@ -194,9 +185,6 @@ const ko: Dict = {
   'live.sectionLive': '라이브',
   'live.sectionUpcoming': '예정 경기',
   'live.back': '목록으로',
-  'player.extracting': '스트림을 불러오는 중…',
-  'player.extractFailed': '이 스트림을 불러오지 못했습니다',
-  'player.tryAnother': '아래 다른 채널을 시도해 보세요.',
   'footer.disclaimer': '면책 조항: 본 사이트는 인터넷에 공개된 스트림 링크만 제공하며, 어떠한 콘텐츠도 직접 호스트하거나 저장하지 않습니다.',
 };
 
