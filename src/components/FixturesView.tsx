@@ -16,22 +16,27 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
     return ['all', ...KNOWN_STAGES.filter((s) => present.has(s))];
   }, [matches]);
 
-  const byDay = useMemo(() => {
+  // 按具体日期（开球当天）分组，日期正序；组内按开球时间正序；无时间的排末尾
+  const byDate = useMemo(() => {
     const filtered = stage === 'all' ? matches : matches.filter((m) => m.stage === stage);
-    const map = new Map<number, WCMatch[]>();
-    [...filtered]
-      .sort((a, b) => (a.kickoff?.getTime() ?? 0) - (b.kickoff?.getTime() ?? 0))
-      .forEach((m) => {
-        const arr = map.get(m.matchday) || [];
-        arr.push(m);
-        map.set(m.matchday, arr);
-      });
-    // 比赛日正序：从第 1 个比赛日开始
-    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+    const map = new Map<string, WCMatch[]>();
+    for (const m of filtered) {
+      const k = m.kickoff;
+      const key = k
+        ? `${k.getFullYear()}-${String(k.getMonth() + 1).padStart(2, '0')}-${String(k.getDate()).padStart(2, '0')}`
+        : 'zzzz-tbd';
+      const arr = map.get(key) || [];
+      arr.push(m);
+      map.set(key, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => (a.kickoff?.getTime() ?? 0) - (b.kickoff?.getTime() ?? 0));
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [matches, stage]);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* 赛程 | 积分 子切换 */}
       <div className="flex items-center gap-1 p-1 rounded-full border border-white/10 bg-white/5 w-fit">
         {(['schedule', 'standings'] as const).map((k) => (
@@ -67,13 +72,20 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
             ))}
           </div>
 
-          {byDay.length === 0 ? (
+          {byDate.length === 0 ? (
             <p className="font-mono text-xs tracking-wider text-chalkdim">{t('common.empty')}</p>
           ) : (
-            byDay.map(([day, list]) => (
-              <section key={day} className="space-y-3">
+            byDate.map(([key, list]) => (
+              <section key={key} className="space-y-3">
                 <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
-                  {t('common.matchday', { n: day })}
+                  {list[0].kickoff
+                    ? list[0].kickoff.toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : t('common.tbd')}
                 </h3>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {list.map((m) => (

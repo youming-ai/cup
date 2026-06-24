@@ -39,11 +39,8 @@ function LiveCard({ m, kind, onSelect, t }: {
       ? `linear-gradient(140deg, ${m.colors[0]}, ${m.colors[1]})`
       : 'linear-gradient(140deg, #1A211D, #0A0F0D)';
 
-  return (
-    <button
-      onClick={() => onSelect(m)}
-      className="group text-left rounded-2xl border border-white/10 bg-panel2 overflow-hidden hover:border-white/25 transition-colors"
-    >
+  const media = (
+    <>
       <div className="relative aspect-[16/9] w-full overflow-hidden">
         {m.poster ? (
           <img
@@ -82,7 +79,25 @@ function LiveCard({ m, kind, onSelect, t }: {
           </p>
         )}
       </div>
-    </button>
+    </>
+  );
+
+  // 仅正在直播可点击进入播放页；即将开始为静态信息卡（不可点击）
+  if (kind === 'live') {
+    return (
+      <button
+        onClick={() => onSelect(m)}
+        className="group text-left rounded-2xl border border-white/10 bg-panel2 overflow-hidden hover:border-white/25 transition-colors"
+      >
+        {media}
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-panel2 overflow-hidden opacity-80">
+      {media}
+    </div>
   );
 }
 
@@ -111,10 +126,13 @@ export default function LiveView({ matches }: { matches: Match[] }) {
   );
   const [iframeUrl, setIframeUrl] = useState('');
 
-  const selected = useMemo(
-    () => (selectedSlug ? matches.find((m) => m.slug === selectedSlug) ?? null : null),
-    [selectedSlug, matches],
-  );
+  // 只有正在直播的场次可进入播放页；指向"即将开始"的 ?match 深链回退到列表
+  const selected = useMemo(() => {
+    if (!selectedSlug) return null;
+    const m = matches.find((x) => x.slug === selectedSlug);
+    if (!m) return null;
+    return classify(m, Date.now()) === 'live' ? m : null;
+  }, [selectedSlug, matches]);
 
   // 深链：?match 已存在但 iframe 尚未设置时，等 matches 加载出来后补上默认线路
   useEffect(() => {
