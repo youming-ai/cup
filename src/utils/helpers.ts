@@ -14,5 +14,8 @@ export function slugify(text: string): string {
  * 转换普通文本为匹配键值
  */
 export function getKebabCase(text: string): string {
-  return slugify(text);
+  const brokenCamel = text
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2');
+  return slugify(brokenCamel);
 }

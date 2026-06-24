@@ -21,5 +21,7 @@ describe('getKebabCase', () => {
   it('should convert CamelCase or spaced text to kebab-case', () => {
     // getKebabCase is slugify(text) as defined in the brief
     expect(getKebabCase('Colombia vs. Congo DR')).toBe('colombia-vs-congo-dr');
+    expect(getKebabCase('CamelCaseText')).toBe('camel-case-text');
+    expect(getKebabCase('camelCase')).toBe('camel-case');
   });
 });
