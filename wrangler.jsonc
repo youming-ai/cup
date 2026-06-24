@@ -1,0 +1,9 @@
+{
+  // Static SPA — no Worker script, just serve the Vite build output.
+  "name": "cup",
+  "compatibility_date": "2026-06-24",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
