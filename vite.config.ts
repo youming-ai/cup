@@ -7,6 +7,7 @@ const EXTRACTOR_URL = process.env.EXTRACTOR_URL || 'http://localhost:8081';
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts: ['umuo.app', '.umuo.app'],
     proxy: {
       '/extract': EXTRACTOR_URL,
       '/proxy': EXTRACTOR_URL,
