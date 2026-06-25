@@ -3,11 +3,11 @@ import type { Match, Substream } from '../types';
 import { slugify } from '../utils/helpers';
 
 interface APISub {
-  id: number; name: string; source_tag: string; locale: string; iframe: string;
+  name: string; source_tag: string; iframe: string;
 }
 interface APIStream {
   id: number; name: string; category_name?: string; iframe: string; viewers?: string;
-  poster?: string; colors?: string[]; substreams?: APISub[];
+  poster?: string; colors?: string[]; substreams?: APISub[]; source_tag?: string;
   tag?: string; starts_at?: number; ends_at?: number; always_live?: number;
 }
 interface APICategory {
@@ -45,6 +45,7 @@ export function useStreams() {
         category_name: s.category_name || 'Football',
         iframe: s.iframe,
         viewers: s.viewers || '0',
+        sourceTag: s.source_tag,
         poster: s.poster,
         colors: s.colors,
         tag: s.tag,
@@ -53,10 +54,8 @@ export function useStreams() {
         alwaysLive: s.always_live === 1,
         substreams: (s.substreams || []).map(
           (sub): Substream => ({
-            id: sub.id,
             name: sub.name,
             source_tag: sub.source_tag,
-            locale: sub.locale,
             iframe: sub.iframe,
           }),
         ),

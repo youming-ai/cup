@@ -1,8 +1,6 @@
 export interface Substream {
-  id: number;
   name: string;
   source_tag: string;
-  locale: string;
   iframe: string;
 }
 
@@ -12,6 +10,7 @@ export interface Match {
   category_name: string;
   iframe: string;
   viewers: string;
+  sourceTag?: string; // primary feed's broadcaster label (e.g. "FOX")
   substreams: Substream[];
   slug: string;
   poster?: string;

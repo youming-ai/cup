@@ -19,6 +19,12 @@ function CornerTicks() {
   );
 }
 
+// ppv.to feeds carry only a language code (not a country), so a flag would be a
+// guess — show the broadcaster tag + a quality badge for 4K/UHD feeds instead.
+function qualityBadge(label: string): string | null {
+  return /\b4k\b/i.test(label) || /\buhd\b/i.test(label) ? '4K' : null;
+}
+
 export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl }: PlayerProps) {
   const t = useT();
 
@@ -38,6 +44,11 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
       </div>
     );
   }
+
+  const sources = [
+    { iframe: match.iframe, label: match.sourceTag || t('live.source') },
+    ...(match.substreams ?? []).map((s) => ({ iframe: s.iframe, label: s.source_tag || s.name })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -60,9 +71,9 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
         )}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 space-y-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
               {match.category_name}
             </span>
@@ -71,38 +82,44 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
               {t('common.watching', { n: match.viewers })}
             </span>
           </div>
-          <h1 className="font-display font-bold text-2xl md:text-3xl text-chalk tracking-wide truncate">
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-chalk tracking-wide">
             {match.name}
           </h1>
         </div>
 
-        <div className="flex flex-wrap gap-2 shrink-0">
-          <button
-            onClick={() => setSelectedIframeUrl(match.iframe)}
-            aria-pressed={selectedIframeUrl === match.iframe}
-            className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
-              selectedIframeUrl === match.iframe
-                ? 'bg-pitch text-night border-pitch'
-                : 'border-pitch/30 text-chalkdim/90 hover:text-chalk hover:border-pitch/60'
-            }`}
-          >
-            {t('live.source')} 01
-          </button>
-          {match.substreams?.map((sub, i) => (
-            <button
-              key={sub.id}
-              onClick={() => setSelectedIframeUrl(sub.iframe)}
-              aria-pressed={selectedIframeUrl === sub.iframe}
-              className={`px-3 py-1.5 rounded font-mono text-xs tracking-wider border transition-colors ${
-                selectedIframeUrl === sub.iframe
-                  ? 'bg-pitch text-night border-pitch'
-                  : 'border-pitch/30 text-chalkdim/90 hover:text-chalk hover:border-pitch/60'
-              }`}
-            >
-              {t('live.source')} {String(i + 2).padStart(2, '0')}
-              <span className="ml-1 opacity-70">{sub.source_tag || sub.name}</span>
-            </button>
-          ))}
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-chalkdim mb-2.5">
+            {t('live.sources')}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {sources.map((src, i) => {
+              const active = selectedIframeUrl === src.iframe;
+              const q = qualityBadge(src.label);
+              return (
+                <button
+                  key={`${i}-${src.iframe}`}
+                  onClick={() => setSelectedIframeUrl(src.iframe)}
+                  aria-pressed={active}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-pitch text-night border-pitch'
+                      : 'border-white/10 bg-white/[0.03] text-chalkdim hover:text-chalk hover:border-white/25'
+                  }`}
+                >
+                  <span className="truncate max-w-[14rem]">{src.label}</span>
+                  {q && (
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide ${
+                        active ? 'bg-night/20 text-night' : 'bg-pitch/15 text-pitch'
+                      }`}
+                    >
+                      {q}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

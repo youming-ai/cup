@@ -1,11 +1,11 @@
 import LanguageSwitcher from './LanguageSwitcher';
 import { useT } from '../i18n';
 
-export type View = 'live' | 'fixtures';
+export type View = 'live' | 'schedule';
 
 const VIEWS: { key: View; icon: string }[] = [
   { key: 'live', icon: '🔴' },
-  { key: 'fixtures', icon: '📅' },
+  { key: 'schedule', icon: '📅' },
 ];
 
 export default function Header({ view, setView }: { view: View; setView: (v: View) => void }) {

@@ -98,7 +98,7 @@ export function useWorldCup() {
           group: g.group,
           matchday: Number(g.matchday) || 0,
           stadiumId: g.stadium_id,
-          kickoff: parseKickoff(g.local_date),
+          kickoff: parseKickoff(g.local_date, g.stadium_id),
           status,
           stage: g.type,
         };

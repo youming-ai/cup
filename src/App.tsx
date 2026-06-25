@@ -7,7 +7,7 @@ import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
 
-const KNOWN_VIEWS: View[] = ['live', 'fixtures'];
+const KNOWN_VIEWS: View[] = ['live', 'schedule'];
 
 function initialView(): View {
   const v = new URLSearchParams(window.location.search).get('view');
@@ -70,7 +70,7 @@ export default function App() {
         <LiveView matches={streams.matches} />
       )}
 
-      {view === 'fixtures' && (
+      {view === 'schedule' && (
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
           <div className="flex-1">
             {wc.loading ? <Loading /> :
