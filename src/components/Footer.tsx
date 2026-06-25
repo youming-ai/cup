@@ -5,7 +5,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-12 py-6 border-t border-white/5 text-center space-y-2 shrink-0">
+    <footer className="mt-12 py-6 border-t border-line text-center space-y-2 shrink-0">
       <p className="font-display text-xs text-chalkdim/80">
         {t('footer.copyright', { year: String(year) })}
       </p>

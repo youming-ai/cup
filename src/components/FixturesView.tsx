@@ -38,13 +38,13 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* 赛程 | 积分 子切换 */}
-      <div className="flex items-center gap-1 p-1 rounded-full border border-white/10 bg-white/5 w-fit">
+      <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
         {(['schedule', 'standings'] as const).map((k) => (
           <button
             key={k}
             onClick={() => setTab(k)}
             aria-pressed={tab === k}
-            className={`px-4 py-2 rounded-full font-display font-semibold text-sm transition-colors ${
+            className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
               tab === k ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
             }`}
           >

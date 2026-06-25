@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Globe } from '@phosphor-icons/react';
+import { Languages } from 'lucide-react';
 import { useLang, useT } from '../i18n';
 import type { Lang } from '../i18n/messages';
 
@@ -87,9 +87,9 @@ export default function LanguageSwitcher() {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={t('common.changeLanguage')}
-        className="p-2 rounded-full hover:bg-white/10 text-chalkdim hover:text-chalk transition-all"
+        className="p-2 hover:bg-panel2 text-chalkdim hover:text-chalk transition-colors"
       >
-        <Globe className="w-5 h-5" aria-hidden />
+        <Languages className="w-5 h-5" aria-hidden />
       </button>
 
       {isOpen && (
@@ -98,7 +98,7 @@ export default function LanguageSwitcher() {
           role="listbox"
           aria-label={t('common.changeLanguage')}
           aria-activedescendant={`lang-opt-${lang}`}
-          className="absolute right-0 mt-1 w-20 rounded-xl border border-white/10 bg-panel shadow-lg py-1 z-50 focus:outline-none"
+          className="absolute right-0 mt-1 w-20 border border-line bg-panel shadow-lg py-1 z-50 focus:outline-none"
         >
           {OPTS.map((o) => (
             <div
@@ -117,7 +117,7 @@ export default function LanguageSwitcher() {
               className={`w-full text-center py-2 text-xs font-semibold transition-colors cursor-pointer ${
                 lang === o.code
                   ? 'bg-pitch text-night'
-                  : 'text-chalkdim hover:text-chalk hover:bg-white/5'
+                  : 'text-chalkdim hover:text-chalk hover:bg-panel2'
               }`}
             >
               {o.label}

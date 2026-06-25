@@ -2,23 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 配色 token：通道值 "R G B"，配合 tailwind 的 rgb(var() / <alpha>)，
+   集中维护暗色（转播机房）调色板。 */
+:root {
+  --c-bg: 10 15 13;
+  --c-surface: 18 24 21;
+  --c-surface2: 26 33 29;
+  --c-line: 42 51 46;
+  --c-text: 234 242 236;
+  --c-muted: 138 150 143;
+  --c-pitch: 43 217 107;
+  --c-live: 255 68 56;
+}
+
 @layer base {
   body {
     @apply bg-night text-chalk font-body antialiased;
   }
 
-  /* 全站键盘焦点环（pitch 绿），覆盖所有交互元素，满足 WCAG 2.4.7 */
+  /* 全站键盘焦点环（pitch 绿），覆盖所有交互元素，满足 WCAG 2.4.7。直角风格不留圆角 */
   :focus-visible {
-    outline: 2px solid #2bd96b;
+    outline: 2px solid rgb(var(--c-pitch));
     outline-offset: 2px;
-    border-radius: 4px;
   }
 }
 
 @layer components {
-  /* 转播信号灯：脉动的红点，专属 LIVE */
+  /* 转播信号灯：脉动的方形 tally 灯，专属 LIVE */
   .live-dot {
-    @apply inline-block w-1.5 h-1.5 rounded-full bg-live;
+    @apply inline-block w-1.5 h-1.5 bg-live;
     animation: live-pulse 1.4s ease-in-out infinite;
   }
 }
@@ -49,14 +61,13 @@
   scrollbar-width: none;
 }
 
-/* 细滚动条，贴合球场夜色 */
+/* 细滚动条，跟随主题 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a332e;
-  border-radius: 4px;
+  background: rgb(var(--c-line));
 }
 ::-webkit-scrollbar-track {
   background: transparent;

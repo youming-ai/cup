@@ -1,11 +1,12 @@
+import { Radio, CalendarDays, type LucideIcon } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useT } from '../i18n';
 
 export type View = 'live' | 'schedule';
 
-const VIEWS: { key: View; icon: string }[] = [
-  { key: 'live', icon: '🔴' },
-  { key: 'schedule', icon: '📅' },
+const VIEWS: { key: View; Icon: LucideIcon }[] = [
+  { key: 'live', Icon: Radio },
+  { key: 'schedule', Icon: CalendarDays },
 ];
 
 export default function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
@@ -14,7 +15,7 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
     <header className="bg-panel border-b border-line">
       <div className="flex items-center justify-between gap-4 px-5 h-16">
         <div className="flex items-center gap-3 shrink-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-pitch shadow-[0_0_12px_rgba(43,217,107,0.8)]" />
+          <span className="w-2.5 h-2.5 bg-pitch shadow-[0_0_12px_rgba(43,217,107,0.8)]" />
           <div className="leading-none">
             <h1 className="font-display font-bold text-xl tracking-[0.18em] text-chalk">STREAMCUP</h1>
             <div className="font-mono text-[10px] tracking-[0.3em] text-chalkdim mt-1">
@@ -26,20 +27,20 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
         <nav
           role="tablist"
           aria-label={t('nav.mainLabel')}
-          className="hidden sm:flex items-center gap-1 p-1 rounded-full border border-line bg-night"
+          className="hidden sm:flex items-center gap-1 p-1 border border-line bg-night"
         >
-          {VIEWS.map((v) => (
+          {VIEWS.map(({ key, Icon }) => (
             <button
-              key={v.key}
+              key={key}
               role="tab"
-              onClick={() => setView(v.key)}
-              aria-selected={view === v.key}
-              className={`px-4 py-1.5 rounded-full font-display font-semibold tracking-wide text-sm whitespace-nowrap transition-colors ${
-                view === v.key ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
+              onClick={() => setView(key)}
+              aria-selected={view === key}
+              className={`inline-flex items-center gap-1.5 px-4 py-1.5 font-display font-semibold tracking-wide text-sm whitespace-nowrap transition-colors ${
+                view === key ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
               }`}
             >
-              <span className="mr-1">{v.icon}</span>
-              {t(`nav.${v.key}`)}
+              <Icon className="w-4 h-4" aria-hidden />
+              {t(`nav.${key}`)}
             </button>
           ))}
         </nav>
@@ -53,19 +54,19 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
         aria-label={t('nav.mainLabel')}
         className="sm:hidden px-4 pb-3"
       >
-        <div className="flex gap-1 p-1 rounded-full border border-line bg-night">
-          {VIEWS.map((v) => (
+        <div className="flex gap-1 p-1 border border-line bg-night">
+          {VIEWS.map(({ key, Icon }) => (
             <button
-              key={v.key}
+              key={key}
               role="tab"
-              onClick={() => setView(v.key)}
-              aria-selected={view === v.key}
-              className={`flex-1 py-2.5 rounded-full font-display font-semibold tracking-wide text-sm transition-colors ${
-                view === v.key ? 'bg-pitch text-night' : 'text-chalkdim'
+              onClick={() => setView(key)}
+              aria-selected={view === key}
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 font-display font-semibold tracking-wide text-sm transition-colors ${
+                view === key ? 'bg-pitch text-night' : 'text-chalkdim'
               }`}
             >
-              <span className="mr-1">{v.icon}</span>
-              {t(`nav.${v.key}`)}
+              <Icon className="w-4 h-4" aria-hidden />
+              {t(`nav.${key}`)}
             </button>
           ))}
         </div>

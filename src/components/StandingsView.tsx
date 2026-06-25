@@ -35,9 +35,9 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
         {groups.map((g) => (
           <div
             key={g.name}
-            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden"
+            className="border border-line bg-panel overflow-hidden"
           >
-            <div className="px-4 py-3 border-b border-white/10">
+            <div className="px-4 py-3 border-b border-line">
               <span className="font-display font-bold text-lg text-chalk">
                 {t('common.group')} {g.name}
               </span>
@@ -62,7 +62,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                   return (
                     <tr
                       key={s.teamId}
-                      className={`border-t border-white/5 ${
+                      className={`border-t border-line ${
                         qual === 'direct'
                           ? 'bg-pitch/[0.06]'
                           : qual === 'third'

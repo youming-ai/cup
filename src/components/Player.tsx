@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
@@ -27,10 +28,13 @@ function qualityBadge(label: string): string | null {
 
 export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl }: PlayerProps) {
   const t = useT();
+  // 切换线路 / 进入直播时，iframe 重新加载 —— 在其 onLoad 前盖一层信号接入动画
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { setLoading(true); }, [selectedIframeUrl]);
 
   if (!match) {
     return (
-      <div className="relative h-full min-h-[60vh] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden flex items-center justify-center">
+      <div className="relative h-full min-h-[60vh] border border-line bg-panel overflow-hidden flex items-center justify-center">
         <CornerTicks />
         <div className="text-center px-8">
           <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">{t('common.standby')}</div>
@@ -52,9 +56,9 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video w-full rounded-2xl border border-white/10 bg-black overflow-hidden">
+      <div className="relative aspect-video w-full border border-line bg-black overflow-hidden">
         <CornerTicks />
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-md bg-night/80 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgba(255,68,56,0.35)]">
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgba(255,68,56,0.35)]">
           <span className="live-dot" />
           <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
         </div>
@@ -66,12 +70,22 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
             title={match.name}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowFullScreen
+            onLoad={() => setLoading(false)}
             className="absolute inset-0 w-full h-full"
           />
         )}
+
+        {selectedIframeUrl && loading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black" aria-live="polite">
+            <span className="live-dot" />
+            <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
+              {t('common.loading')}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 space-y-4">
+      <div className="border border-line bg-panel p-4 sm:p-5 space-y-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
@@ -100,10 +114,10 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
                   key={`${i}-${src.iframe}`}
                   onClick={() => setSelectedIframeUrl(src.iframe)}
                   aria-pressed={active}
-                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center gap-2 px-3 py-2 border text-sm font-medium transition-colors ${
                     active
                       ? 'bg-pitch text-night border-pitch'
-                      : 'border-white/10 bg-white/[0.03] text-chalkdim hover:text-chalk hover:border-white/25'
+                      : 'border-line bg-panel2 text-chalkdim hover:text-chalk hover:border-chalkdim'
                   }`}
                 >
                   <span className="truncate max-w-[14rem]">{src.label}</span>
