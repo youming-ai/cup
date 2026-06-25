@@ -16,19 +16,24 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
         <div className="flex items-center gap-3 shrink-0">
           <span className="w-2.5 h-2.5 rounded-full bg-pitch shadow-[0_0_12px_rgba(43,217,107,0.8)]" />
           <div className="leading-none">
-            <div className="font-display font-bold text-xl tracking-[0.18em] text-chalk">STREAMCUP</div>
+            <h1 className="font-display font-bold text-xl tracking-[0.18em] text-chalk">STREAMCUP</h1>
             <div className="font-mono text-[10px] tracking-[0.3em] text-chalkdim mt-1">
               {t('brand.subtitle')}
             </div>
           </div>
         </div>
 
-        <nav className="hidden sm:flex items-center gap-1 p-1 rounded-full border border-line bg-night">
+        <nav
+          role="tablist"
+          aria-label={t('nav.mainLabel')}
+          className="hidden sm:flex items-center gap-1 p-1 rounded-full border border-line bg-night"
+        >
           {VIEWS.map((v) => (
             <button
               key={v.key}
+              role="tab"
               onClick={() => setView(v.key)}
-              aria-pressed={view === v.key}
+              aria-selected={view === v.key}
               className={`px-4 py-1.5 rounded-full font-display font-semibold tracking-wide text-sm whitespace-nowrap transition-colors ${
                 view === v.key ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
               }`}
@@ -43,13 +48,18 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
       </div>
 
       {/* 移动端导航：占满宽度的分段控件，每段 ~50%、py-2.5 触控友好 */}
-      <nav className="sm:hidden px-4 pb-3">
+      <nav
+        role="tablist"
+        aria-label={t('nav.mainLabel')}
+        className="sm:hidden px-4 pb-3"
+      >
         <div className="flex gap-1 p-1 rounded-full border border-line bg-night">
           {VIEWS.map((v) => (
             <button
               key={v.key}
+              role="tab"
               onClick={() => setView(v.key)}
-              aria-pressed={view === v.key}
+              aria-selected={view === v.key}
               className={`flex-1 py-2.5 rounded-full font-display font-semibold tracking-wide text-sm transition-colors ${
                 view === v.key ? 'bg-pitch text-night' : 'text-chalkdim'
               }`}

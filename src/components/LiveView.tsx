@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CaretLeft, Play } from '@phosphor-icons/react';
 import Player from './Player';
 import Footer from './Footer';
@@ -98,6 +98,7 @@ function LiveCard({ m, kind, onSelect, t }: {
     return (
       <button
         onClick={() => onSelect(m)}
+        aria-label={m.name}
         className="group text-left rounded-2xl border border-white/10 bg-panel2 overflow-hidden hover:border-white/25 transition-colors"
       >
         {media}
@@ -150,6 +151,22 @@ export default function LiveView({ matches }: { matches: Match[] }) {
     if (selected && !iframeUrl) setIframeUrl(selected.iframe);
   }, [selected, iframeUrl]);
 
+  const backToList = useCallback(() => {
+    setSelectedSlug(null);
+    setIframeUrl('');
+    const params = new URLSearchParams(window.location.search);
+    params.delete('match');
+    window.history.replaceState(null, '', `?${params.toString()}`);
+  }, []);
+
+  // Escape 键退出播放页
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') backToList(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selected, backToList]);
+
   const { live, upcoming } = useMemo(() => {
     const now = Date.now();
     const live: Match[] = [];
@@ -172,13 +189,6 @@ export default function LiveView({ matches }: { matches: Match[] }) {
     window.history.replaceState(null, '', `?${params.toString()}`);
   };
 
-  const backToList = () => {
-    setSelectedSlug(null);
-    setIframeUrl('');
-    const params = new URLSearchParams(window.location.search);
-    params.delete('match');
-    window.history.replaceState(null, '', `?${params.toString()}`);
-  };
 
   // 播放页
   if (selected) {

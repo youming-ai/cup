@@ -5,7 +5,7 @@ export function translate(lang: Lang, key: string, vars?: Record<string, string 
   let s = messages[lang]?.[key] ?? messages.en[key] ?? key;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
-      s = s.replace(`{${k}}`, String(v));
+      s = s.replaceAll(`{${k}}`, String(v));
     }
   }
   return s;
@@ -37,7 +37,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
   }, [lang]);
   const setLang = (l: Lang) => {
-    localStorage.setItem('lang', l);
+    try { localStorage.setItem('lang', l); } catch { /* private/full */ }
     setLangState(l);
   };
   return <Ctx.Provider value={{ lang, setLang }}>{children}</Ctx.Provider>;

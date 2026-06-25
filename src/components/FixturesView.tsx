@@ -89,7 +89,19 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
                 </h3>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {list.map((m) => (
-                    <MatchCard key={m.id} {...m} />
+                    <MatchCard
+                      key={m.id}
+                      homeName={m.homeName}
+                      awayName={m.awayName}
+                      homeFlag={m.homeFlag}
+                      awayFlag={m.awayFlag}
+                      homeScore={m.homeScore}
+                      awayScore={m.awayScore}
+                      status={m.status}
+                      kickoff={m.kickoff}
+                      stage={m.stage}
+                      group={m.group}
+                    />
                   ))}
                 </div>
               </section>

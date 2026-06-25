@@ -45,8 +45,8 @@ export default function MatchCard(p: MatchCardProps) {
   const awayWon = p.status === 'finished' && (p.awayScore ?? 0) > (p.homeScore ?? 0);
   const teamCls = (won: boolean, lost: boolean) =>
     `font-display text-sm text-center truncate w-full ${
-      lost ? 'font-normal text-chalkdim' : 'font-semibold text-chalk'
-    }${won ? ' font-bold' : ''}`;
+      lost ? 'font-normal text-chalkdim' : won ? 'font-bold text-chalk' : 'font-semibold text-chalk'
+    }`;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/20 transition-colors">
@@ -75,7 +75,10 @@ export default function MatchCard(p: MatchCardProps) {
                 : tbd}
             </span>
           ) : (
-            <span className="font-mono text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap">
+            <span
+              className="font-mono text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap"
+              aria-label={`${p.homeName || tbd} ${p.homeScore ?? 0} - ${p.awayName || tbd} ${p.awayScore ?? 0}`}
+            >
               {`${p.homeScore ?? 0} : ${p.awayScore ?? 0}`}
             </span>
           )}

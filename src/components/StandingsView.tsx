@@ -43,15 +43,16 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
               </span>
             </div>
             <table className="w-full text-sm">
+              <caption className="sr-only">{t('common.group')} {g.name}</caption>
               <thead>
                 <tr className="text-chalkdim font-mono text-[10px] uppercase">
-                  <th className="text-left font-medium px-4 py-2">{t('st.team')}</th>
-                  <th className="px-1 font-medium">{t('st.mp')}</th>
-                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.w')}</th>
-                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.d')}</th>
-                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.l')}</th>
-                  <th className="px-1 font-medium">{t('st.gd')}</th>
-                  <th className="px-2 font-medium">{t('st.pts')}</th>
+                  <th scope="col" className="text-left font-medium px-4 py-2">{t('st.team')}</th>
+                  <th scope="col" className="px-1 font-medium"><abbr title="Matches Played">{t('st.mp')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium hidden sm:table-cell"><abbr title="Wins">{t('st.w')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium hidden sm:table-cell"><abbr title="Draws">{t('st.d')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium hidden sm:table-cell"><abbr title="Losses">{t('st.l')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium"><abbr title="Goal Difference">{t('st.gd')}</abbr></th>
+                  <th scope="col" className="px-2 font-medium"><abbr title="Points">{t('st.pts')}</abbr></th>
                 </tr>
               </thead>
               <tbody>
