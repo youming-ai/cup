@@ -66,7 +66,6 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
             title={match.name}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowFullScreen
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             className="absolute inset-0 w-full h-full"
           />
         )}
