@@ -98,7 +98,7 @@ export default function LanguageSwitcher() {
           role="listbox"
           aria-label={t('common.changeLanguage')}
           aria-activedescendant={`lang-opt-${lang}`}
-          className="absolute right-0 mt-1 w-20 border border-line bg-panel shadow-lg py-1 z-50 focus:outline-none"
+          className="absolute right-0 mt-1 w-20 border border-line bg-panel/100 shadow-lg py-1 z-50 focus:outline-none"
         >
           {OPTS.map((o) => (
             <div
@@ -114,7 +114,7 @@ export default function LanguageSwitcher() {
                   select(o.code);
                 }
               }}
-              className={`w-full text-center py-2 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full text-center py-2 text-xs font-semibold transition-colors cursor-pointer bg-panel ${
                 lang === o.code
                   ? 'bg-pitch text-night'
                   : 'text-chalkdim hover:text-chalk hover:bg-panel2'
