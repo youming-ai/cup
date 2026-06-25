@@ -248,7 +248,7 @@ export default function LiveView({ matches }: { matches: Match[] }) {
 
   // 列表页
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
+    <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges] p-4 md:p-6 bg-night flex flex-col justify-between">
       <div className="flex-1 max-w-6xl mx-auto w-full space-y-8">
         {live.length === 0 && upcoming.length === 0 ? (
           <div className="py-20 text-center">
