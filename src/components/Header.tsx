@@ -15,7 +15,7 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
     <header className="bg-panel border-b border-line">
       <div className="flex items-center justify-between gap-4 px-5 h-16">
         <div className="flex items-center gap-3 shrink-0">
-          <span className="w-2.5 h-2.5 bg-pitch shadow-[0_0_12px_rgba(43,217,107,0.8)]" />
+          <img src="/logo-mark.png" alt="" aria-hidden className="w-9 h-9 object-contain" />
           <div className="leading-none">
             <h1 className="font-display font-bold text-xl tracking-[0.18em] text-chalk">STREAMCUP</h1>
             <div className="font-mono text-[10px] tracking-[0.3em] text-chalkdim mt-1">
