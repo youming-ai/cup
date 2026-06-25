@@ -5,7 +5,7 @@ import { useMatchDetail } from './useMatchDetail';
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => { vi.clearAllMocks(); });
 
 it('does not fetch when eventId is null', () => {
   renderHook(() => useMatchDetail(null));

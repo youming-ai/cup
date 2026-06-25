@@ -12,6 +12,10 @@ interface MatchCardProps {
   kickoff: Date | null;
   stage: string;
   group: string;
+  homeScorers?: string[];
+  awayScorers?: string[];
+  venue?: string;
+  onOpen?: () => void;
 }
 
 function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => string }) {
@@ -31,8 +35,9 @@ function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => stri
 
 function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
   const cls = dim ? 'opacity-50' : '';
-  if (!src) return <div className={`w-10 h-7 bg-panel2 ${cls}`} aria-hidden />;
-  return <img src={src} alt={alt} className={`w-10 h-7 object-cover ${cls}`} />;
+  const size = 'w-8 h-6 sm:w-10 sm:h-7';
+  if (!src) return <div className={`${size} bg-panel2 ${cls}`} aria-hidden />;
+  return <img src={src} alt={alt} className={`${size} object-cover ${cls}`} />;
 }
 
 export default function MatchCard({
@@ -46,6 +51,10 @@ export default function MatchCard({
   kickoff,
   stage,
   group,
+  homeScorers = [],
+  awayScorers = [],
+  venue,
+  onOpen,
 }: MatchCardProps) {
   const t = useT();
   const tbd = t('common.tbd');
@@ -59,8 +68,15 @@ export default function MatchCard({
       lost ? 'font-normal text-chalkdim' : won ? 'font-bold text-chalk' : 'font-semibold text-chalk'
     }`;
 
+  const clickable = Boolean(onOpen);
+  const Root = clickable ? 'button' : 'div';
   return (
-    <div className="border border-line bg-panel overflow-hidden hover:border-chalkdim transition-colors">
+    <Root
+      {...(clickable ? { onClick: onOpen, type: 'button' as const } : {})}
+      className={`block w-full text-left border border-line bg-panel overflow-hidden transition-colors ${
+        clickable ? 'hover:border-pitch cursor-pointer' : 'hover:border-chalkdim'
+      }`}
+    >
       <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-line">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
           {stageLabel}
@@ -72,22 +88,22 @@ export default function MatchCard({
         )}
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-4">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4">
         <div className="flex flex-col items-center gap-2 min-w-0">
           <Flag src={homeFlag} alt={homeName || tbd} dim={awayWon} />
           <span className={teamCls(homeWon, awayWon)}>{homeName || tbd}</span>
         </div>
 
-        <div className="flex flex-col items-center gap-1 px-2">
+        <div className="flex flex-col items-center gap-1 px-1 sm:px-2">
           {status === 'upcoming' ? (
-            <span className="font-mono text-lg font-bold text-chalk tabular-nums whitespace-nowrap leading-none">
+            <span className="font-mono text-sm sm:text-lg font-bold text-chalk tabular-nums whitespace-nowrap leading-none">
               {kickoff
                 ? kickoff.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
                 : tbd}
             </span>
           ) : (
             <span
-              className="font-mono text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap"
+              className="font-mono text-2xl sm:text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap"
               aria-label={`${homeName || tbd} ${homeScore ?? 0} - ${awayName || tbd} ${awayScore ?? 0}`}
             >
               {`${homeScore ?? 0} : ${awayScore ?? 0}`}
@@ -101,6 +117,31 @@ export default function MatchCard({
           <span className={teamCls(awayWon, homeWon)}>{awayName || tbd}</span>
         </div>
       </div>
-    </div>
+
+      {(homeScorers.length > 0 || awayScorers.length > 0) && (
+        <div className="grid grid-cols-2 gap-2 px-4 pb-3 -mt-1">
+          <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight min-w-0">
+            {homeScorers.map((s, i) => (
+              <li key={i} className="truncate">
+                ⚽ {s}
+              </li>
+            ))}
+          </ul>
+          <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight text-right min-w-0">
+            {awayScorers.map((s, i) => (
+              <li key={i} className="truncate">
+                {s} ⚽
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {venue && (
+        <div className="px-4 py-2 border-t border-line">
+          <span className="font-mono text-[10px] text-chalkdim/70 truncate block">{venue}</span>
+        </div>
+      )}
+    </Root>
   );
 }
