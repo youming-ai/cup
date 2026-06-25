@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Match, Substream } from '../types';
 import { slugify } from '../utils/helpers';
-import { TEST_LIVE_STREAMS } from '../dev/testStreams';
 
 interface APISub {
-  id: number; name: string; source_tag: string; locale: string; iframe: string;
+  name: string; source_tag: string; iframe: string;
 }
 interface APIStream {
   id: number; name: string; category_name?: string; iframe: string; viewers?: string;
@@ -55,10 +54,8 @@ export function useStreams() {
         alwaysLive: s.always_live === 1,
         substreams: (s.substreams || []).map(
           (sub): Substream => ({
-            id: sub.id,
             name: sub.name,
             source_tag: sub.source_tag,
-            locale: sub.locale,
             iframe: sub.iframe,
           }),
         ),
@@ -66,9 +63,7 @@ export function useStreams() {
       }));
 
       if (signal.aborted) return;
-      // dev-server only (not test/prod): prepend one always-live 24/7 test stream
-      const devSeed = import.meta.env.MODE === 'development';
-      setMatches(devSeed ? [...TEST_LIVE_STREAMS, ...flat] : flat);
+      setMatches(flat);
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
       console.error('Failed to fetch streams:', err);

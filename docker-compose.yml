@@ -1,9 +1,0 @@
-# One-shot deploy: `docker compose up -d --build`
-# web: Vite dev server hosting the SPA. Streams play via the provider's iframe.
-# Put your TLS / Cloudflare in front of the published port.
-services:
-  web:
-    build: .
-    ports:
-      - "5173:5173"
-    restart: unless-stopped

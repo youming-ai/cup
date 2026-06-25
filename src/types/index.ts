@@ -1,8 +1,6 @@
 export interface Substream {
-  id: number;
   name: string;
   source_tag: string;
-  locale: string;
   iframe: string;
 }
 
