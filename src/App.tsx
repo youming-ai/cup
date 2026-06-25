@@ -71,7 +71,7 @@ export default function App() {
       )}
 
       {view === 'schedule' && (
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
+        <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges] p-4 md:p-6 bg-night flex flex-col justify-between">
           <div className="flex-1">
             {wc.loading ? <Loading /> :
               wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :

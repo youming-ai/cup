@@ -33,14 +33,14 @@ const ROUTES: Record<string, string> = {
   '/api/wc/teams': 'teams',
 };
 
-function json(body: string, status: number, cache: string): Response {
+export function json(body: string, status: number, cache: string): Response {
   return new Response(body, {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8', 'x-cache': cache },
   });
 }
 
-async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {
+export async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {
   const src = SOURCES[name];
   const stored = await env.CACHE.get<Entry>(name, 'json');
   const now = Date.now();

@@ -1,16 +1,26 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WCMatch, WCGroup, WCStanding } from '../types';
+import type { WCMatch, WCGroup, WCStanding, Stage } from '../types';
 import { parseScore, deriveStatus, parseKickoff, sortStandings } from '../utils/wc';
 
 // same-origin Worker that edge-caches worldcup26.ir in KV (see worker/index.ts)
 const BASE = '/api/wc';
 
+const KNOWN_STAGES: readonly string[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
+
+function isStage(s: string): s is Stage {
+  return KNOWN_STAGES.includes(s);
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
 // Each endpoint returns the array wrapped under a key, e.g. { games: [...] };
 // accept a bare array too in case the shape ever changes.
 function unwrap<T>(json: unknown, key: string): T[] {
   if (Array.isArray(json)) return json as T[];
-  if (json && typeof json === 'object') {
-    const v = (json as Record<string, unknown>)[key];
+  if (isPlainObject(json)) {
+    const v = json[key];
     if (Array.isArray(v)) return v as T[];
   }
   return [];
@@ -88,6 +98,7 @@ export function useWorldCup() {
 
       const ms: WCMatch[] = games.map((g) => {
         const status = deriveStatus(g.finished, g.time_elapsed);
+        const stage: Stage = isStage(g.type) ? g.type : 'group';
         return {
           id: g.id,
           homeName: g.home_team_name_en || g.home_team_label || '',
@@ -101,7 +112,7 @@ export function useWorldCup() {
           stadiumId: g.stadium_id,
           kickoff: parseKickoff(g.local_date, g.stadium_id),
           status,
-          stage: g.type,
+          stage,
         };
       });
 
