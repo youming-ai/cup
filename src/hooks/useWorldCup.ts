@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { WCMatch, WCGroup, WCStanding } from '../types';
 import { parseScore, deriveStatus, parseKickoff, sortStandings } from '../utils/wc';
 
-const BASE = 'https://worldcup26.ir';
+// same-origin Worker that edge-caches worldcup26.ir in KV (see worker/index.ts)
+const BASE = '/api/wc';
 
 // Each endpoint returns the array wrapped under a key, e.g. { games: [...] };
 // accept a bare array too in case the shape ever changes.
@@ -64,9 +65,9 @@ export function useWorldCup() {
 
     try {
       const [gRes, grRes, tRes] = await Promise.all([
-        fetch(`${BASE}/get/games`, { signal }),
-        fetch(`${BASE}/get/groups`, { signal }),
-        fetch(`${BASE}/get/teams`, { signal }),
+        fetch(`${BASE}/games`, { signal }),
+        fetch(`${BASE}/groups`, { signal }),
+        fetch(`${BASE}/teams`, { signal }),
       ]);
       if (!gRes.ok || !grRes.ok || !tRes.ok) {
         throw new Error('Failed to load World Cup data');

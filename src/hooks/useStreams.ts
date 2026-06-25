@@ -32,6 +32,8 @@ export function useStreams() {
     setError(null);
 
     try {
+      // ppv.to fingerprint-blocks datacenter requests, so it can't go through the
+      // Worker — fetch it directly from the browser (it allows CORS).
       const res = await fetch('https://api.ppv.to/api/streams', { signal });
       if (!res.ok) throw new Error('Failed to fetch streams');
       const data = (await res.json()) as APIEnvelope;
