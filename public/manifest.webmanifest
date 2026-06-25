@@ -1,0 +1,15 @@
+{
+  "name": "StreamCup — World Cup 2026 live streams & fixtures",
+  "short_name": "StreamCup",
+  "description": "Watch World Cup 2026 football live streams and follow every fixture, group standings, and result — one fast, no-clutter hub.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0F0D",
+  "theme_color": "#0A0F0D",
+  "lang": "en",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" }
+  ]
+}
