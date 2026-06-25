@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { ChevronLeft, Play } from 'lucide-react';
 import Player from './Player';
 import Footer from './Footer';
+import { FavoriteButton, ReminderMenu } from './MatchActions';
+import { useFavorites } from '../hooks/useFavorites';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 
@@ -29,11 +31,13 @@ function formatKickoff(startsAt?: number): string {
   });
 }
 
-function LiveCard({ m, kind, onSelect, t }: {
+function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
   m: Match;
   kind: LiveKind;
   onSelect: (m: Match) => void;
   t: (k: string, v?: Record<string, string | number>) => string;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }) {
   const grad =
     m.colors && m.colors.length >= 2
@@ -93,22 +97,31 @@ function LiveCard({ m, kind, onSelect, t }: {
     </>
   );
 
-  // 仅正在直播可点击进入播放页；即将开始为静态信息卡（不可点击）
-  if (kind === 'live') {
-    return (
-      <button
-        onClick={() => onSelect(m)}
-        aria-label={m.name}
-        className="group text-left border border-line bg-panel2 overflow-hidden hover:border-pitch transition-colors"
-      >
-        {media}
-      </button>
-    );
-  }
+  // 收藏 / 提醒浮层，置于右上角；脱离可点击的卡片本体（避免 button 套 button）
+  const overlay = (
+    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/65 backdrop-blur-sm border border-white/15">
+      {kind === 'upcoming' && m.startsAt && (
+        <ReminderMenu title={m.name} start={new Date(m.startsAt * 1000)} t={t} />
+      )}
+      <FavoriteButton active={isFavorite} onToggle={onToggleFavorite} t={t} />
+    </div>
+  );
 
+  // 仅正在直播可点击进入播放页；即将开始为静态信息卡（不可点击）
   return (
-    <div className="border border-line bg-panel2 overflow-hidden opacity-80">
-      {media}
+    <div className="relative">
+      {overlay}
+      {kind === 'live' ? (
+        <button
+          onClick={() => onSelect(m)}
+          aria-label={m.name}
+          className="group text-left w-full border border-line bg-panel2 overflow-hidden hover:border-pitch transition-colors"
+        >
+          {media}
+        </button>
+      ) : (
+        <div className="border border-line bg-panel2 overflow-hidden opacity-80">{media}</div>
+      )}
     </div>
   );
 }
@@ -126,13 +139,15 @@ function Section({ label, count, accent, children }: {
         <h2 className="font-mono text-xs tracking-[0.25em] uppercase text-chalkdim">{label}</h2>
         <span className="font-mono text-xs tabular-nums text-pitch">{String(count).padStart(2, '0')}</span>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">{children}</div>
     </section>
   );
 }
 
 export default function LiveView({ matches }: { matches: Match[] }) {
   const t = useT();
+  const { toggle, isFavorite } = useFavorites();
+  const favKey = (m: Match) => `live:${m.slug}`;
   const [selectedSlug, setSelectedSlug] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('match'),
   );
@@ -222,14 +237,30 @@ export default function LiveView({ matches }: { matches: Match[] }) {
             {live.length > 0 && (
               <Section label={t('live.sectionLive')} count={live.length} accent="live">
                 {live.map((m) => (
-                  <LiveCard key={m.id} m={m} kind="live" onSelect={openMatch} t={t} />
+                  <LiveCard
+                    key={m.id}
+                    m={m}
+                    kind="live"
+                    onSelect={openMatch}
+                    t={t}
+                    isFavorite={isFavorite(favKey(m))}
+                    onToggleFavorite={() => toggle(favKey(m))}
+                  />
                 ))}
               </Section>
             )}
             {upcoming.length > 0 && (
               <Section label={t('live.sectionUpcoming')} count={upcoming.length} accent="dim">
                 {upcoming.map((m) => (
-                  <LiveCard key={m.id} m={m} kind="upcoming" onSelect={openMatch} t={t} />
+                  <LiveCard
+                    key={m.id}
+                    m={m}
+                    kind="upcoming"
+                    onSelect={openMatch}
+                    t={t}
+                    isFavorite={isFavorite(favKey(m))}
+                    onToggleFavorite={() => toggle(favKey(m))}
+                  />
                 ))}
               </Section>
             )}
