@@ -12,10 +12,9 @@ const VIEWS: { key: View; Icon: LucideIcon }[] = [
 export default function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
   const t = useT();
   return (
-    // 悬浮：脱离顶边留出 night 背景。下方内容容器是滚动区，用 scrollbar-gutter
-    // stable both-edges 预留两侧各一个滚动条宽度；这里在 p-4/md:p-6 基础上各加
-    // 同一个 --sb-w(单一来源，见 index.css)，让胶囊与下方卡片左右对齐。
-    <div className="bg-night pt-4 px-[calc(1rem_+_var(--sb-w))] md:px-[calc(1.5rem_+_var(--sb-w))]">
+    // 吸顶。Header 与内容同处一个滚动容器(见 App.tsx)，共享同一条 scrollbar
+    // gutter，内边距与下方内容一致(p-4/md:p-6)即左右对齐，无需补偿。
+    <div className="sticky top-0 z-30 bg-night pt-4 px-4 md:px-6">
       <header className="max-w-6xl mx-auto bg-panel border border-line">
         {/* 单行：logo · 导航 · 语言。移动端缩小内边距让两个 tab 与 logo、语言挤进一行 */}
         <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-5 h-14">
