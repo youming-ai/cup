@@ -1,61 +1,35 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WCMatch, WCGroup, WCStanding, Stage } from '../types';
-import { parseScore, deriveStatus, parseKickoff, sortStandings } from '../utils/wc';
+import type { WCMatch, WCGroup, WCStanding } from '../types';
+import { parseScore, statusFromState, stageFromSlug, scorerLabel, sortStandings } from '../utils/wc';
 
-// same-origin Worker that edge-caches worldcup26.ir in KV (see worker/index.ts)
+// same-origin Worker that edge-caches ESPN's public API in KV (see worker/index.ts)
 const BASE = '/api/wc';
-
-const KNOWN_STAGES: readonly string[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
-
-function isStage(s: string): s is Stage {
-  return KNOWN_STAGES.includes(s);
-}
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
-
-// Each endpoint returns the array wrapped under a key, e.g. { games: [...] };
-// accept a bare array too in case the shape ever changes.
-function unwrap<T>(json: unknown, key: string): T[] {
-  if (Array.isArray(json)) return json as T[];
-  if (isPlainObject(json)) {
-    const v = json[key];
-    if (Array.isArray(v)) return v as T[];
-  }
-  return [];
+function arr(v: unknown): unknown[] {
+  return Array.isArray(v) ? v : [];
+}
+function obj(v: unknown): Record<string, unknown> {
+  return isPlainObject(v) ? v : {};
+}
+function str(v: unknown): string {
+  return typeof v === 'string' ? v : '';
 }
 
-interface RawGame {
-  id: string;
-  home_team_id: string;
-  away_team_id: string;
-  home_score: string;
-  away_score: string;
-  group: string;
-  matchday: string;
-  stadium_id: string;
-  local_date: string;
-  finished: string;
-  time_elapsed: string;
-  type: string;
-  home_team_name_en?: string;
-  away_team_name_en?: string;
-  home_team_label?: string;
-  away_team_label?: string;
+// ESPN standings stats are [{name, value}]; pull one by name.
+function stat(entry: Record<string, unknown>, name: string): number {
+  const s = arr(entry.stats).find((x) => obj(x).name === name);
+  return s ? Number(obj(s).value) || 0 : 0;
 }
-interface RawTeam {
-  id: string;
-  name_en: string;
-  flag?: string;
-}
-interface RawStandingTeam {
-  team_id: string;
-  mp: string; w: string; d: string; l: string; gf: string; ga: string; gd: string; pts: string;
-}
-interface RawGroup {
-  name: string;
-  teams: RawStandingTeam[];
+
+// A competitor/team's crest URL: scoreboard uses `team.logo` (string),
+// standings uses `team.logos: [{href}]`.
+function teamLogo(team: Record<string, unknown>): string {
+  if (str(team.logo)) return str(team.logo);
+  const logos = arr(team.logos);
+  return logos.length ? str(obj(logos[0]).href) : '';
 }
 
 export function useWorldCup() {
@@ -74,71 +48,90 @@ export function useWorldCup() {
     setError(null);
 
     try {
-      const [gRes, grRes, tRes] = await Promise.all([
-        fetch(`${BASE}/games`, { signal }),
-        fetch(`${BASE}/groups`, { signal }),
-        fetch(`${BASE}/teams`, { signal }),
+      const [sbRes, stRes] = await Promise.all([
+        fetch(`${BASE}/scoreboard`, { signal }),
+        fetch(`${BASE}/standings`, { signal }),
       ]);
-      if (!gRes.ok || !grRes.ok || !tRes.ok) {
-        throw new Error('Failed to load World Cup data');
-      }
-      const [gamesJson, groupsJson, teamsJson] = await Promise.all([
-        gRes.json(),
-        grRes.json(),
-        tRes.json(),
-      ]);
-      // worldcup26.ir wraps each payload in an object ({ games: [...] }, { teams: [...] }, …);
-      // unwrap by key, tolerating a bare array too.
-      const games = unwrap<RawGame>(gamesJson, 'games');
-      const rawGroups = unwrap<RawGroup>(groupsJson, 'groups');
-      const teams = unwrap<RawTeam>(teamsJson, 'teams');
+      if (!sbRes.ok || !stRes.ok) throw new Error('Failed to load World Cup data');
+      const [sbJson, stJson] = await Promise.all([sbRes.json(), stRes.json()]);
 
-      const teamMap = new Map<string, { name: string; flag: string }>();
-      teams.forEach((t) => teamMap.set(t.id, { name: t.name_en, flag: t.flag || '' }));
+      // --- standings → groups (+ a teamId → group-letter map for the matches) ---
+      const teamGroup = new Map<string, string>();
+      const gr: WCGroup[] = arr(obj(stJson).children)
+        .map((raw): WCGroup => {
+          const g = obj(raw);
+          const letter = str(g.name).replace(/^Group\s+/i, '') || str(g.abbreviation);
+          const entries = arr(obj(g.standings).entries);
+          const standings = entries.map((rawEntry): WCStanding => {
+            const e = obj(rawEntry);
+            const team = obj(e.team);
+            const id = str(team.id);
+            if (id) teamGroup.set(id, letter);
+            return {
+              teamId: id,
+              name: str(team.displayName),
+              flag: teamLogo(team),
+              mp: stat(e, 'gamesPlayed'),
+              w: stat(e, 'wins'),
+              d: stat(e, 'ties'),
+              l: stat(e, 'losses'),
+              gf: stat(e, 'pointsFor'),
+              ga: stat(e, 'pointsAgainst'),
+              gd: stat(e, 'pointDifferential'),
+              pts: stat(e, 'points'),
+            };
+          });
+          return { name: letter, standings: sortStandings(standings) };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-      const ms: WCMatch[] = games.map((g) => {
-        const status = deriveStatus(g.finished, g.time_elapsed);
-        const stage: Stage = isStage(g.type) ? g.type : 'group';
+      // --- scoreboard → matches ---
+      const ms: WCMatch[] = arr(obj(sbJson).events).map((rawEvent): WCMatch => {
+        const ev = obj(rawEvent);
+        const comp = obj(arr(ev.competitions)[0]);
+        const competitors = arr(comp.competitors).map(obj);
+        const home = competitors.find((c) => c.homeAway === 'home') || competitors[0] || {};
+        const away = competitors.find((c) => c.homeAway === 'away') || competitors[1] || {};
+        const homeTeam = obj(home.team);
+        const awayTeam = obj(away.team);
+        const status = statusFromState(str(obj(obj(comp.status).type).state));
+
+        // goals: scoring plays from competition.details, split by team id
+        const homeId = str(homeTeam.id);
+        const homeScorers: string[] = [];
+        const awayScorers: string[] = [];
+        for (const rawDetail of arr(comp.details)) {
+          const d = obj(rawDetail);
+          if (!d.scoringPlay) continue;
+          const who = str(obj(arr(d.athletesInvolved)[0]).displayName);
+          if (!who) continue;
+          const label = scorerLabel(who, str(obj(d.clock).displayValue), str(obj(d.type).text));
+          (str(obj(d.team).id) === homeId ? homeScorers : awayScorers).push(label);
+        }
+
+        const venue = obj(comp.venue);
+        const city = str(obj(venue.address).city);
+        const venueName = str(venue.fullName);
+        const date = str(ev.date);
+        const kickoff = date ? new Date(date) : null;
+
         return {
-          id: g.id,
-          homeName: g.home_team_name_en || g.home_team_label || '',
-          awayName: g.away_team_name_en || g.away_team_label || '',
-          homeFlag: teamMap.get(g.home_team_id)?.flag || '',
-          awayFlag: teamMap.get(g.away_team_id)?.flag || '',
-          homeScore: status === 'upcoming' ? null : parseScore(g.home_score),
-          awayScore: status === 'upcoming' ? null : parseScore(g.away_score),
-          group: g.group,
-          matchday: Number(g.matchday) || 0,
-          stadiumId: g.stadium_id,
-          kickoff: parseKickoff(g.local_date, g.stadium_id),
+          id: str(ev.id),
+          homeName: str(homeTeam.displayName),
+          awayName: str(awayTeam.displayName),
+          homeFlag: teamLogo(homeTeam),
+          awayFlag: teamLogo(awayTeam),
+          homeScore: status === 'upcoming' ? null : parseScore(str(home.score)),
+          awayScore: status === 'upcoming' ? null : parseScore(str(away.score)),
+          group: teamGroup.get(homeId) || teamGroup.get(str(awayTeam.id)) || '',
+          kickoff: kickoff && !Number.isNaN(kickoff.getTime()) ? kickoff : null,
           status,
-          stage,
+          stage: stageFromSlug(str(obj(ev.season).slug)),
+          homeScorers: status === 'upcoming' ? [] : homeScorers,
+          awayScorers: status === 'upcoming' ? [] : awayScorers,
+          venue: venueName && city ? `${venueName} · ${city}` : venueName,
         };
       });
-
-      const gr: WCGroup[] = rawGroups
-        .map((group) => ({
-          name: group.name,
-          standings: sortStandings(
-            group.teams.map((t): WCStanding => {
-              const meta = teamMap.get(t.team_id) || { name: t.team_id, flag: '' };
-              return {
-                teamId: t.team_id,
-                name: meta.name,
-                flag: meta.flag,
-                mp: Number(t.mp) || 0,
-                w: Number(t.w) || 0,
-                d: Number(t.d) || 0,
-                l: Number(t.l) || 0,
-                gf: Number(t.gf) || 0,
-                ga: Number(t.ga) || 0,
-                gd: Number(t.gd) || 0,
-                pts: Number(t.pts) || 0,
-              };
-            }),
-          ),
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
 
       if (signal.aborted) return;
       setMatches(ms);

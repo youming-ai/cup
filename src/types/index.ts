@@ -34,11 +34,12 @@ export interface WCMatch {
   homeScore: number | null;
   awayScore: number | null;
   group: string;
-  matchday: number;
-  stadiumId: string;
   kickoff: Date | null;
   status: MatchStatus;
   stage: Stage;
+  homeScorers: string[];
+  awayScorers: string[];
+  venue: string; // "Estadio Azteca · Mexico City" or '' when unknown
 }
 
 export interface WCStanding {

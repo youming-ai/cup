@@ -18,19 +18,28 @@ interface Entry {
   at: number;
 }
 
-// Only worldcup26.ir is proxied: it has no anti-bot gate and its data changes
-// slowly, so KV caching is a clear win. ppv.to fingerprint-blocks datacenter
-// requests ("IP blocked"), so the SPA keeps fetching it directly from the browser.
+// ESPN's public site API (no key, CORS-open) carries the full 2026 World Cup:
+// scoreboard = all 104 matches (scores, status, venue, scorers); standings =
+// the 12 group tables. KV-cache both: scoreboard refreshes often (live scores),
+// standings change slowly. ppv.to is still fetched browser-side (it IP-blocks
+// datacenter requests).
+const ESPN = 'https://site.api.espn.com/apis';
 const SOURCES: Record<string, { url: string; fresh: number; keep: number }> = {
-  games: { url: 'https://worldcup26.ir/get/games', fresh: 300, keep: 86400 },
-  groups: { url: 'https://worldcup26.ir/get/groups', fresh: 300, keep: 86400 },
-  teams: { url: 'https://worldcup26.ir/get/teams', fresh: 3600, keep: 604800 },
+  scoreboard: {
+    url: `${ESPN}/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300`,
+    fresh: 60,
+    keep: 86400,
+  },
+  standings: {
+    url: `${ESPN}/v2/sports/soccer/fifa.world/standings?season=2026&level=3`,
+    fresh: 300,
+    keep: 86400,
+  },
 };
 
 const ROUTES: Record<string, string> = {
-  '/api/wc/games': 'games',
-  '/api/wc/groups': 'groups',
-  '/api/wc/teams': 'teams',
+  '/api/wc/scoreboard': 'scoreboard',
+  '/api/wc/standings': 'standings',
 };
 
 export function json(body: string, status: number, cache: string): Response {

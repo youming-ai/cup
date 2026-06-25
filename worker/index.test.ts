@@ -35,7 +35,7 @@ globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 function mockEnv(kvData?: { body: string; at: number } | null) {
   const store = new Map<string, string>();
   if (kvData) {
-    store.set('games', JSON.stringify(kvData));
+    store.set('standings', JSON.stringify(kvData));
   }
   return {
     CACHE: {
@@ -70,7 +70,7 @@ describe('serve', () => {
     const env = mockEnv({ body: '{"data":"cached"}', at: storedAt });
     const ctx = mockCtx();
 
-    const res = await serve('games', env as unknown as Env, ctx);
+    const res = await serve('standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('HIT');
     const body = await res.text();
@@ -83,7 +83,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    const res = await serve('games', env as unknown as Env, ctx);
+    const res = await serve('standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('MISS');
     const body = await res.text();
@@ -98,7 +98,7 @@ describe('serve', () => {
     const env = mockEnv({ body: '{"data":"old"}', at: storedAt });
     const ctx = mockCtx();
 
-    const res = await serve('games', env as unknown as Env, ctx);
+    const res = await serve('standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('REVALIDATED');
     const body = await res.text();
@@ -113,7 +113,7 @@ describe('serve', () => {
     const env = mockEnv({ body: '{"data":"stale"}', at: storedAt });
     const ctx = mockCtx();
 
-    const res = await serve('games', env as unknown as Env, ctx);
+    const res = await serve('standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('STALE');
     const body = await res.text();
@@ -126,7 +126,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    const res = await serve('games', env as unknown as Env, ctx);
+    const res = await serve('standings', env as unknown as Env, ctx);
     expect(res.status).toBe(502);
     expect(res.headers.get('x-cache')).toBe('MISS');
     const body = await res.text();
@@ -139,7 +139,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    const res = await serve('games', env as unknown as Env, ctx);
+    const res = await serve('standings', env as unknown as Env, ctx);
     expect(res.status).toBe(502);
     expect(res.headers.get('x-cache')).toBe('MISS');
   });
@@ -150,7 +150,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    await serve('games', env as unknown as Env, ctx);
+    await serve('standings', env as unknown as Env, ctx);
     expect(ctx.waitUntil).toHaveBeenCalled();
     expect((env.CACHE as ReturnType<typeof mockEnv>['CACHE']).put).toHaveBeenCalled();
   });

@@ -1,42 +1,39 @@
-import type { MatchStatus, WCStanding } from '../types';
+import type { MatchStatus, WCStanding, Stage } from '../types';
 
-export function parseScore(s: string | null | undefined): number | null {
+export function parseScore(s: string | number | null | undefined): number | null {
   if (s == null) return null;
-  const t = s.trim();
-  if (t === '' || t.toLowerCase() === 'null') return null;
-  const n = Number(t);
+  if (typeof s === 'string' && s.trim() === '') return null;
+  const n = typeof s === 'number' ? s : Number(s.trim());
   return Number.isFinite(n) ? n : null;
 }
 
-export function deriveStatus(finished: string, timeElapsed: string): MatchStatus {
-  const f = (finished || '').toLowerCase();
-  const te = (timeElapsed || '').toLowerCase();
-  if (f === 'true' || te === 'finished') return 'finished';
-  if (te === 'notstarted' || te === '') return 'upcoming';
-  return 'live';
+// ESPN status: competition.status.type.state is 'pre' | 'in' | 'post'.
+export function statusFromState(state: string | undefined): MatchStatus {
+  if (state === 'post') return 'finished';
+  if (state === 'in') return 'live';
+  return 'upcoming';
 }
 
-// worldcup26.ir gives `local_date` as wall-clock time at the venue's city, with
-// no timezone. Map each venue (by stadium_id) to its UTC offset for the
-// tournament window (Jun–Jul 2026): US/Canada are on DST; Mexico has no DST
-// (UTC−6 year-round since 2022). Verified against ppv.to's absolute UTC kickoffs.
-const STADIUM_UTC_OFFSET: Record<string, number> = {
-  '1': -6, '2': -6, '3': -6, // Mexico City, Guadalajara, Monterrey (CST)
-  '4': -5, '5': -5, '6': -5, // Dallas, Houston, Kansas City (CDT)
-  '7': -4, '8': -4, '9': -4, '10': -4, '11': -4, '12': -4, // Atlanta, Miami, Boston, Philadelphia, NY/NJ, Toronto (EDT)
-  '13': -7, '14': -7, '15': -7, '16': -7, // Vancouver, Seattle, SF Bay, LA (PDT)
+// ESPN season.slug → our Stage. Anything unknown stays 'group'.
+const SLUG_TO_STAGE: Record<string, Stage> = {
+  'group-stage': 'group',
+  'round-of-32': 'r32',
+  'round-of-16': 'r16',
+  quarterfinals: 'qf',
+  semifinals: 'sf',
+  'third-place': 'third',
+  final: 'final',
 };
+export function stageFromSlug(slug: string | undefined): Stage {
+  return (slug && SLUG_TO_STAGE[slug]) || 'group';
+}
 
-// Parse `local_date` into an absolute instant so it displays in the viewer's
-// own timezone — matching how ppv.to's unix `starts_at` is shown.
-export function parseKickoff(localDate: string, stadiumId: string): Date | null {
-  const m = (localDate || '').match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
-  if (!m) return null;
-  const [, mm, dd, yyyy, hh, min] = m;
-  const offset = STADIUM_UTC_OFFSET[stadiumId] ?? -5; // ponytail: -5 fallback for an unknown venue
-  const utcMs = Date.UTC(+yyyy, +mm - 1, +dd, +hh, +min) - offset * 3600000;
-  const d = new Date(utcMs);
-  return Number.isNaN(d.getTime()) ? null : d;
+// Build a display scorer line from an ESPN scoring play, e.g.
+// "Breel Embolo 17' (p)" / "L. Messi 90'+5'" / "J. Doe 30' (OG)".
+export function scorerLabel(name: string, clock: string, typeText: string): string {
+  const t = (typeText || '').toLowerCase();
+  const tag = t.includes('own') ? ' (OG)' : t.includes('penalty') ? ' (p)' : '';
+  return `${name} ${clock}${tag}`.trim();
 }
 
 export function sortStandings(teams: WCStanding[]): WCStanding[] {
