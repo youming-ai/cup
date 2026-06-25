@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ChevronLeft, Play } from 'lucide-react';
+import { ChevronLeft, Play, Star } from 'lucide-react';
 import Player from './Player';
 import Footer from './Footer';
 import { FavoriteButton, ReminderMenu } from './MatchActions';
@@ -129,17 +129,18 @@ function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
 function Section({ label, count, accent, children }: {
   label: string;
   count: number;
-  accent: 'live' | 'dim';
+  accent: 'live' | 'dim' | 'fav';
   children: ReactNode;
 }) {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         {accent === 'live' && <span className="live-dot" />}
+        {accent === 'fav' && <Star className="w-3.5 h-3.5 text-pitch" fill="currentColor" aria-hidden />}
         <h2 className="font-mono text-xs tracking-[0.25em] uppercase text-chalkdim">{label}</h2>
         <span className="font-mono text-xs tabular-nums text-pitch">{String(count).padStart(2, '0')}</span>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">{children}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">{children}</div>
     </section>
   );
 }
@@ -204,6 +205,27 @@ export default function LiveView({ matches }: { matches: Match[] }) {
     window.history.replaceState(null, '', `?${params.toString()}`);
   };
 
+  // favorited matches (live + upcoming) get pinned into a section at the top,
+  // and are removed from their normal section so they aren't shown twice.
+  const isFav = (m: Match) => isFavorite(favKey(m));
+  const favLive = live.filter(isFav);
+  const favUpcoming = upcoming.filter(isFav);
+  const favCount = favLive.length + favUpcoming.length;
+  const liveRest = live.filter((m) => !isFav(m));
+  const upcomingRest = upcoming.filter((m) => !isFav(m));
+
+  const renderCard = (m: Match, kind: LiveKind) => (
+    <LiveCard
+      key={m.id}
+      m={m}
+      kind={kind}
+      onSelect={openMatch}
+      t={t}
+      isFavorite={isFavorite(favKey(m))}
+      onToggleFavorite={() => toggle(favKey(m))}
+    />
+  );
+
 
   // 播放页
   if (selected) {
@@ -234,34 +256,20 @@ export default function LiveView({ matches }: { matches: Match[] }) {
           </div>
         ) : (
           <>
-            {live.length > 0 && (
-              <Section label={t('live.sectionLive')} count={live.length} accent="live">
-                {live.map((m) => (
-                  <LiveCard
-                    key={m.id}
-                    m={m}
-                    kind="live"
-                    onSelect={openMatch}
-                    t={t}
-                    isFavorite={isFavorite(favKey(m))}
-                    onToggleFavorite={() => toggle(favKey(m))}
-                  />
-                ))}
+            {favCount > 0 && (
+              <Section label={t('live.sectionFavorites')} count={favCount} accent="fav">
+                {favLive.map((m) => renderCard(m, 'live'))}
+                {favUpcoming.map((m) => renderCard(m, 'upcoming'))}
               </Section>
             )}
-            {upcoming.length > 0 && (
-              <Section label={t('live.sectionUpcoming')} count={upcoming.length} accent="dim">
-                {upcoming.map((m) => (
-                  <LiveCard
-                    key={m.id}
-                    m={m}
-                    kind="upcoming"
-                    onSelect={openMatch}
-                    t={t}
-                    isFavorite={isFavorite(favKey(m))}
-                    onToggleFavorite={() => toggle(favKey(m))}
-                  />
-                ))}
+            {liveRest.length > 0 && (
+              <Section label={t('live.sectionLive')} count={liveRest.length} accent="live">
+                {liveRest.map((m) => renderCard(m, 'live'))}
+              </Section>
+            )}
+            {upcomingRest.length > 0 && (
+              <Section label={t('live.sectionUpcoming')} count={upcomingRest.length} accent="dim">
+                {upcomingRest.map((m) => renderCard(m, 'upcoming'))}
               </Section>
             )}
           </>

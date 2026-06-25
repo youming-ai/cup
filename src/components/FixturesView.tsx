@@ -58,7 +58,7 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
             })
           : t('common.tbd')}
       </h3>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {list.map((m) => (
           <MatchCard
             key={m.id}
