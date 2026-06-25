@@ -13,10 +13,9 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
   const t = useT();
   return (
     // 悬浮：脱离顶边留出 night 背景。下方内容容器是滚动区，用 scrollbar-gutter
-    // stable both-edges 预留两侧各 8px(= index.css 滚动条宽度)，所以这里在
-    // p-4/md:p-6 基础上各多 8px(px-6/md:px-8),让胶囊与下方卡片左右对齐。
-    // ponytail: 8px 硬编码对应 ::-webkit-scrollbar width;改滚动条宽度需同步
-    <div className="bg-night px-6 md:px-8 pt-4">
+    // stable both-edges 预留两侧各一个滚动条宽度；这里在 p-4/md:p-6 基础上各加
+    // 同一个 --sb-w(单一来源，见 index.css)，让胶囊与下方卡片左右对齐。
+    <div className="bg-night pt-4 px-[calc(1rem_+_var(--sb-w))] md:px-[calc(1.5rem_+_var(--sb-w))]">
       <header className="max-w-6xl mx-auto bg-panel border border-line">
         {/* 单行：logo · 导航 · 语言。移动端缩小内边距让两个 tab 与 logo、语言挤进一行 */}
         <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-5 h-14">
