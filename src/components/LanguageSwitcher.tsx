@@ -98,7 +98,7 @@ export default function LanguageSwitcher() {
           role="listbox"
           aria-label={t('common.changeLanguage')}
           aria-activedescendant={`lang-opt-${lang}`}
-          className="absolute right-0 mt-1 w-20 border border-line bg-panel shadow-lg py-1 z-50 focus:outline-none"
+          className="absolute right-0 mt-1 w-20 border border-line bg-panel/100 shadow-lg py-1 z-50 focus:outline-none"
         >
           {OPTS.map((o) => (
             <div
