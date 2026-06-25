@@ -14,7 +14,7 @@ function Pitch({ starters }: { starters: LineupPlayer[] }) {
           className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 w-16 text-center"
           style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }}
         >
-          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-panel border border-chalkdim font-mono text-xs text-chalk">
+          <span className="flex items-center justify-center w-7 h-7 bg-panel border border-chalkdim font-mono text-xs text-chalk">
             {p.jersey}
           </span>
           <span className="font-display text-[10px] text-chalk truncate w-full mt-0.5">{p.name}</span>

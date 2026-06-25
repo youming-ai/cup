@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 
-// 颜色走 CSS 变量（通道值 "R G B"），主题在 :root / :root.light 间翻转。
-// rgb(var() / <alpha-value>) 让 bg-pitch/40、text-chalkdim/70 这类透明修饰继续可用。
+// 颜色走 CSS 变量（通道值 "R G B"）。用 rgb(var() / <alpha-value>) 包装，
+// 让 bg-pitch/40、text-chalkdim/70 这类透明修饰可用（暂无亮色主题）。
 const c = (v) => `rgb(var(${v}) / <alpha-value>)`;
 
 export default {

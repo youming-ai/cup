@@ -58,7 +58,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     <div className="space-y-4">
       <div className="relative aspect-video w-full border border-line bg-black overflow-hidden">
         <CornerTicks />
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgba(255,68,56,0.35)]">
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgb(var(--c-live)_/_0.35)]">
           <span className="live-dot" />
           <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
         </div>
@@ -92,7 +92,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
               {match.category_name}
             </span>
             <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-pitch" />
+              <span className="w-1 h-1 bg-pitch" />
               {t('common.watching', { n: match.viewers })}
             </span>
           </div>
@@ -123,7 +123,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
                   <span className="truncate max-w-[14rem]">{src.label}</span>
                   {q && (
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide ${
+                      className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${
                         active ? 'bg-night/20 text-night' : 'bg-pitch/15 text-pitch'
                       }`}
                     >

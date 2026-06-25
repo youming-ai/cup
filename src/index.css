@@ -43,11 +43,11 @@
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(255, 68, 56, 0.55);
+    box-shadow: 0 0 0 0 rgb(var(--c-live) / 0.55);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 0 5px rgba(255, 68, 56, 0);
+    box-shadow: 0 0 0 5px rgb(var(--c-live) / 0);
   }
 }
 

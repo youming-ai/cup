@@ -42,7 +42,7 @@ function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
   const grad =
     m.colors && m.colors.length >= 2
       ? `linear-gradient(140deg, ${m.colors[0]}, ${m.colors[1]})`
-      : 'linear-gradient(140deg, #1A211D, #0A0F0D)';
+      : 'linear-gradient(140deg, rgb(var(--c-surface2)), rgb(var(--c-bg)))';
 
   const media = (
     <>
@@ -86,14 +86,14 @@ function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
         <h3 className="font-display font-bold text-base text-chalk leading-tight truncate">{m.name}</h3>
         {kind === 'live' && (
           <p className="mt-1 font-mono text-[10px] text-chalkdim flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-pitch" />
+            <span className="w-1 h-1 bg-pitch" />
             {t('common.watching', { n: m.viewers })}
           </p>
         )}
       </div>
 
       {/* thin accent line in the stream's own brand colour */}
-      <div className="h-0.5 w-full" style={{ background: m.colors?.[0] || '#2BD96B' }} aria-hidden />
+      <div className="h-0.5 w-full" style={{ background: m.colors?.[0] || 'rgb(var(--c-pitch))' }} aria-hidden />
     </>
   );
 

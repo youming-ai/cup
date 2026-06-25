@@ -34,7 +34,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
       <p className="font-body text-sm text-chalkdim max-w-sm">{message}</p>
       <button
         onClick={onRetry}
-        className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide rounded hover:brightness-110 transition"
+        className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide hover:brightness-110 transition"
       >
         {t('common.retry')}
       </button>
