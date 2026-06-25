@@ -114,7 +114,7 @@ export default function LanguageSwitcher() {
                   select(o.code);
                 }
               }}
-              className={`w-full text-center py-2 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`w-full text-center py-2 text-xs font-semibold transition-colors cursor-pointer bg-panel ${
                 lang === o.code
                   ? 'bg-pitch text-night'
                   : 'text-chalkdim hover:text-chalk hover:bg-panel2'

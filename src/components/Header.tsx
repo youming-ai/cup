@@ -14,7 +14,7 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
   return (
     // 悬浮：脱离顶边留出 night 背景；左右内边距与下方内容容器(p-4/md:p-6)一致
     <div className="bg-night px-4 md:px-6 pt-4">
-      <header className="max-w-6xl mx-auto bg-panel/85 backdrop-blur-md border border-line shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)] ring-1 ring-pitch/10">
+      <header className="max-w-6xl mx-auto bg-panel border border-line shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)] ring-1 ring-pitch/10">
         <div className="flex items-center justify-between gap-4 px-4 sm:px-5 h-14">
           <h1 className="flex items-center shrink-0 m-0 leading-none">
             <img
