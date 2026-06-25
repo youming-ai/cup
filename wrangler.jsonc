@@ -2,6 +2,21 @@
   // Static SPA — no Worker script, just serve the Vite build output.
   "name": "cup",
   "compatibility_date": "2026-06-24",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  },
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
