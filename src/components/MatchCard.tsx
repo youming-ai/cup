@@ -35,14 +35,25 @@ function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
   return <img src={src} alt={alt} className={`w-10 h-7 object-cover ${cls}`} />;
 }
 
-export default function MatchCard(p: MatchCardProps) {
+export default function MatchCard({
+  homeName,
+  awayName,
+  homeFlag,
+  awayFlag,
+  homeScore,
+  awayScore,
+  status,
+  kickoff,
+  stage,
+  group,
+}: MatchCardProps) {
   const t = useT();
   const tbd = t('common.tbd');
-  const stageLabel = p.stage === 'group' ? `${t('common.group')} ${p.group}` : t(`stage.${p.stage}`);
+  const stageLabel = stage === 'group' ? `${t('common.group')} ${group}` : t(`stage.${stage}`);
 
   // finished: brighten the winner, dim the loser
-  const homeWon = p.status === 'finished' && (p.homeScore ?? 0) > (p.awayScore ?? 0);
-  const awayWon = p.status === 'finished' && (p.awayScore ?? 0) > (p.homeScore ?? 0);
+  const homeWon = status === 'finished' && (homeScore ?? 0) > (awayScore ?? 0);
+  const awayWon = status === 'finished' && (awayScore ?? 0) > (homeScore ?? 0);
   const teamCls = (won: boolean, lost: boolean) =>
     `font-display text-sm text-center truncate w-full ${
       lost ? 'font-normal text-chalkdim' : won ? 'font-bold text-chalk' : 'font-semibold text-chalk'
@@ -54,40 +65,40 @@ export default function MatchCard(p: MatchCardProps) {
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
           {stageLabel}
         </span>
-        {p.kickoff && (
+        {kickoff && (
           <span className="font-mono text-[10px] tabular-nums text-chalkdim/70 shrink-0 ml-2">
-            {p.kickoff.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {kickoff.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
         )}
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-4">
         <div className="flex flex-col items-center gap-2 min-w-0">
-          <Flag src={p.homeFlag} alt={p.homeName || tbd} dim={awayWon} />
-          <span className={teamCls(homeWon, awayWon)}>{p.homeName || tbd}</span>
+          <Flag src={homeFlag} alt={homeName || tbd} dim={awayWon} />
+          <span className={teamCls(homeWon, awayWon)}>{homeName || tbd}</span>
         </div>
 
         <div className="flex flex-col items-center gap-1 px-2">
-          {p.status === 'upcoming' ? (
+          {status === 'upcoming' ? (
             <span className="font-mono text-lg font-bold text-chalk tabular-nums whitespace-nowrap leading-none">
-              {p.kickoff
-                ? p.kickoff.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+              {kickoff
+                ? kickoff.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
                 : tbd}
             </span>
           ) : (
             <span
               className="font-mono text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap"
-              aria-label={`${p.homeName || tbd} ${p.homeScore ?? 0} - ${p.awayName || tbd} ${p.awayScore ?? 0}`}
+              aria-label={`${homeName || tbd} ${homeScore ?? 0} - ${awayName || tbd} ${awayScore ?? 0}`}
             >
-              {`${p.homeScore ?? 0} : ${p.awayScore ?? 0}`}
+              {`${homeScore ?? 0} : ${awayScore ?? 0}`}
             </span>
           )}
-          <StatusPill status={p.status} t={t} />
+          <StatusPill status={status} t={t} />
         </div>
 
         <div className="flex flex-col items-center gap-2 min-w-0">
-          <Flag src={p.awayFlag} alt={p.awayName || tbd} dim={homeWon} />
-          <span className={teamCls(awayWon, homeWon)}>{p.awayName || tbd}</span>
+          <Flag src={awayFlag} alt={awayName || tbd} dim={homeWon} />
+          <span className={teamCls(awayWon, homeWon)}>{awayName || tbd}</span>
         </div>
       </div>
     </div>

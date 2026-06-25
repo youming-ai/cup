@@ -10,18 +10,20 @@ export interface Match {
   category_name: string;
   iframe: string;
   viewers: string;
-  sourceTag?: string; // primary feed's broadcaster label (e.g. "FOX")
+  sourceTag?: string;
   substreams: Substream[];
   slug: string;
   poster?: string;
   colors?: string[];
   tag?: string;
-  startsAt?: number; // unix seconds
-  endsAt?: number; // unix seconds
+  startsAt?: number;
+  endsAt?: number;
   alwaysLive?: boolean;
 }
 
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
+
+export type Stage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'third' | 'final';
 
 export interface WCMatch {
   id: string;
@@ -36,7 +38,7 @@ export interface WCMatch {
   stadiumId: string;
   kickoff: Date | null;
   status: MatchStatus;
-  stage: string;
+  stage: Stage;
 }
 
 export interface WCStanding {

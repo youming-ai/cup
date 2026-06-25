@@ -193,8 +193,8 @@ export default function LiveView({ matches }: { matches: Match[] }) {
   // 播放页
   if (selected) {
     return (
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-night flex flex-col justify-between">
-        <div className="flex-1 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges] p-4 md:p-6 bg-night flex flex-col justify-between">
+        <div className="flex-1 max-w-6xl mx-auto w-full">
           <button
             onClick={backToList}
             className="mb-4 inline-flex items-center gap-1.5 font-mono text-xs tracking-wider text-chalkdim hover:text-chalk transition-colors"
