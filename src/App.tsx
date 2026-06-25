@@ -61,17 +61,22 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden bg-night">
+    // Single scroll container for the whole app, so the sticky Header shares the
+    // SAME scrollbar gutter as the content below — they line up on desktop
+    // (classic scrollbar) and mobile (overlay) with no per-platform padding hack.
+    <div className="flex flex-col h-dvh overflow-y-auto [scrollbar-gutter:stable_both-edges] bg-night">
       <Header view={view} setView={setView} />
 
       {view === 'live' && (
-        streams.loading ? <Loading /> :
-        streams.error ? <ErrorState message={streams.error} onRetry={streams.refetch} /> :
-        <LiveView matches={streams.matches} />
+        <div className="flex-1 flex flex-col">
+          {streams.loading ? <Loading /> :
+            streams.error ? <ErrorState message={streams.error} onRetry={streams.refetch} /> :
+            <LiveView matches={streams.matches} />}
+        </div>
       )}
 
       {view === 'schedule' && (
-        <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges] p-4 md:p-6 bg-night flex flex-col justify-between">
+        <div className="flex-1 p-4 md:p-6 bg-night flex flex-col justify-between">
           <div className="flex-1">
             {wc.loading ? <Loading /> :
               wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
