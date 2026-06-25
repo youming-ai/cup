@@ -49,6 +49,9 @@ const en: Dict = {
   'live.sectionUpcoming': 'Upcoming matches',
   'live.back': 'Back to matches',
   'footer.disclaimer': 'Disclaimer: We only link to streams available on the internet. We do not host any content.',
+  'footer.copyright': '© {year} StreamCup. All rights reserved.',
+  'nav.mainLabel': 'Main navigation',
+  'common.changeLanguage': 'Change language',
 };
 
 const zh: Dict = {
@@ -96,6 +99,9 @@ const zh: Dict = {
   'live.sectionUpcoming': '即将开赛',
   'live.back': '返回列表',
   'footer.disclaimer': '免责声明：本站仅提供互联网公开直播源的链接，不托管、存储或上传任何视频内容。',
+  'footer.copyright': '© {year} StreamCup. 保留所有权利。',
+  'nav.mainLabel': '主导航',
+  'common.changeLanguage': '切换语言',
 };
 
 const ja: Dict = {
@@ -143,6 +149,9 @@ const ja: Dict = {
   'live.sectionUpcoming': '開催予定',
   'live.back': '一覧へ戻る',
   'footer.disclaimer': '免責事項：当サイトはインターネット上で公開されている配信へのリンクのみを提供しており、コンテンツのホストや保存は行っておりません。',
+  'footer.copyright': '© {year} StreamCup. 全著作権所有。',
+  'nav.mainLabel': 'メインナビゲーション',
+  'common.changeLanguage': '言語を変更',
 };
 
 const ko: Dict = {
@@ -190,6 +199,9 @@ const ko: Dict = {
   'live.sectionUpcoming': '예정 경기',
   'live.back': '목록으로',
   'footer.disclaimer': '면책 조항: 본 사이트는 인터넷에 공개된 스트림 링크만 제공하며, 어떠한 콘텐츠도 직접 호스트하거나 저장하지 않습니다.',
+  'footer.copyright': '© {year} StreamCup. 모든 권리 보유.',
+  'nav.mainLabel': '기본 탐색',
+  'common.changeLanguage': '언어 변경',
 };
 
 export const messages: Record<Lang, Dict> = { en, zh, ja, ko };

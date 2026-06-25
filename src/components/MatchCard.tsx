@@ -31,8 +31,8 @@ function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => stri
 
 function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
   const cls = dim ? 'opacity-50' : '';
-  if (!src) return <div className={`w-10 h-7 rounded bg-white/10 ${cls}`} aria-hidden />;
-  return <img src={src} alt={alt} className={`w-10 h-7 object-cover rounded shadow ${cls}`} />;
+  if (!src) return <div className={`w-10 h-7 bg-panel2 ${cls}`} aria-hidden />;
+  return <img src={src} alt={alt} className={`w-10 h-7 object-cover ${cls}`} />;
 }
 
 export default function MatchCard(p: MatchCardProps) {
@@ -45,12 +45,12 @@ export default function MatchCard(p: MatchCardProps) {
   const awayWon = p.status === 'finished' && (p.awayScore ?? 0) > (p.homeScore ?? 0);
   const teamCls = (won: boolean, lost: boolean) =>
     `font-display text-sm text-center truncate w-full ${
-      lost ? 'font-normal text-chalkdim' : 'font-semibold text-chalk'
-    }${won ? ' font-bold' : ''}`;
+      lost ? 'font-normal text-chalkdim' : won ? 'font-bold text-chalk' : 'font-semibold text-chalk'
+    }`;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden hover:border-white/20 transition-colors">
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-white/5">
+    <div className="border border-line bg-panel overflow-hidden hover:border-chalkdim transition-colors">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-line">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
           {stageLabel}
         </span>
@@ -75,7 +75,10 @@ export default function MatchCard(p: MatchCardProps) {
                 : tbd}
             </span>
           ) : (
-            <span className="font-mono text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap">
+            <span
+              className="font-mono text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap"
+              aria-label={`${p.homeName || tbd} ${p.homeScore ?? 0} - ${p.awayName || tbd} ${p.awayScore ?? 0}`}
+            >
               {`${p.homeScore ?? 0} : ${p.awayScore ?? 0}`}
             </span>
           )}

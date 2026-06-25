@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { CaretLeft, Play } from '@phosphor-icons/react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ChevronLeft, Play } from 'lucide-react';
 import Player from './Player';
 import Footer from './Footer';
 import { useT } from '../i18n';
@@ -53,23 +53,23 @@ function LiveCard({ m, kind, onSelect, t }: {
         ) : (
           <div className="absolute inset-0" style={{ background: grad }} aria-hidden />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-night via-night/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="absolute top-3 left-3">
           {kind === 'live' ? (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-night/75 backdrop-blur-sm border border-live/40 font-mono text-[10px] tracking-widest text-live">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-black/65 backdrop-blur-sm border border-live/40 font-mono text-[10px] tracking-widest text-live">
               <span className="live-dot" />
               {t('status.live')}
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-md bg-night/75 backdrop-blur-sm font-mono text-[10px] tracking-wider text-chalkdim whitespace-nowrap">
+            <span className="px-2.5 py-1 bg-black/65 backdrop-blur-sm font-mono text-[10px] tracking-wider text-white/90 whitespace-nowrap">
               {formatKickoff(m.startsAt) || t('status.upcoming')}
             </span>
           )}
         </div>
         {kind === 'live' && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="flex items-center justify-center w-12 h-12 rounded-full bg-night/70 backdrop-blur-sm border border-white/25">
-              <Play weight="fill" className="w-5 h-5 text-chalk ml-0.5" />
+            <span className="flex items-center justify-center w-12 h-12 bg-black/60 backdrop-blur-sm border border-white/30">
+              <Play fill="currentColor" className="w-5 h-5 text-white ml-0.5" />
             </span>
           </div>
         )}
@@ -98,7 +98,8 @@ function LiveCard({ m, kind, onSelect, t }: {
     return (
       <button
         onClick={() => onSelect(m)}
-        className="group text-left rounded-2xl border border-white/10 bg-panel2 overflow-hidden hover:border-white/25 transition-colors"
+        aria-label={m.name}
+        className="group text-left border border-line bg-panel2 overflow-hidden hover:border-pitch transition-colors"
       >
         {media}
       </button>
@@ -106,7 +107,7 @@ function LiveCard({ m, kind, onSelect, t }: {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-panel2 overflow-hidden opacity-80">
+    <div className="border border-line bg-panel2 overflow-hidden opacity-80">
       {media}
     </div>
   );
@@ -150,6 +151,22 @@ export default function LiveView({ matches }: { matches: Match[] }) {
     if (selected && !iframeUrl) setIframeUrl(selected.iframe);
   }, [selected, iframeUrl]);
 
+  const backToList = useCallback(() => {
+    setSelectedSlug(null);
+    setIframeUrl('');
+    const params = new URLSearchParams(window.location.search);
+    params.delete('match');
+    window.history.replaceState(null, '', `?${params.toString()}`);
+  }, []);
+
+  // Escape 键退出播放页
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') backToList(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selected, backToList]);
+
   const { live, upcoming } = useMemo(() => {
     const now = Date.now();
     const live: Match[] = [];
@@ -172,13 +189,6 @@ export default function LiveView({ matches }: { matches: Match[] }) {
     window.history.replaceState(null, '', `?${params.toString()}`);
   };
 
-  const backToList = () => {
-    setSelectedSlug(null);
-    setIframeUrl('');
-    const params = new URLSearchParams(window.location.search);
-    params.delete('match');
-    window.history.replaceState(null, '', `?${params.toString()}`);
-  };
 
   // 播放页
   if (selected) {
@@ -189,7 +199,7 @@ export default function LiveView({ matches }: { matches: Match[] }) {
             onClick={backToList}
             className="mb-4 inline-flex items-center gap-1.5 font-mono text-xs tracking-wider text-chalkdim hover:text-chalk transition-colors"
           >
-            <CaretLeft className="w-4 h-4" weight="bold" />
+            <ChevronLeft className="w-4 h-4" />
             {t('live.back')}
           </button>
           <Player match={selected} selectedIframeUrl={iframeUrl} setSelectedIframeUrl={setIframeUrl} />

@@ -35,23 +35,24 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
         {groups.map((g) => (
           <div
             key={g.name}
-            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden"
+            className="border border-line bg-panel overflow-hidden"
           >
-            <div className="px-4 py-3 border-b border-white/10">
+            <div className="px-4 py-3 border-b border-line">
               <span className="font-display font-bold text-lg text-chalk">
                 {t('common.group')} {g.name}
               </span>
             </div>
             <table className="w-full text-sm">
+              <caption className="sr-only">{t('common.group')} {g.name}</caption>
               <thead>
                 <tr className="text-chalkdim font-mono text-[10px] uppercase">
-                  <th className="text-left font-medium px-4 py-2">{t('st.team')}</th>
-                  <th className="px-1 font-medium">{t('st.mp')}</th>
-                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.w')}</th>
-                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.d')}</th>
-                  <th className="px-1 font-medium hidden sm:table-cell">{t('st.l')}</th>
-                  <th className="px-1 font-medium">{t('st.gd')}</th>
-                  <th className="px-2 font-medium">{t('st.pts')}</th>
+                  <th scope="col" className="text-left font-medium px-4 py-2">{t('st.team')}</th>
+                  <th scope="col" className="px-1 font-medium"><abbr title="Matches Played">{t('st.mp')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium hidden sm:table-cell"><abbr title="Wins">{t('st.w')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium hidden sm:table-cell"><abbr title="Draws">{t('st.d')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium hidden sm:table-cell"><abbr title="Losses">{t('st.l')}</abbr></th>
+                  <th scope="col" className="px-1 font-medium"><abbr title="Goal Difference">{t('st.gd')}</abbr></th>
+                  <th scope="col" className="px-2 font-medium"><abbr title="Points">{t('st.pts')}</abbr></th>
                 </tr>
               </thead>
               <tbody>
@@ -61,7 +62,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                   return (
                     <tr
                       key={s.teamId}
-                      className={`border-t border-white/5 ${
+                      className={`border-t border-line ${
                         qual === 'direct'
                           ? 'bg-pitch/[0.06]'
                           : qual === 'third'

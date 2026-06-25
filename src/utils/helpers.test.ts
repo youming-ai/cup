@@ -15,4 +15,14 @@ describe('slugify', () => {
   it('should handle leading/trailing spaces and multiple dashes', () => {
     expect(slugify('  Hello   World  ')).toBe('hello-world');
   });
+
+  it('strips accented letters via NFD normalization (Côte d\'Ivoire, São Paulo)', () => {
+    expect(slugify("Côte d'Ivoire")).toBe('cote-divoire');
+    expect(slugify('São Paulo')).toBe('sao-paulo');
+    expect(slugify('Ñoño FC')).toBe('nono-fc');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(slugify('')).toBe('');
+  });
 });
