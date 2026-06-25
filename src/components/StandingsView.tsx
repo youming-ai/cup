@@ -31,7 +31,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
         </span>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5">
         {groups.map((g) => (
           <div
             key={g.name}
