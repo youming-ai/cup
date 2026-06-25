@@ -121,6 +121,29 @@ describe('parseSummary', () => {
     expect(empty.lineups).toEqual([]);
     expect(empty.attendance).toBeNull();
   });
+
+  it('orders lineups [home, away] even when rosters arrive away-first', () => {
+    const awayFirst = {
+      ...summary,
+      rosters: [...summary.rosters].reverse(),
+    };
+    const parsed = parseSummary(awayFirst);
+    expect(parsed.lineups[0].teamId).toBe(parsed.homeId);
+    expect(parsed.lineups[1].teamId).toBe(parsed.awayId);
+  });
+
+  it('drops keyEvents without text (admin entries)', () => {
+    const withAdmin = {
+      ...summary,
+      keyEvents: [
+        { clock: { displayValue: "0'" }, type: { text: 'Kickoff' }, team: { id: '203' }, text: '' },
+        { clock: { displayValue: "9'" }, type: { text: 'Goal' }, team: { id: '203' }, text: 'Goal!' },
+      ],
+    };
+    const parsed = parseSummary(withAdmin);
+    expect(parsed.keyPlays).toHaveLength(1);
+    expect(parsed.keyPlays[0].text).toBe('Goal!');
+  });
 });
 
 function mk(pos: string, jersey: string): LineupPlayer {
@@ -164,5 +187,38 @@ describe('layoutStarters', () => {
 
   it('does not throw on an unknown position (defaults to midfield row)', () => {
     expect(() => layoutStarters([mk('???', '99')])).not.toThrow();
+  });
+
+  it('places wide forwards LF/RF in the attack row', () => {
+    const [lf, rf] = layoutStarters([mk('LF', '11'), mk('RF', '7')]);
+    expect(lf.y).toBeLessThan(0.25);
+    expect(rf.y).toBeLessThan(0.25);
+  });
+
+  it('places a sweeper SW in the defense row', () => {
+    const [sw] = layoutStarters([mk('SW', '5')]);
+    expect(sw.y).toBeGreaterThan(0.6);
+    expect(sw.y).toBeLessThan(0.85);
+  });
+
+  it('lays out a real 4-3-3 XI with 3 attackers and 3 midfielders', () => {
+    const xi433: LineupPlayer[] = [
+      mk('G', '1'),
+      mk('CD-L', '5'),
+      mk('CD-R', '3'),
+      mk('LB', '23'),
+      mk('RB', '2'),
+      mk('CM', '6'),
+      mk('LM', '16'),
+      mk('RM', '25'),
+      mk('F', '9'),
+      mk('LF', '11'),
+      mk('RF', '7'),
+    ];
+    const placed = layoutStarters(xi433);
+    const attack = placed.filter((p) => p.y < 0.25);
+    const mid = placed.filter((p) => p.y > 0.35 && p.y < 0.45);
+    expect(attack).toHaveLength(3);
+    expect(mid).toHaveLength(3);
   });
 });

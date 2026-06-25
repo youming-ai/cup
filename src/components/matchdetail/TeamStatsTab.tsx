@@ -1,6 +1,14 @@
 import { useT } from '../../i18n';
 import type { TeamStatRow } from '../../types';
 
+// ESPN sends %-labeled stats as fractions (0.3 → 30%), except Possession which
+// arrives pre-scaled (60.5). Scale only fractional %-labeled values for display.
+function fmt(label: string, v: string): string {
+  const n = parseFloat(v);
+  if (label.trim().endsWith('%') && Number.isFinite(n) && n <= 1) return `${Math.round(n * 100)}%`;
+  return v;
+}
+
 // Width of the home side's bar, 0..100, when both values are numeric.
 function homePct(home: string, away: string): number | null {
   const h = parseFloat(home);
@@ -21,9 +29,9 @@ export default function TeamStatsTab({ stats }: { stats: TeamStatRow[] }) {
         return (
           <div key={s.label} className="space-y-1">
             <div className="flex items-center justify-between font-mono text-sm text-chalk tabular-nums">
-              <span className="font-bold">{s.home}</span>
+              <span className="font-bold">{fmt(s.label, s.home)}</span>
               <span className="text-chalkdim text-xs uppercase tracking-wider">{s.label}</span>
-              <span className="font-bold">{s.away}</span>
+              <span className="font-bold">{fmt(s.label, s.away)}</span>
             </div>
             {pct !== null && (
               <div className="flex h-1.5 gap-0.5">

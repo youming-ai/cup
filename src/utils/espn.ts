@@ -64,15 +64,17 @@ export function parseSummary(json: unknown): MatchDetail {
     const c = obj(raw);
     return { clock: str(obj(c.time).displayValue), text: str(c.text), teamId: null, type: '' };
   });
-  const keyPlays: PlayEvent[] = arr(d.keyEvents).map((raw) => {
-    const k = obj(raw);
-    return {
-      clock: str(obj(k.clock).displayValue),
-      text: str(k.text),
-      teamId: str(obj(k.team).id) || null,
-      type: str(obj(k.type).text),
-    };
-  });
+  const keyPlays: PlayEvent[] = arr(d.keyEvents)
+    .filter((k) => str(obj(k).text))
+    .map((raw) => {
+      const k = obj(raw);
+      return {
+        clock: str(obj(k.clock).displayValue),
+        text: str(k.text),
+        teamId: str(obj(k.team).id) || null,
+        type: str(obj(k.type).text),
+      };
+    });
 
   const lineups: TeamLineup[] = arr(d.rosters).map((raw): TeamLineup => {
     const r = obj(raw);
@@ -93,6 +95,9 @@ export function parseSummary(json: unknown): MatchDetail {
     });
     return { teamId: str(team.id), teamName: str(team.displayName), formation: str(r.formation), players };
   });
+  // Enforce the [home, away] contract regardless of ESPN roster order.
+  const rank = (l: TeamLineup) => (l.teamId === homeId ? 0 : l.teamId === awayId ? 1 : 2);
+  lineups.sort((a, b) => rank(a) - rank(b));
 
   const venueObj = obj(obj(d.gameInfo).venue);
   const city = str(obj(venueObj.address).city);
@@ -120,8 +125,8 @@ function rowGroup(pos: string): number {
   const p = pos.toUpperCase();
   if (p === 'G' || p === 'GK') return 0;
   if (p.includes('DM')) return 2;
-  if (p.startsWith('CD') || p.startsWith('D') || p.endsWith('B')) return 1; // CB/RB/LB/WB/CD
-  if (p.startsWith('F') || p.startsWith('S') || p.startsWith('CF') || p.endsWith('W')) return 4; // F/ST/RW/LW
+  if (p === 'SW' || p.startsWith('CD') || p.startsWith('D') || p.endsWith('B')) return 1; // SW/CB/RB/LB/WB/CD
+  if (p.startsWith('F') || p.endsWith('F') || p.startsWith('S') || p.endsWith('W')) return 4; // F/LF/RF/ST/RW/LW
   return 3; // CM/RM/LM/AM/M and unknowns → midfield
 }
 function sideScore(pos: string): number {

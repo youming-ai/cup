@@ -22,6 +22,27 @@ describe('TeamStatsTab', () => {
     wrap(<TeamStatsTab stats={[]} />);
     expect(screen.getByText('No data yet')).toBeInTheDocument();
   });
+
+  it('renders fractional %-labeled stats as whole percentages', () => {
+    const stats: TeamStatRow[] = [{ label: 'Pass Completion %', home: '0.9', away: '0.86' }];
+    wrap(<TeamStatsTab stats={stats} />);
+    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getByText('86%')).toBeInTheDocument();
+  });
+
+  it('leaves pre-scaled possession % untouched', () => {
+    const stats: TeamStatRow[] = [{ label: 'Possession %', home: '60.5', away: '39.5' }];
+    wrap(<TeamStatsTab stats={stats} />);
+    expect(screen.getByText('60.5')).toBeInTheDocument();
+    expect(screen.getByText('39.5')).toBeInTheDocument();
+  });
+
+  it('leaves non-% counts untouched', () => {
+    const stats: TeamStatRow[] = [{ label: 'Shots', home: '21', away: '14' }];
+    wrap(<TeamStatsTab stats={stats} />);
+    expect(screen.getByText('21')).toBeInTheDocument();
+    expect(screen.getByText('14')).toBeInTheDocument();
+  });
 });
 
 describe('PlayByPlayTab', () => {
@@ -34,6 +55,12 @@ describe('PlayByPlayTab', () => {
     expect(screen.getByText('Foul.')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Key Plays'));
     expect(screen.getByText('Goal!')).toBeInTheDocument();
+  });
+
+  it('surfaces the event type label when switching to Key Plays', () => {
+    wrap(<PlayByPlayTab allPlays={allPlays} keyPlays={keyPlays} homeId="203" />);
+    fireEvent.click(screen.getByText('Key Plays'));
+    expect(screen.getByText('Goal')).toBeInTheDocument();
   });
 
   it('does NOT apply border-l-2 in All Plays even when teamId is set, but DOES in Key Plays', () => {
@@ -71,5 +98,22 @@ describe('LineupTab', () => {
     expect(screen.getByText('4-3-3')).toBeInTheDocument();
     expect(screen.getByText('Jiménez')).toBeInTheDocument();
     expect(screen.getByText('Bench Guy')).toBeInTheDocument();
+  });
+
+  it('shows a ↓ subbed-out marker on a pitch starter', () => {
+    const withSubOut: TeamLineup[] = [
+      {
+        teamId: '203',
+        teamName: 'Mexico',
+        formation: '4-3-3',
+        players: [
+          { jersey: '1', name: 'Rangel', pos: 'G', starter: true },
+          { jersey: '9', name: 'Jiménez', pos: 'F', starter: true, subbedOutAt: "67'" },
+        ],
+      },
+      { teamId: '467', teamName: 'South Africa', formation: '4-2-3-1', players: [] },
+    ];
+    wrap(<LineupTab lineups={withSubOut} homeId="203" />);
+    expect(screen.getByText("↓ 67'")).toBeInTheDocument();
   });
 });

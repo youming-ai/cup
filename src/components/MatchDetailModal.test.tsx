@@ -60,3 +60,40 @@ it('closes on Escape', async () => {
   fireEvent.keyDown(window, { key: 'Escape' });
   expect(onClose).toHaveBeenCalled();
 });
+
+it('restores focus to the opener element after closing', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
+  const opener = document.createElement('button');
+  opener.textContent = 'open';
+  document.body.appendChild(opener);
+  opener.focus();
+  expect(document.activeElement).toBe(opener);
+
+  const onClose = vi.fn();
+  const { unmount } = render(
+    <LanguageProvider>
+      <MatchDetailModal match={match} onClose={onClose} />
+    </LanguageProvider>,
+  );
+  await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
+  // Closing the modal (caller would unmount it on onClose) restores opener focus.
+  unmount();
+  expect(document.activeElement).toBe(opener);
+  opener.remove();
+});
+
+it('shows an i18n error with a retry button that refetches', async () => {
+  fetchMock
+    .mockResolvedValueOnce({ ok: false })
+    .mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
+  const onClose = vi.fn();
+  render(
+    <LanguageProvider>
+      <MatchDetailModal match={match} onClose={onClose} />
+    </LanguageProvider>,
+  );
+  await waitFor(() => expect(screen.getByText('Failed to load data')).toBeInTheDocument());
+  fireEvent.click(screen.getByText('Retry'));
+  await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});

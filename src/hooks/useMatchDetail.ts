@@ -6,6 +6,7 @@ export function useMatchDetail(eventId: string | null) {
   const [detail, setDetail] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!eventId) {
@@ -30,6 +31,8 @@ export function useMatchDetail(eventId: string | null) {
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
+        // Raw message is for the console/internal only; the UI surfaces an i18n string.
+        console.error('useMatchDetail:', err);
         setError(err instanceof Error ? err.message : 'Failed to load match detail');
       })
       .finally(() => {
@@ -37,7 +40,9 @@ export function useMatchDetail(eventId: string | null) {
       });
 
     return () => controller.abort();
-  }, [eventId]);
+  }, [eventId, attempt]);
 
-  return { detail, loading, error };
+  const reload = () => setAttempt((n) => n + 1);
+
+  return { detail, loading, error, reload };
 }

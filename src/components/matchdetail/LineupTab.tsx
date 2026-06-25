@@ -18,6 +18,8 @@ function Pitch({ starters }: { starters: LineupPlayer[] }) {
             {p.jersey}
           </span>
           <span className="font-display text-[10px] text-chalk truncate w-full mt-0.5">{p.name}</span>
+          {p.card && <span className={`mt-0.5 w-2 h-3 ${p.card === 'red' ? 'bg-live' : 'bg-yellow-400'}`} aria-hidden />}
+          {p.subbedOutAt && <span className="font-mono text-[10px] text-live">↓ {p.subbedOutAt}</span>}
         </div>
       ))}
     </div>

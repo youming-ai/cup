@@ -1,5 +1,5 @@
 import { it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useMatchDetail } from './useMatchDetail';
 
 const fetchMock = vi.fn();
@@ -34,4 +34,27 @@ it('surfaces an error when the request fails', async () => {
   await waitFor(() => expect(result.current.loading).toBe(false));
   expect(result.current.error).toBeTruthy();
   expect(result.current.detail).toBeNull();
+});
+
+it('refetches on reload() and populates detail on success', async () => {
+  fetchMock
+    .mockResolvedValueOnce({ ok: false })
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        header: { competitions: [{ competitors: [{ homeAway: 'home', team: { id: '7' } }] }] },
+        boxscore: { teams: [] },
+        gameInfo: {},
+      }),
+    });
+  const { result } = renderHook(() => useMatchDetail('1'));
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.error).toBeTruthy();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+
+  act(() => result.current.reload());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(result.current.error).toBeNull();
+  expect(result.current.detail?.homeId).toBe('7');
 });

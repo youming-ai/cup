@@ -37,13 +37,20 @@ export default function PlayByPlayTab({
         <ul className="space-y-2">
           {plays.map((p, i) => (
             <li
-              key={i}
+              key={`${i}-${p.clock}-${p.text}`}
               className={`border border-line bg-panel px-3 py-2 ${
                 tab === 'key' && p.teamId ? `border-l-2 ${p.teamId === homeId ? 'border-l-pitch' : 'border-l-live'}` : ''
               }`}
             >
               <div className="font-body text-sm text-chalk">{p.text}</div>
-              {p.clock && <div className="font-mono text-[10px] text-chalkdim tabular-nums mt-1">{p.clock}</div>}
+              {(p.clock || p.type) && (
+                <div className="flex items-center gap-2 mt-1">
+                  {p.clock && <span className="font-mono text-[10px] text-chalkdim tabular-nums">{p.clock}</span>}
+                  {p.type && (
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-pitch">{p.type}</span>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>
