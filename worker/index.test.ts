@@ -2,7 +2,7 @@
 // @vitest-environment node
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { json, serve, type Env } from './index';
+import { json, serve, serveSummary, type Env } from './index';
 
 // ---- json helper ----
 
@@ -32,19 +32,19 @@ describe('json helper', () => {
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
-function mockEnv(kvData?: { body: string; at: number } | null) {
+function mockEnv(kvData?: { body: string; at: number } | null, key = 'standings') {
   const store = new Map<string, string>();
   if (kvData) {
-    store.set('standings', JSON.stringify(kvData));
+    store.set(key, JSON.stringify(kvData));
   }
   return {
     CACHE: {
-      get: vi.fn(async (key: string) => {
-        const v = store.get(key);
+      get: vi.fn(async (k: string) => {
+        const v = store.get(k);
         return v ? JSON.parse(v) : null;
       }),
-      put: vi.fn(async (key: string, value: string) => {
-        store.set(key, value);
+      put: vi.fn(async (k: string, value: string) => {
+        store.set(k, value);
       }),
     },
   };
@@ -153,5 +153,40 @@ describe('serve', () => {
     await serve('standings', env as unknown as Env, ctx);
     expect(ctx.waitUntil).toHaveBeenCalled();
     expect((env.CACHE as ReturnType<typeof mockEnv>['CACHE']).put).toHaveBeenCalled();
+  });
+});
+
+describe('serveSummary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 400 for a non-numeric event id', async () => {
+    const env = mockEnv(null);
+    const res = await serveSummary('abc; DROP', env as unknown as Env, mockCtx());
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for an empty event id', async () => {
+    const env = mockEnv(null);
+    const res = await serveSummary('', env as unknown as Env, mockCtx());
+    expect(res.status).toBe(400);
+  });
+
+  it('fetches and caches the ESPN summary for a numeric id', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, text: async () => '{"boxscore":{}}' });
+    const env = mockEnv(null);
+    const ctx = mockCtx();
+    const res = await serveSummary('760420', env as unknown as Env, ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-cache')).toBe('MISS');
+    expect(await res.text()).toBe('{"boxscore":{}}');
+    // cached under the per-event key
+    expect((env.CACHE as ReturnType<typeof mockEnv>['CACHE']).put).toHaveBeenCalledWith(
+      'summary:760420',
+      expect.any(String),
+      expect.objectContaining({ expirationTtl: expect.any(Number) }),
+    );
   });
 });
