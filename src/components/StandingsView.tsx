@@ -22,16 +22,16 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
       {/* 出线图例 */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] uppercase tracking-wider text-chalkdim">
         <span className="flex items-center gap-1.5">
-          <span className="w-1 h-3 rounded-full bg-pitch" />
+          <span className="w-1 h-3 bg-pitch" />
           {t('standings.advanceTop2')}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-1 h-3 rounded-full bg-pitch/40" />
+          <span className="w-1 h-3 bg-pitch/40" />
           {t('standings.advanceThird')}
         </span>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
         {groups.map((g) => (
           <div
             key={g.name}
@@ -73,7 +73,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className={`w-1 h-4 rounded-full ${
+                            className={`w-1 h-4 ${
                               qual === 'direct'
                                 ? 'bg-pitch'
                                 : qual === 'third'
@@ -82,7 +82,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                             }`}
                           />
                           {s.flag ? (
-                            <img src={s.flag} alt={s.name} className="w-5 h-3.5 object-cover rounded-sm" />
+                            <img src={s.flag} alt={s.name} className="w-5 h-3.5 object-cover" />
                           ) : (
                             <span className="w-5" />
                           )}

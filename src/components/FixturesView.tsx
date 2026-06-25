@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import MatchCard from './MatchCard';
+import MatchDetailModal from './MatchDetailModal';
 import StandingsView from './StandingsView';
 import type { WCGroup, WCMatch, Stage } from '../types';
 
@@ -10,30 +11,76 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
   const t = useT();
   const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
+  const [openMatch, setOpenMatch] = useState<WCMatch | null>(null);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));
     return ['all', ...KNOWN_STAGES.filter((s) => present.has(s))] as (Stage | 'all')[];
   }, [matches]);
 
-  // 按具体日期（开球当天）分组，日期正序；组内按开球时间正序；无时间的排末尾
-  const byDate = useMemo(() => {
+  // 按开球当天分组；组内按开球时间正序。未完赛(upcoming/live)在前(日期正序)，
+  // 已完赛在后(日期倒序，最近的在上)，两段分开。
+  const { upcoming, finished } = useMemo(() => {
     const filtered = stage === 'all' ? matches : matches.filter((m) => m.stage === stage);
-    const map = new Map<string, WCMatch[]>();
-    for (const m of filtered) {
-      const k = m.kickoff;
-      const key = k
-        ? `${k.getFullYear()}-${String(k.getMonth() + 1).padStart(2, '0')}-${String(k.getDate()).padStart(2, '0')}`
-        : 'zzzz-tbd';
-      const arr = map.get(key) || [];
-      arr.push(m);
-      map.set(key, arr);
-    }
-    for (const arr of map.values()) {
-      arr.sort((a, b) => (a.kickoff?.getTime() ?? 0) - (b.kickoff?.getTime() ?? 0));
-    }
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const group = (list: WCMatch[]) => {
+      const map = new Map<string, WCMatch[]>();
+      for (const m of list) {
+        const k = m.kickoff;
+        const key = k
+          ? `${k.getFullYear()}-${String(k.getMonth() + 1).padStart(2, '0')}-${String(k.getDate()).padStart(2, '0')}`
+          : 'zzzz-tbd';
+        (map.get(key) ?? map.set(key, []).get(key)!).push(m);
+      }
+      for (const arr of map.values()) {
+        arr.sort((a, b) => (a.kickoff?.getTime() ?? 0) - (b.kickoff?.getTime() ?? 0));
+      }
+      return [...map.entries()];
+    };
+    return {
+      upcoming: group(filtered.filter((m) => m.status !== 'finished')).sort((a, b) =>
+        a[0].localeCompare(b[0]),
+      ),
+      finished: group(filtered.filter((m) => m.status === 'finished')).sort((a, b) =>
+        b[0].localeCompare(a[0]),
+      ),
+    };
   }, [matches, stage]);
+
+  const renderDay = ([key, list]: [string, WCMatch[]]) => (
+    <section key={key} className="space-y-3">
+      <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
+        {list[0].kickoff
+          ? list[0].kickoff.toLocaleDateString(undefined, {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
+          : t('common.tbd')}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        {list.map((m) => (
+          <MatchCard
+            key={m.id}
+            homeName={m.homeName}
+            awayName={m.awayName}
+            homeFlag={m.homeFlag}
+            awayFlag={m.awayFlag}
+            homeScore={m.homeScore}
+            awayScore={m.awayScore}
+            status={m.status}
+            kickoff={m.kickoff}
+            stage={m.stage}
+            group={m.group}
+            homeScorers={m.homeScorers}
+            awayScorers={m.awayScorers}
+            venue={m.venue}
+            onOpen={m.status === 'upcoming' ? undefined : () => setOpenMatch(m)}
+          />
+        ))}
+      </div>
+    </section>
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -72,43 +119,25 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
             ))}
           </div>
 
-          {byDate.length === 0 ? (
+          {upcoming.length === 0 && finished.length === 0 ? (
             <p className="font-mono text-xs tracking-wider text-chalkdim">{t('common.empty')}</p>
           ) : (
-            byDate.map(([key, list]) => (
-              <section key={key} className="space-y-3">
-                <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
-                  {list[0].kickoff
-                    ? list[0].kickoff.toLocaleDateString(undefined, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : t('common.tbd')}
-                </h3>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {list.map((m) => (
-                    <MatchCard
-                      key={m.id}
-                      homeName={m.homeName}
-                      awayName={m.awayName}
-                      homeFlag={m.homeFlag}
-                      awayFlag={m.awayFlag}
-                      homeScore={m.homeScore}
-                      awayScore={m.awayScore}
-                      status={m.status}
-                      kickoff={m.kickoff}
-                      stage={m.stage}
-                      group={m.group}
-                    />
-                  ))}
+            <>
+              {upcoming.map(renderDay)}
+              {finished.length > 0 && (
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase shrink-0">
+                    {t('fixtures.results')}
+                  </span>
+                  <span className="h-px flex-1 bg-line" />
                 </div>
-              </section>
-            ))
+              )}
+              {finished.map(renderDay)}
+            </>
           )}
         </>
       )}
+      {openMatch && <MatchDetailModal match={openMatch} onClose={() => setOpenMatch(null)} />}
     </div>
   );
 }

@@ -13,6 +13,10 @@
   --c-muted: 138 150 143;
   --c-pitch: 43 217 107;
   --c-live: 255 68 56;
+  /* scrollbar width — single source. Scrolling content reserves this gutter
+     (scrollbar-gutter: both-edges); the non-scrolling header adds the same
+     amount to its padding so the two line up. Change here only. */
+  --sb-w: 8px;
 }
 
 @layer base {
@@ -39,11 +43,11 @@
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(255, 68, 56, 0.55);
+    box-shadow: 0 0 0 0 rgb(var(--c-live) / 0.55);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 0 5px rgba(255, 68, 56, 0);
+    box-shadow: 0 0 0 5px rgb(var(--c-live) / 0);
   }
 }
 
@@ -63,8 +67,8 @@
 
 /* 细滚动条，跟随主题 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--sb-w);
+  height: var(--sb-w);
 }
 ::-webkit-scrollbar-thumb {
   background: rgb(var(--c-line));

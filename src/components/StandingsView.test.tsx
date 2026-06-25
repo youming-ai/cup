@@ -73,7 +73,7 @@ describe('StandingsView', () => {
     // The first two teams should have a bg-pitch class (direct qualifier)
     const rows = screen.getAllByRole('row');
     // rows[0] = thead, rows[1-4] = tbody rows
-    // The qualifier indicator is a span with rounded-full bg
+    // The qualifier indicator is a span indicator
     expect(rows[1].className).toContain('bg-pitch');
     expect(rows[2].className).toContain('bg-pitch');
     // Third place: only gets the indicator if among best 8 thirds

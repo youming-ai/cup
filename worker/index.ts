@@ -18,19 +18,28 @@ interface Entry {
   at: number;
 }
 
-// Only worldcup26.ir is proxied: it has no anti-bot gate and its data changes
-// slowly, so KV caching is a clear win. ppv.to fingerprint-blocks datacenter
-// requests ("IP blocked"), so the SPA keeps fetching it directly from the browser.
+// ESPN's public site API (no key, CORS-open) carries the full 2026 World Cup:
+// scoreboard = all 104 matches (scores, status, venue, scorers); standings =
+// the 12 group tables. KV-cache both: scoreboard refreshes often (live scores),
+// standings change slowly. ppv.to is still fetched browser-side (it IP-blocks
+// datacenter requests).
+const ESPN = 'https://site.api.espn.com/apis';
 const SOURCES: Record<string, { url: string; fresh: number; keep: number }> = {
-  games: { url: 'https://worldcup26.ir/get/games', fresh: 300, keep: 86400 },
-  groups: { url: 'https://worldcup26.ir/get/groups', fresh: 300, keep: 86400 },
-  teams: { url: 'https://worldcup26.ir/get/teams', fresh: 3600, keep: 604800 },
+  scoreboard: {
+    url: `${ESPN}/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300`,
+    fresh: 60,
+    keep: 86400,
+  },
+  standings: {
+    url: `${ESPN}/v2/sports/soccer/fifa.world/standings?season=2026&level=3`,
+    fresh: 300,
+    keep: 86400,
+  },
 };
 
 const ROUTES: Record<string, string> = {
-  '/api/wc/games': 'games',
-  '/api/wc/groups': 'groups',
-  '/api/wc/teams': 'teams',
+  '/api/wc/scoreboard': 'scoreboard',
+  '/api/wc/standings': 'standings',
 };
 
 export function json(body: string, status: number, cache: string): Response {
@@ -40,17 +49,23 @@ export function json(body: string, status: number, cache: string): Response {
   });
 }
 
-export async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {
-  const src = SOURCES[name];
-  const stored = await env.CACHE.get<Entry>(name, 'json');
+async function cached(
+  cacheKey: string,
+  url: string,
+  fresh: number,
+  keep: number,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  const stored = await env.CACHE.get<Entry>(cacheKey, 'json');
   const now = Date.now();
 
-  if (stored && now - stored.at < src.fresh * 1000) {
+  if (stored && now - stored.at < fresh * 1000) {
     return json(stored.body, 200, 'HIT');
   }
 
   try {
-    const res = await fetch(src.url, {
+    const res = await fetch(url, {
       headers: {
         'user-agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -60,17 +75,34 @@ export async function serve(name: string, env: Env, ctx: ExecutionContext): Prom
     });
     if (!res.ok) throw new Error(`upstream ${res.status}`);
     const body = await res.text();
-    ctx.waitUntil(env.CACHE.put(name, JSON.stringify({ body, at: now } satisfies Entry), { expirationTtl: src.keep }));
+    ctx.waitUntil(
+      env.CACHE.put(cacheKey, JSON.stringify({ body, at: now } satisfies Entry), { expirationTtl: keep }),
+    );
     return json(body, 200, stored ? 'REVALIDATED' : 'MISS');
   } catch {
-    if (stored) return json(stored.body, 200, 'STALE'); // upstream down → serve last good copy
+    if (stored) return json(stored.body, 200, 'STALE');
     return json('{"error":"upstream unavailable"}', 502, 'MISS');
   }
 }
 
+export async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const src = SOURCES[name];
+  return cached(name, src.url, src.fresh, src.keep, env, ctx);
+}
+
+export async function serveSummary(eventId: string, env: Env, ctx: ExecutionContext): Promise<Response> {
+  if (!/^\d+$/.test(eventId)) return json('{"error":"bad event id"}', 400, 'MISS');
+  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`;
+  return cached(`summary:${eventId}`, url, 30, 86400, env, ctx);
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const { pathname } = url;
+    if (pathname === '/api/wc/summary') {
+      return serveSummary(url.searchParams.get('event') ?? '', env, ctx);
+    }
     const name = ROUTES[pathname];
     if (name) return serve(name, env, ctx);
     if (pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });

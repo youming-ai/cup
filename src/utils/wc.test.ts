@@ -1,54 +1,49 @@
 import { describe, it, expect } from 'vitest';
-import { parseScore, deriveStatus, parseKickoff, sortStandings } from './wc';
+import { parseScore, statusFromState, stageFromSlug, scorerLabel, sortStandings } from './wc';
 import type { WCStanding } from '../types';
 
 describe('parseScore', () => {
-  it('parses numeric strings', () => {
+  it('parses numeric strings and numbers', () => {
     expect(parseScore('2')).toBe(2);
     expect(parseScore('0')).toBe(0);
+    expect(parseScore(3)).toBe(3);
   });
   it('returns null for empty / null / non-numeric', () => {
     expect(parseScore('')).toBeNull();
-    expect(parseScore('null')).toBeNull();
-    expect(parseScore('NULL')).toBeNull();
+    expect(parseScore('  ')).toBeNull();
     expect(parseScore('abc')).toBeNull();
     expect(parseScore(undefined)).toBeNull();
+    expect(parseScore(null)).toBeNull();
   });
 });
 
-describe('deriveStatus', () => {
-  it('finished when finished flag is TRUE or time_elapsed says finished (any case)', () => {
-    expect(deriveStatus('TRUE', 'notstarted')).toBe('finished');
-    expect(deriveStatus('FALSE', 'finished')).toBe('finished');
-    expect(deriveStatus('FALSE', 'Finished')).toBe('finished');
-  });
-  it('upcoming when not started', () => {
-    expect(deriveStatus('FALSE', 'notstarted')).toBe('upcoming');
-    expect(deriveStatus('FALSE', '')).toBe('upcoming');
-  });
-  it('live when in progress', () => {
-    expect(deriveStatus('FALSE', "67'")).toBe('live');
-    expect(deriveStatus('FALSE', 'HT')).toBe('live');
+describe('statusFromState', () => {
+  it('maps ESPN state to MatchStatus', () => {
+    expect(statusFromState('post')).toBe('finished');
+    expect(statusFromState('in')).toBe('live');
+    expect(statusFromState('pre')).toBe('upcoming');
+    expect(statusFromState(undefined)).toBe('upcoming');
   });
 });
 
-describe('parseKickoff', () => {
-  // Assert the absolute instant (toISOString is timezone-independent), since
-  // local_date is a venue wall-clock that must convert to UTC by stadium TZ.
-  it('converts venue wall-clock to UTC by stadium offset', () => {
-    // stadium 7 = Atlanta (EDT, UTC−4): 13:00 local → 17:00 UTC
-    expect(parseKickoff('06/11/2026 13:00', '7')!.toISOString()).toBe('2026-06-11T17:00:00.000Z');
-    // stadium 16 = Los Angeles (PDT, UTC−7): 19:00 local → next-day 02:00 UTC
-    expect(parseKickoff('06/25/2026 19:00', '16')!.toISOString()).toBe('2026-06-26T02:00:00.000Z');
-    // stadium 1 = Mexico City (CST, no DST, UTC−6): 19:00 local → next-day 01:00 UTC
-    expect(parseKickoff('06/24/2026 19:00', '1')!.toISOString()).toBe('2026-06-25T01:00:00.000Z');
+describe('stageFromSlug', () => {
+  it('maps known season slugs, defaults to group', () => {
+    expect(stageFromSlug('group-stage')).toBe('group');
+    expect(stageFromSlug('round-of-32')).toBe('r32');
+    expect(stageFromSlug('round-of-16')).toBe('r16');
+    expect(stageFromSlug('quarterfinals')).toBe('qf');
+    expect(stageFromSlug('semifinals')).toBe('sf');
+    expect(stageFromSlug('final')).toBe('final');
+    expect(stageFromSlug('mystery')).toBe('group');
+    expect(stageFromSlug(undefined)).toBe('group');
   });
-  it('falls back to UTC−5 for an unknown stadium', () => {
-    expect(parseKickoff('06/11/2026 13:00', '999')!.toISOString()).toBe('2026-06-11T18:00:00.000Z');
-  });
-  it('returns null for bad input', () => {
-    expect(parseKickoff('not a date', '7')).toBeNull();
-    expect(parseKickoff('', '7')).toBeNull();
+});
+
+describe('scorerLabel', () => {
+  it('appends penalty/own-goal tags, keeps clock notation', () => {
+    expect(scorerLabel('Breel Embolo', "17'", 'Penalty - Scored')).toBe("Breel Embolo 17' (p)");
+    expect(scorerLabel('B. Khoukhi', "90'+5'", 'Goal')).toBe("B. Khoukhi 90'+5'");
+    expect(scorerLabel('J. Doe', "30'", 'Own Goal')).toBe("J. Doe 30' (OG)");
   });
 });
 
