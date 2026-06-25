@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseSummary } from './espn';
+import { parseSummary, layoutStarters } from './espn';
+import type { LineupPlayer } from '../types';
 
 const summary = {
   header: {
@@ -119,5 +120,49 @@ describe('parseSummary', () => {
     expect(empty.stats).toEqual([]);
     expect(empty.lineups).toEqual([]);
     expect(empty.attendance).toBeNull();
+  });
+});
+
+function mk(pos: string, jersey: string): LineupPlayer {
+  return { jersey, name: pos, pos, starter: true };
+}
+
+describe('layoutStarters', () => {
+  const xi: LineupPlayer[] = [
+    mk('G', '1'),
+    mk('RB', '2'),
+    mk('CD-R', '3'),
+    mk('CD-L', '5'),
+    mk('LB', '23'),
+    mk('DM', '6'),
+    mk('RM', '25'),
+    mk('CM-R', '26'),
+    mk('CM-L', '8'),
+    mk('LM', '16'),
+    mk('F', '9'),
+  ];
+  const out = layoutStarters(xi);
+
+  it('returns one position per starter', () => {
+    expect(out).toHaveLength(11);
+  });
+
+  it('puts the keeper at the bottom and the forward near the top', () => {
+    const gk = out.find((p) => p.pos === 'G')!;
+    const fw = out.find((p) => p.pos === 'F')!;
+    expect(gk.y).toBeGreaterThan(0.85);
+    expect(fw.y).toBeLessThan(0.25);
+  });
+
+  it('orders a back four left-to-right by side', () => {
+    const lb = out.find((p) => p.pos === 'LB')!;
+    const rb = out.find((p) => p.pos === 'RB')!;
+    expect(lb.x).toBeLessThan(rb.x);
+    expect(lb.x).toBeGreaterThanOrEqual(0);
+    expect(rb.x).toBeLessThanOrEqual(1);
+  });
+
+  it('does not throw on an unknown position (defaults to midfield row)', () => {
+    expect(() => layoutStarters([mk('???', '99')])).not.toThrow();
   });
 });
