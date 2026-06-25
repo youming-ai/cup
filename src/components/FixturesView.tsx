@@ -2,18 +2,18 @@ import { useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import MatchCard from './MatchCard';
 import StandingsView from './StandingsView';
-import type { WCGroup, WCMatch } from '../types';
+import type { WCGroup, WCMatch, Stage } from '../types';
 
-const KNOWN_STAGES = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
+const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
 
 export default function FixturesView({ matches, groups }: { matches: WCMatch[]; groups: WCGroup[] }) {
   const t = useT();
   const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
-  const [stage, setStage] = useState<string>('all');
+  const [stage, setStage] = useState<Stage | 'all'>('all');
 
-  const stages = useMemo(() => {
-    const present = new Set(matches.map((m) => m.stage));
-    return ['all', ...KNOWN_STAGES.filter((s) => present.has(s))];
+  const stages: (Stage | 'all')[] = useMemo(() => {
+    const present = new Set<Stage>(matches.map((m) => m.stage));
+    return ['all', ...KNOWN_STAGES.filter((s) => present.has(s))] as (Stage | 'all')[];
   }, [matches]);
 
   // 按具体日期（开球当天）分组，日期正序；组内按开球时间正序；无时间的排末尾
