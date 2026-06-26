@@ -1,24 +1,19 @@
-export interface Substream {
-  name: string;
-  source_tag: string;
-  iframe: string;
+// One {source, id} pair from streamed.pk's match.sources — resolved to embed
+// URLs on demand (in Player) via /api/stream/{source}/{id}.
+export interface StreamRef {
+  source: string;
+  id: string;
 }
 
 export interface Match {
-  id: number;
+  id: string;
   name: string;
   category_name: string;
-  iframe: string;
-  viewers: string;
-  sourceTag?: string;
-  substreams: Substream[];
   slug: string;
+  status: 'live' | 'upcoming';
+  streamSources: StreamRef[];
   poster?: string;
-  colors?: string[];
-  tag?: string;
-  startsAt?: number;
-  endsAt?: number;
-  alwaysLive?: boolean;
+  startsAt?: number; // unix seconds
 }
 
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
