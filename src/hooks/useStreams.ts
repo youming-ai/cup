@@ -22,14 +22,24 @@ export function useStreams() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const cacheRef = useRef<{ data: Match[]; ts: number } | null>(null);
+  const initialRef = useRef(true);
 
   const fetchData = useCallback(async () => {
+    // stale-while-revalidate: show cached data immediately on subsequent fetches
+    if (cacheRef.current && !initialRef.current) {
+      setMatches(cacheRef.current.data);
+      setLoading(false);
+    }
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     const { signal } = controller;
-    setLoading(true);
-    setError(null);
+    if (initialRef.current) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       // ppv.to fingerprint-blocks datacenter requests, so it can't go through the
@@ -65,19 +75,36 @@ export function useStreams() {
       }));
 
       if (signal.aborted) return;
+      cacheRef.current = { data: flat, ts: Date.now() };
       setMatches(flat);
+      setError(null);
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
       console.error('Failed to fetch streams:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch streams');
+      if (!cacheRef.current) setError(err instanceof Error ? err.message : 'Failed to fetch streams');
     } finally {
-      if (!signal.aborted) setLoading(false);
+      if (!signal.aborted) {
+        setLoading(false);
+        initialRef.current = false;
+      }
     }
   }, []);
 
   useEffect(() => {
     fetchData();
-    return () => abortRef.current?.abort();
+    // Poll every 60s when tab is visible, pause when hidden
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchData();
+    }, 60_000);
+    return () => {
+      abortRef.current?.abort();
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchData]);
 
   return { matches, loading, error, refetch: fetchData };

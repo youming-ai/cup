@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useT } from '../i18n';
 import type { MatchStatus } from '../types';
 
@@ -40,7 +41,7 @@ function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
   return <img src={src} alt={alt} className={`${size} object-cover ${cls}`} />;
 }
 
-export default function MatchCard({
+export default memo(function MatchCard({
   homeName,
   awayName,
   homeFlag,
@@ -121,15 +122,15 @@ export default function MatchCard({
       {(homeScorers.length > 0 || awayScorers.length > 0) && (
         <div className="grid grid-cols-2 gap-2 px-4 pb-3 -mt-1">
           <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight min-w-0">
-            {homeScorers.map((s, i) => (
-              <li key={i} className="truncate">
+            {homeScorers.map((s) => (
+              <li key={s} className="truncate">
                 ⚽ {s}
               </li>
             ))}
           </ul>
           <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight text-right min-w-0">
-            {awayScorers.map((s, i) => (
-              <li key={i} className="truncate">
+            {awayScorers.map((s) => (
+              <li key={s} className="truncate">
                 {s} ⚽
               </li>
             ))}
@@ -144,4 +145,4 @@ export default function MatchCard({
       )}
     </Root>
   );
-}
+});

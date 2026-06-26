@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
-import FixturesView from './components/FixturesView';
 import Footer from './components/Footer';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
+
+const FixturesView = lazy(() => import('./components/FixturesView'));
 
 const KNOWN_VIEWS: View[] = ['live', 'schedule'];
 
@@ -52,13 +53,13 @@ export default function App() {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
   }, [lang]);
 
-  const setView = (v: View) => {
+  const setView = useCallback((v: View) => {
     setViewState(v);
     // 保留既有查询参数（尤其是 ?match），仅更新 view，避免切 tab 丢失直播深链
     const params = new URLSearchParams(window.location.search);
     params.set('view', v);
     window.history.replaceState(null, '', `?${params.toString()}`);
-  };
+  }, []);
 
   return (
     // Single scroll container for the whole app, so the sticky Header shares the
@@ -80,7 +81,9 @@ export default function App() {
           <div className="flex-1">
             {wc.loading ? <Loading /> :
               wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
-              <FixturesView matches={wc.matches} groups={wc.groups} />}
+              <Suspense fallback={<Loading />}>
+                <FixturesView matches={wc.matches} groups={wc.groups} />
+              </Suspense>}
           </div>
           <Footer />
         </div>

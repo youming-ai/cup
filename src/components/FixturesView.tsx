@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import MatchCard from './MatchCard';
 import MatchDetailModal from './MatchDetailModal';
@@ -12,6 +12,7 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
   const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [openMatch, setOpenMatch] = useState<WCMatch | null>(null);
+  const closeDetail = useCallback(() => setOpenMatch(null), []);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));
@@ -137,7 +138,7 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
           )}
         </>
       )}
-      {openMatch && <MatchDetailModal match={openMatch} onClose={() => setOpenMatch(null)} />}
+      {openMatch && <MatchDetailModal match={openMatch} onClose={closeDetail} />}
     </div>
   );
 }

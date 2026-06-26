@@ -21,7 +21,7 @@ export default {
       fontFamily: {
         display: ['"Saira Condensed"', "system-ui", "sans-serif"],
         body: ['"Hanken Grotesk"', "system-ui", "sans-serif"],
-        mono: ['"Space Mono"', "ui-monospace", "monospace"],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       // 直角风格：整套圆角刻度归零，rounded-* 一律输出 0。
       borderRadius: {

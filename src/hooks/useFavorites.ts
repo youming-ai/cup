@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const KEY = 'wc-favorites';
 
@@ -13,6 +13,8 @@ function load(): Set<string> {
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Set<string>>(load);
+  const favRef = useRef(favorites);
+  favRef.current = favorites;
 
   useEffect(() => {
     try {
@@ -21,6 +23,18 @@ export function useFavorites() {
       /* private/full storage — keep in-memory only */
     }
   }, [favorites]);
+
+  // Sync favorites across browser tabs via the storage event
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== KEY || !e.newValue) return;
+      try {
+        setFavorites(new Set(JSON.parse(e.newValue) as string[]));
+      } catch { /* ignore parse errors */ }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const toggle = useCallback((id: string) => {
     setFavorites((prev) => {
@@ -31,7 +45,7 @@ export function useFavorites() {
     });
   }, []);
 
-  const isFavorite = useCallback((id: string) => favorites.has(id), [favorites]);
+  const isFavorite = useCallback((id: string) => favRef.current.has(id), []);
 
   return { favorites, toggle, isFavorite };
 }
