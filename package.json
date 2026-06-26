@@ -9,10 +9,10 @@
     "typecheck": "tsc && tsc -p tsconfig.worker.json",
     "preview": "vite preview",
     "test": "vitest",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "dependencies": {
     "lucide-react": "^1.21.0",
@@ -20,22 +20,18 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.1",
     "@cloudflare/workers-types": "^4.20260625.1",
-    "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^14.3.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.5.2",
-    "eslint": "^10.5.0",
-    "eslint-config-prettier": "^10.1.8",
     "jsdom": "^23.2.0",
     "postcss": "^8.5.15",
-    "prettier": "^3.8.4",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.62.0",
     "vite": "^5.4.21",
     "vitest": "^1.6.1"
   }
