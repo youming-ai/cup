@@ -154,6 +154,35 @@ describe('serve', () => {
     expect(ctx.waitUntil).toHaveBeenCalled();
     expect((env.CACHE as ReturnType<typeof mockEnv>['CACHE']).put).toHaveBeenCalled();
   });
+
+  it('lets N coalesced callers each read the body without `Body is unusable`', async () => {
+    // Regression guard for the body-reuse bug: if `inflight` ever stored
+    // `Promise<Response>`, the second caller reading `.text()` on the shared
+    // body would throw `Body is unusable: Body has already been read`. With
+    // the fix (shared payload is a plain object; each caller rebuilds its
+    // own Response), all N concurrent readers must succeed.
+    const gate = Promise.withResolvers<void>();
+    fetchMock.mockImplementationOnce(async () => {
+      await gate.promise;
+      return { ok: true, text: async () => '{"data":"fan-out"}' };
+    });
+
+    const env = mockEnv(null);
+    const ctx = mockCtx();
+
+    const N = 10;
+    const responses = Array.from({ length: N }, () =>
+      serve('standings', env as unknown as Env, ctx),
+    );
+    gate.resolve();
+
+    const settled = await Promise.all(responses);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(settled).toHaveLength(N);
+
+    const bodies = await Promise.all(settled.map((r) => r.text()));
+    expect(bodies.every((b) => b === '{"data":"fan-out"}')).toBe(true);
+  });
 });
 
 describe('serveSummary', () => {
