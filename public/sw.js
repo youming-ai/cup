@@ -19,7 +19,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: cache-first for same-origin static assets, network-first for API
+// Fetch: cache-first for same-origin static assets, network-first for API.
+// The cache write must be wrapped in `event.waitUntil` so the SW stays alive
+// long enough to persist the entry; otherwise the response promise can
+// resolve and the SW may be terminated before `cache.put` settles, leaving
+// the cache stale on the next request. `.catch` guards against
+// QuotaExceededError so one bad write doesn't poison the response.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== location.origin) return; // let cross-origin requests pass through
@@ -29,7 +34,12 @@ self.addEventListener('fetch', (event) => {
       const fetched = fetch(event.request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          event.waitUntil(
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, clone))
+              .catch(() => {}),
+          );
         }
         return response;
       });

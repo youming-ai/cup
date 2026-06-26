@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2024"],
+    "lib": ["ES2024"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -10,11 +9,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "vite.config.ts", "worker-configuration.d.ts"]
+  "include": ["worker/**/*.ts", "worker-configuration.d.ts"]
 }

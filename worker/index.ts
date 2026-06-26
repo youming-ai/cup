@@ -27,7 +27,10 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 1): Prom
   throw new Error('unreachable');
 }
 
-interface Env {
+// Generated bindings from `worker-configuration.d.ts` already declare a global
+// `interface Env`, but we re-declare and re-export it here so consumers of
+// this module (notably the test suite) can import it as a named type.
+export interface Env {
   ASSETS: Fetcher;
   CACHE: KVNamespace;
 }
@@ -35,6 +38,12 @@ interface Env {
 interface Entry {
   body: string;
   at: number;
+}
+
+interface CachedResult {
+  body: string;
+  status: number;
+  cache: string;
 }
 
 // ESPN's public site API (no key, CORS-open) carries the full 2026 World Cup:
@@ -68,10 +77,13 @@ export function json(body: string, status: number, cache: string): Response {
   });
 }
 
-// Request coalescing: if multiple requests for the same cache key arrive while
-// one fetch is already in-flight, they share the same Promise instead of each
-// triggering a separate upstream request (cache-stampede protection).
-const inflight = new Map<string, Promise<Response>>();
+// Request coalescing: concurrent callers share one upstream fetch and one
+// cached payload (a plain {body, status, cache} object — JSON-safe, not a
+// stream). Each caller then calls `json(...)` to build its OWN `Response`
+// from that shared payload; we never share the Response itself, because
+// `Response#body` is a one-shot stream and a second `.text()` would throw
+// `Body is unusable: Body has already been read`.
+const inflight = new Map<string, Promise<CachedResult>>();
 
 async function cached(
   cacheKey: string,
@@ -90,9 +102,12 @@ async function cached(
 
   // Coalesce: if an identical request is already in-flight, piggyback on it.
   const pending = inflight.get(cacheKey);
-  if (pending) return pending;
+  if (pending) {
+    const result = await pending;
+    return json(result.body, result.status, result.cache);
+  }
 
-  const promise = (async () => {
+  const promise = (async (): Promise<CachedResult> => {
     try {
       const res = await fetchWithRetry(url, {
         headers: {
@@ -108,18 +123,19 @@ async function cached(
       ctx.waitUntil(
         env.CACHE.put(cacheKey, JSON.stringify({ body, at: now } satisfies Entry), { expirationTtl: keep }),
       );
-      return json(body, 200, stored ? 'REVALIDATED' : 'MISS');
+      return { body, status: 200, cache: stored ? 'REVALIDATED' : 'MISS' };
     } catch (err) {
       console.error(`[worker] fetch failed for ${cacheKey}:`, err);
-      if (stored) return json(stored.body, 200, 'STALE');
-      return json('{"error":"upstream unavailable"}', 502, 'MISS');
+      if (stored) return { body: stored.body, status: 200, cache: 'STALE' };
+      return { body: '{"error":"upstream unavailable"}', status: 502, cache: 'MISS' };
     } finally {
       inflight.delete(cacheKey);
     }
   })();
 
   inflight.set(cacheKey, promise);
-  return promise;
+  const result = await promise;
+  return json(result.body, result.status, result.cache);
 }
 
 export async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {
