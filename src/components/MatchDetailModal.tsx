@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useT } from '../i18n';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import TeamStatsTab from './matchdetail/TeamStatsTab';
@@ -29,7 +29,7 @@ export default function MatchDetailModal({ match, onClose }: { match: WCMatch; o
   }, [onClose]);
 
   // Keep keyboard focus inside the dialog while it is open.
-  const onTrapKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+  const onTrapKey = useCallback((e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Tab') return;
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -47,7 +47,7 @@ export default function MatchDetailModal({ match, onClose }: { match: WCMatch; o
       e.preventDefault();
       first.focus();
     }
-  };
+  }, []);
 
   const homeId = detail?.homeId ?? '';
 

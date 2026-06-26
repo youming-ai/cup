@@ -8,6 +8,25 @@
 // `keep`  = how long KV retains it (≥ fresh) so a stale copy can cover an outage.
 // KV TTL minimum is 60s.
 
+async function fetchWithRetry(url: string, init: RequestInit, retries = 1): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, init);
+      if (res.ok || i === retries) return res;
+      // 仅对 5xx 重试
+      if (res.status >= 500) {
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+  throw new Error('unreachable');
+}
+
 interface Env {
   ASSETS: Fetcher;
   CACHE: KVNamespace;
@@ -49,6 +68,11 @@ export function json(body: string, status: number, cache: string): Response {
   });
 }
 
+// Request coalescing: if multiple requests for the same cache key arrive while
+// one fetch is already in-flight, they share the same Promise instead of each
+// triggering a separate upstream request (cache-stampede protection).
+const inflight = new Map<string, Promise<Response>>();
+
 async function cached(
   cacheKey: string,
   url: string,
@@ -64,25 +88,38 @@ async function cached(
     return json(stored.body, 200, 'HIT');
   }
 
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'user-agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        accept: 'application/json, text/plain, */*',
-        'accept-language': 'en-US,en;q=0.9',
-      },
-    });
-    if (!res.ok) throw new Error(`upstream ${res.status}`);
-    const body = await res.text();
-    ctx.waitUntil(
-      env.CACHE.put(cacheKey, JSON.stringify({ body, at: now } satisfies Entry), { expirationTtl: keep }),
-    );
-    return json(body, 200, stored ? 'REVALIDATED' : 'MISS');
-  } catch {
-    if (stored) return json(stored.body, 200, 'STALE');
-    return json('{"error":"upstream unavailable"}', 502, 'MISS');
-  }
+  // Coalesce: if an identical request is already in-flight, piggyback on it.
+  const pending = inflight.get(cacheKey);
+  if (pending) return pending;
+
+  const promise = (async () => {
+    try {
+      const res = await fetchWithRetry(url, {
+        headers: {
+          'user-agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          accept: 'application/json, text/plain, */*',
+          'accept-language': 'en-US,en;q=0.9',
+        },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) throw new Error(`upstream ${res.status}`);
+      const body = await res.text();
+      ctx.waitUntil(
+        env.CACHE.put(cacheKey, JSON.stringify({ body, at: now } satisfies Entry), { expirationTtl: keep }),
+      );
+      return json(body, 200, stored ? 'REVALIDATED' : 'MISS');
+    } catch (err) {
+      console.error(`[worker] fetch failed for ${cacheKey}:`, err);
+      if (stored) return json(stored.body, 200, 'STALE');
+      return json('{"error":"upstream unavailable"}', 502, 'MISS');
+    } finally {
+      inflight.delete(cacheKey);
+    }
+  })();
+
+  inflight.set(cacheKey, promise);
+  return promise;
 }
 
 export async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {

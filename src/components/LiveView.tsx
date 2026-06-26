@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, Play, Star } from 'lucide-react';
 import Player from './Player';
 import Footer from './Footer';
@@ -31,7 +31,7 @@ function formatKickoff(startsAt?: number): string {
   });
 }
 
-function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
+const LiveCard = memo(function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
   m: Match;
   kind: LiveKind;
   onSelect: (m: Match) => void;
@@ -124,7 +124,7 @@ function LiveCard({ m, kind, onSelect, t, isFavorite, onToggleFavorite }: {
       )}
     </div>
   );
-}
+});
 
 function Section({ label, count, accent, children }: {
   label: string;
@@ -196,23 +196,26 @@ export default function LiveView({ matches }: { matches: Match[] }) {
     return { live, upcoming };
   }, [matches]);
 
-  const openMatch = (m: Match) => {
+  const openMatch = useCallback((m: Match) => {
     setSelectedSlug(m.slug);
     setIframeUrl(m.iframe);
     const params = new URLSearchParams(window.location.search);
     params.set('view', 'live');
     params.set('match', m.slug);
     window.history.replaceState(null, '', `?${params.toString()}`);
-  };
+  }, []);
 
   // favorited matches (live + upcoming) get pinned into a section at the top,
   // and are removed from their normal section so they aren't shown twice.
-  const isFav = (m: Match) => isFavorite(favKey(m));
-  const favLive = live.filter(isFav);
-  const favUpcoming = upcoming.filter(isFav);
-  const favCount = favLive.length + favUpcoming.length;
-  const liveRest = live.filter((m) => !isFav(m));
-  const upcomingRest = upcoming.filter((m) => !isFav(m));
+  const { favLive, favUpcoming, favCount, liveRest, upcomingRest } = useMemo(() => {
+    const fl: Match[] = [], fu: Match[] = [];
+    const lr: Match[] = [], ur: Match[] = [];
+    for (const m of live)
+      (isFavorite(`live:${m.slug}`) ? fl : lr).push(m);
+    for (const m of upcoming)
+      (isFavorite(`live:${m.slug}`) ? fu : ur).push(m);
+    return { favLive: fl, favUpcoming: fu, favCount: fl.length + fu.length, liveRest: lr, upcomingRest: ur };
+  }, [live, upcoming, isFavorite]);
 
   const renderCard = (m: Match, kind: LiveKind) => (
     <LiveCard
