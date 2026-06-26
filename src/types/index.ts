@@ -14,6 +14,8 @@ export interface Match {
   streamSources: StreamRef[];
   poster?: string;
   startsAt?: number; // unix seconds
+  endsAt?: number; // unix seconds
+  alwaysLive?: boolean;
 }
 
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
