@@ -1,34 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Match, Substream } from '../types';
+import type { Match, StreamRef } from '../types';
 import { slugify } from '../utils/helpers';
-import { isTrustedStreamUrl } from '../utils/streamSources';
 
-interface APISub {
-  name: string;
-  source_tag: string;
-  iframe: string;
+const API = 'https://streamed.pk/api';
+
+interface APIMatch {
+  id: string;
+  title: string;
+  category: string;
+  date?: number; // ms epoch, kickoff time
+  poster?: string; // path like /api/images/proxy/<hash>.webp
+  sources?: StreamRef[];
 }
-interface APIStream {
-  id: number;
-  name: string;
-  category_name?: string;
-  iframe: string;
-  viewers?: string;
-  poster?: string;
-  colors?: string[];
-  substreams?: APISub[];
-  source_tag?: string;
-  tag?: string;
-  starts_at?: number;
-  ends_at?: number;
-  always_live?: number;
-}
-interface APICategory {
-  category?: string;
-  streams?: APIStream[];
-}
-interface APIEnvelope {
-  streams?: APICategory[];
+
+function toMatch(m: APIMatch, status: 'live' | 'upcoming'): Match | null {
+  if (!m.sources || m.sources.length === 0) return null;
+  return {
+    id: m.id,
+    name: m.title,
+    category_name: 'Football',
+    slug: slugify(m.title),
+    status,
+    streamSources: m.sources,
+    poster: m.poster ? `https://streamed.pk${m.poster}` : undefined,
+    startsAt: m.date ? Math.floor(m.date / 1000) : undefined,
+  };
 }
 
 export function useStreams() {
@@ -56,48 +52,37 @@ export function useStreams() {
     }
 
     try {
-      // ppv.to fingerprint-blocks datacenter requests, so it can't go through the
-      // Worker — fetch it directly from the browser (it allows CORS).
-      const res = await fetch('https://api.ppv.to/api/streams', { signal });
+      // streamed.pk allows CORS (access-control-allow-origin: *), so fetch it
+      // directly from the browser. /matches/football is the full football list
+      // (live + upcoming); /matches/live tells us which ones are live right now.
+      const [allRes, liveRes] = await Promise.all([
+        fetch(`${API}/matches/football`, { signal }),
+        fetch(`${API}/matches/live`, { signal }),
+      ]);
       if (signal.aborted) return;
-      if (!res.ok) throw new Error('Failed to fetch streams');
-      const data = (await res.json()) as APIEnvelope;
-      const cats: APICategory[] = data.streams ?? [];
-      // 精确匹配 Football（避免 American/Australian Football）
-      const football = cats.find((c) => (c.category || '').toLowerCase() === 'football');
+      if (!allRes.ok) throw new Error('Failed to fetch streams');
+      const all = (await allRes.json()) as APIMatch[];
+      const live = liveRes.ok ? ((await liveRes.json()) as APIMatch[]) : [];
 
-      const flat: Match[] = (football?.streams || [])
-        .map((s): Match | null => {
-          const substreams = (s.substreams || [])
-            .map(
-              (sub): Substream => ({
-                name: sub.name,
-                source_tag: sub.source_tag,
-                iframe: sub.iframe,
-              }),
-            )
-            .filter((sub) => isTrustedStreamUrl(sub.iframe));
-          const iframe = isTrustedStreamUrl(s.iframe) ? s.iframe : substreams[0]?.iframe;
-          if (!iframe) return null;
+      const liveFootball = live.filter((m) => m.category === 'football');
+      const liveIds = new Set(liveFootball.map((m) => m.id));
 
-          return {
-            id: s.id,
-            name: s.name,
-            category_name: s.category_name || 'Football',
-            iframe,
-            viewers: s.viewers || '0',
-            sourceTag: s.source_tag,
-            poster: s.poster,
-            colors: s.colors,
-            tag: s.tag,
-            startsAt: s.starts_at,
-            endsAt: s.ends_at,
-            alwaysLive: s.always_live === 1,
-            substreams,
-            slug: slugify(s.name),
-          };
-        })
-        .filter((m): m is Match => m !== null);
+      // Live football matches first (some may not appear in /matches/football),
+      // then the rest of the football list, deduped by id.
+      const byId = new Map<string, APIMatch>();
+      for (const m of liveFootball) byId.set(m.id, m);
+      for (const m of all) if (!byId.has(m.id)) byId.set(m.id, m);
+
+      const now = Date.now();
+      const flat: Match[] = [];
+      for (const m of byId.values()) {
+        const isLive = liveIds.has(m.id);
+        // Not live and kickoff is in the past → ended; streamed.pk gives no end
+        // time, so dropping past non-live matches is the only "ended" signal.
+        if (!isLive && m.date && m.date <= now) continue;
+        const match = toMatch(m, isLive ? 'live' : 'upcoming');
+        if (match) flat.push(match);
+      }
 
       if (signal.aborted) return;
       cacheRef.current = { data: flat, ts: Date.now() };
