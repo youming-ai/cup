@@ -125,4 +125,64 @@ describe('MatchCard', () => {
     // The "clock under the score" line is omitted for finished games.
     expect(screen.queryByText("90'+5'")).not.toBeInTheDocument();
   });
+
+  it('renders scorers inline under each team name on a finished match', () => {
+    renderCard({
+      homeName: 'Mexico',
+      awayName: 'South Africa',
+      homeScore: 2,
+      awayScore: 0,
+      status: 'finished',
+      kickoff: null,
+      stage: 'group',
+      group: 'A',
+      homeScorers: ["Alvarado 45'", "Vega 67'"],
+      awayScorers: [],
+    });
+    // The full scorer line including the minute marker is rendered under
+    // the home team's name; the unicode ball emoji is appended by the UI.
+    expect(screen.getByText(/⚽ Alvarado 45'/)).toBeInTheDocument();
+    expect(screen.getByText(/⚽ Vega 67'/)).toBeInTheDocument();
+  });
+
+  it('truncates long scorer lists to 3 entries + "+N more"', () => {
+    renderCard({
+      homeName: 'Brazil',
+      awayName: 'Germany',
+      homeScore: 5,
+      awayScore: 1,
+      status: 'finished',
+      kickoff: null,
+      stage: 'group',
+      group: 'G',
+      homeScorers: ["P1 10'", "P2 20'", "P3 30'", "P4 40'", "P5 50'"],
+      awayScorers: [],
+    });
+    // First three are shown
+    expect(screen.getByText(/⚽ P1 10'/)).toBeInTheDocument();
+    expect(screen.getByText(/⚽ P2 20'/)).toBeInTheDocument();
+    expect(screen.getByText(/⚽ P3 30'/)).toBeInTheDocument();
+    // The other two are summarised as "+2 more"
+    expect(screen.getByText('+2 more')).toBeInTheDocument();
+    // Earlier this showed them all in a separate block under the score;
+    // the names should not leak through elsewhere
+    expect(screen.queryByText(/P4 40'/)).not.toBeInTheDocument();
+  });
+
+  it('does not render a scorer list for an upcoming match', () => {
+    renderCard({
+      homeName: 'Scotland',
+      awayName: 'Brazil',
+      homeScore: null,
+      awayScore: null,
+      status: 'upcoming',
+      kickoff: new Date(2026, 5, 24, 18, 0),
+      stage: 'group',
+      group: 'C',
+      homeScorers: [],
+      awayScorers: [],
+    });
+    expect(screen.queryByText(/⚽/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\+[0-9]+ more/)).not.toBeInTheDocument();
+  });
 });

@@ -136,9 +136,21 @@ export default memo(function MatchCard({
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4">
-        <div className="flex flex-col items-center gap-2 min-w-0">
+        <div className="flex flex-col items-center gap-1 min-w-0">
           <Flag src={homeFlag} alt={homeName || tbd} dim={awayWon} />
           <span className={teamCls(homeWon, awayWon)}>{homeName || tbd}</span>
+          {homeScorers.length > 0 && (
+            <ul className="space-y-0.5 text-[10px] text-chalkdim leading-tight text-center min-w-0 max-w-full">
+              {homeScorers.slice(0, 3).map((s) => (
+                <li key={s} className="truncate px-1">
+                  ⚽ {s}
+                </li>
+              ))}
+              {homeScorers.length > 3 && (
+                <li className="text-chalkdim/60">+{homeScorers.length - 3} more</li>
+              )}
+            </ul>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1 px-1 sm:px-2">
@@ -161,30 +173,23 @@ export default memo(function MatchCard({
           <ClockLabel progress={progress} />
         </div>
 
-        <div className="flex flex-col items-center gap-2 min-w-0">
+        <div className="flex flex-col items-center gap-1 min-w-0">
           <Flag src={awayFlag} alt={awayName || tbd} dim={homeWon} />
           <span className={teamCls(awayWon, homeWon)}>{awayName || tbd}</span>
+          {awayScorers.length > 0 && (
+            <ul className="space-y-0.5 text-[10px] text-chalkdim leading-tight text-center min-w-0 max-w-full">
+              {awayScorers.slice(0, 3).map((s) => (
+                <li key={s} className="truncate px-1">
+                  {s} ⚽
+                </li>
+              ))}
+              {awayScorers.length > 3 && (
+                <li className="text-chalkdim/60">+{awayScorers.length - 3} more</li>
+              )}
+            </ul>
+          )}
         </div>
       </div>
-
-      {(homeScorers.length > 0 || awayScorers.length > 0) && (
-        <div className="grid grid-cols-2 gap-2 px-4 pb-3 -mt-1">
-          <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight min-w-0">
-            {homeScorers.map((s) => (
-              <li key={s} className="truncate">
-                ⚽ {s}
-              </li>
-            ))}
-          </ul>
-          <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight text-right min-w-0">
-            {awayScorers.map((s) => (
-              <li key={s} className="truncate">
-                {s} ⚽
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {venue && (
         <div className="px-4 py-2 border-t border-line">
