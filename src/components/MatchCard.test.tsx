@@ -126,6 +126,59 @@ describe('MatchCard', () => {
     expect(screen.queryByText("90'+5'")).not.toBeInTheDocument();
   });
 
+  it('shows ET label for extra time (period 3)', () => {
+    renderCard({
+      homeName: 'Spain',
+      awayName: 'Germany',
+      homeScore: 2,
+      awayScore: 2,
+      status: 'live',
+      kickoff: null,
+      stage: 'qf',
+      group: 'QF',
+      // Period 3 = extra time 1st half. ESPN's displayClock would
+      // typically read "91'" or "105'" — the label takes precedence.
+      progress: { status: 'in', clock: 95, displayClock: '91', period: 3 },
+    });
+    expect(screen.getByText('LIVE')).toBeInTheDocument();
+    expect(screen.getByText('ET')).toBeInTheDocument();
+    expect(screen.queryByText('91')).not.toBeInTheDocument();
+  });
+
+  it('shows PEN label during penalty shootout (period 5)', () => {
+    renderCard({
+      homeName: 'Argentina',
+      awayName: 'France',
+      homeScore: 2,
+      awayScore: 2,
+      status: 'live',
+      kickoff: null,
+      stage: 'final',
+      group: 'Final',
+      progress: { status: 'in', clock: 120, displayClock: '120', period: 5 },
+    });
+    expect(screen.getByText('LIVE')).toBeInTheDocument();
+    expect(screen.getByText('PEN')).toBeInTheDocument();
+    expect(screen.queryByText('120')).not.toBeInTheDocument();
+  });
+
+  it('still shows the minute in regulation (period 1 or 2)', () => {
+    renderCard({
+      homeName: 'Brazil',
+      awayName: 'Argentina',
+      homeScore: 1,
+      awayScore: 0,
+      status: 'live',
+      kickoff: null,
+      stage: 'group',
+      group: 'G',
+      progress: { status: 'in', clock: 67, displayClock: "67'", period: 2 },
+    });
+    expect(screen.getByText("67'")).toBeInTheDocument();
+    expect(screen.queryByText('ET')).not.toBeInTheDocument();
+    expect(screen.queryByText('PEN')).not.toBeInTheDocument();
+  });
+
   it('renders scorers inline under each team name on a finished match', () => {
     renderCard({
       homeName: 'Mexico',

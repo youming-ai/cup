@@ -24,6 +24,9 @@ interface MatchCardProps {
 
 // What to render under the score on a live/HT card. Returns null for FT /
 // upcoming (the FT pill is enough; upcoming shows kickoff time instead).
+// During extra time (period >= 3) or penalties (period >= 5) we render
+// short period tags ('ET', 'PEN') instead of a minute, since ET runs
+// 91-120+ and penalties don't have a clock.
 function ClockLabel({ progress }: { progress: MatchProgress | undefined }) {
   if (!progress) return null;
   if (progress.status === 'post') return null;
@@ -31,6 +34,12 @@ function ClockLabel({ progress }: { progress: MatchProgress | undefined }) {
     return <span className="font-mono text-[10px] tracking-widest uppercase text-pitch">HT</span>;
   }
   if (progress.status === 'in') {
+    if (progress.period >= 5) {
+      return <span className="font-mono text-[10px] tracking-widest uppercase text-live">PEN</span>;
+    }
+    if (progress.period >= 3) {
+      return <span className="font-mono text-[10px] tracking-widest uppercase text-live">ET</span>;
+    }
     // Prefer ESPN's displayClock (e.g. "45'+2'"); fall back to a derived
     // value from the numeric clock field.
     const text =
