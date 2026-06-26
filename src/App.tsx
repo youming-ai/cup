@@ -12,7 +12,7 @@ const KNOWN_VIEWS: View[] = ['live', 'schedule'];
 
 function initialView(): View {
   const v = new URLSearchParams(window.location.search).get('view');
-  return v && (KNOWN_VIEWS as string[]).includes(v) ? (v as View) : 'live';
+  return v && (KNOWN_VIEWS as string[]).includes(v) ? (v as View) : 'schedule';
 }
 
 function Loading() {

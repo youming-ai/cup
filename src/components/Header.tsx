@@ -5,8 +5,8 @@ import { useT } from '../i18n';
 export type View = 'live' | 'schedule';
 
 const VIEWS: { key: View; Icon: LucideIcon }[] = [
-  { key: 'live', Icon: Radio },
   { key: 'schedule', Icon: CalendarDays },
+  { key: 'live', Icon: Radio },
 ];
 
 export default function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
