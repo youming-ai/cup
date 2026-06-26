@@ -4,10 +4,10 @@ import { LanguageProvider } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
 import FixturesView from './FixturesView';
 
-function renderView(matches: WCMatch[], groups: WCGroup[] = []) {
+function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
   return render(
     <LanguageProvider>
-      <FixturesView matches={matches} groups={groups} />
+      <FixturesView matches={matches} groups={groups} scorers={scorers} />
     </LanguageProvider>,
   );
 }

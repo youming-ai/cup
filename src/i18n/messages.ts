@@ -36,6 +36,7 @@ const en: Dict = {
   'fixtures.schedule': 'Schedule',
   'fixtures.standings': 'Standings',
   'fixtures.results': 'Results',
+  'fixtures.scorers': 'Scorers',
   'fixtures.filterUpcoming': 'Upcoming',
   'fixtures.filterFinished': 'Finished',
   'fixtures.upcomingEmpty': 'No upcoming matches',
@@ -75,6 +76,13 @@ const en: Dict = {
   'detail.attendance': 'Attendance',
   'detail.noData': 'No data yet',
   'detail.close': 'Close',
+  'scorers.title': 'Top Scorers',
+  'scorers.subtitle': 'Golden Boot race',
+  'scorers.rank': '#',
+  'scorers.player': 'Player',
+  'scorers.team': 'Team',
+  'scorers.goals': 'G',
+  'scorers.empty': 'No goals scored yet',
 };
 
 const zh: Dict = {
@@ -109,6 +117,7 @@ const zh: Dict = {
   'fixtures.schedule': '赛程',
   'fixtures.standings': '积分榜',
   'fixtures.results': '已结束',
+  'fixtures.scorers': '射手榜',
   'fixtures.filterUpcoming': '未完赛',
   'fixtures.filterFinished': '已结束',
   'fixtures.upcomingEmpty': '暂无未完赛的赛程',
@@ -148,6 +157,13 @@ const zh: Dict = {
   'detail.attendance': '上座',
   'detail.noData': '暂无数据',
   'detail.close': '关闭',
+  'scorers.title': '射手榜',
+  'scorers.subtitle': '金靴奖争夺',
+  'scorers.rank': '名次',
+  'scorers.player': '球员',
+  'scorers.team': '球队',
+  'scorers.goals': '进球',
+  'scorers.empty': '暂无进球',
 };
 
 const ja: Dict = {
@@ -182,6 +198,7 @@ const ja: Dict = {
   'fixtures.schedule': '日程',
   'fixtures.standings': '順位表',
   'fixtures.results': '終了',
+  'fixtures.scorers': '得点ランキング',
   'fixtures.filterUpcoming': '開催予定',
   'fixtures.filterFinished': '終了',
   'fixtures.upcomingEmpty': '開催予定の試合はありません',
@@ -221,6 +238,13 @@ const ja: Dict = {
   'detail.attendance': '観客数',
   'detail.noData': 'データなし',
   'detail.close': '閉じる',
+  'scorers.title': '得点ランキング',
+  'scorers.subtitle': 'ゴールデンシュート争い',
+  'scorers.rank': '順位',
+  'scorers.player': '選手',
+  'scorers.team': 'チーム',
+  'scorers.goals': '得',
+  'scorers.empty': 'まだゴールはありません',
 };
 
 const ko: Dict = {
@@ -255,6 +279,7 @@ const ko: Dict = {
   'fixtures.schedule': '일정',
   'fixtures.standings': '순위표',
   'fixtures.results': '종료',
+  'fixtures.scorers': '득점 순위',
   'fixtures.filterUpcoming': '예정',
   'fixtures.filterFinished': '종료',
   'fixtures.upcomingEmpty': '예정된 경기가 없습니다',
@@ -294,6 +319,13 @@ const ko: Dict = {
   'detail.attendance': '관중',
   'detail.noData': '데이터 없음',
   'detail.close': '닫기',
+  'scorers.title': '득점 순위',
+  'scorers.subtitle': '골든부트 경쟁',
+  'scorers.rank': '순위',
+  'scorers.player': '선수',
+  'scorers.team': '팀',
+  'scorers.goals': '골',
+  'scorers.empty': '아직 골이 없습니다',
 };
 
 export const messages: Record<Lang, Dict> = { en, zh, ja, ko };

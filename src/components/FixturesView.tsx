@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
-import type { Stage, WCGroup, WCMatch } from '../types';
+import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import MatchCard from './MatchCard';
 import MatchDetailModal from './MatchDetailModal';
 import StandingsView from './StandingsView';
+import TopScorersView from './TopScorersView';
 
 const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
 
@@ -11,16 +12,19 @@ const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'fina
 // further narrow by stage; this is a coarser "is the match still to play or
 // already played?" toggle.
 type StatusFilter = 'all' | 'upcoming' | 'finished';
+type Tab = 'schedule' | 'standings' | 'scorers';
 
 export default function FixturesView({
   matches,
   groups,
+  scorers,
 }: {
   matches: WCMatch[];
   groups: WCGroup[];
+  scorers: TopScorer[];
 }) {
   const t = useT();
-  const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
+  const [tab, setTab] = useState<Tab>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [openMatch, setOpenMatch] = useState<WCMatch | null>(null);
@@ -115,7 +119,7 @@ export default function FixturesView({
     <div className="max-w-6xl mx-auto space-y-6">
       {/* 赛程 | 积分 子切换 */}
       <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
-        {(['schedule', 'standings'] as const).map((k) => (
+        {(['schedule', 'standings', 'scorers'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -132,6 +136,8 @@ export default function FixturesView({
 
       {tab === 'standings' ? (
         <StandingsView groups={groups} />
+      ) : tab === 'scorers' ? (
+        <TopScorersView scorers={scorers} />
       ) : (
         <>
           {/* Quick filter: All / Upcoming / Finished. Counts are taken from

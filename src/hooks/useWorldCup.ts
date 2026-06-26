@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WCGroup, WCMatch, WCStanding } from '../types';
+import type { TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
 import {
   parseScore,
   progressFromStatus,
@@ -42,10 +42,16 @@ function teamLogo(team: Record<string, unknown>): string {
 export function useWorldCup() {
   const [matches, setMatches] = useState<WCMatch[]>([]);
   const [groups, setGroups] = useState<WCGroup[]>([]);
+  const [scorers, setScorers] = useState<TopScorer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const cacheRef = useRef<{ matches: WCMatch[]; groups: WCGroup[]; ts: number } | null>(null);
+  const cacheRef = useRef<{
+    matches: WCMatch[];
+    groups: WCGroup[];
+    scorers: TopScorer[];
+    ts: number;
+  } | null>(null);
   const initialRef = useRef(true);
 
   const fetchAll = useCallback(async () => {
@@ -53,6 +59,7 @@ export function useWorldCup() {
     if (cacheRef.current && !initialRef.current) {
       setMatches(cacheRef.current.matches);
       setGroups(cacheRef.current.groups);
+      setScorers(cacheRef.current.scorers);
       setLoading(false);
     }
 
@@ -169,10 +176,57 @@ export function useWorldCup() {
         };
       });
 
+      // --- top scorers (tournament-level) ---
+      // Each competitor in each event has a `leaders` array; we want the
+      // "goals" entry (ESPN emits two duplicate entries named "goals" and
+      // "goalsLeaders" — take the first matching one). Aggregate across all
+      // events, dedupe by athlete id, keep the highest goal count (a player
+      // may appear under multiple matches). Resolve team display name from
+      // the team map built from the standings feed.
+      const teamMap = new Map<string, string>();
+      for (const g of gr) {
+        for (const s of g.standings) teamMap.set(s.teamId, s.name);
+      }
+      const scorerMap = new Map<string, TopScorer>();
+      for (const rawEvent of arr(obj(sbJson).events)) {
+        const comp = obj(arr(obj(rawEvent).competitions)[0]);
+        for (const rawComp of arr(comp.competitors)) {
+          const c = obj(rawComp);
+          for (const cat of arr(c.leaders)) {
+            const catObj = obj(cat);
+            if (str(catObj.name) !== 'goals') continue;
+            for (const rawLeader of arr(catObj.leaders)) {
+              const l = obj(rawLeader);
+              const a = obj(l.athlete);
+              const id = str(a.id);
+              if (!id) continue;
+              const goals = Number(l.value) || 0;
+              const teamId = str(obj(a.team).id);
+              const existing = scorerMap.get(id);
+              if (!existing || goals > existing.goals) {
+                scorerMap.set(id, {
+                  athleteId: id,
+                  name: str(a.displayName) || str(a.shortName),
+                  teamId,
+                  teamName: teamMap.get(teamId) || '',
+                  goals,
+                });
+              }
+            }
+            break; // one goals category is enough
+          }
+        }
+      }
+      const sc: TopScorer[] = [...scorerMap.values()]
+        .filter((s) => s.goals > 0)
+        .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
+        .slice(0, 50);
+
       if (signal.aborted) return;
-      cacheRef.current = { matches: ms, groups: gr, ts: Date.now() };
+      cacheRef.current = { matches: ms, groups: gr, scorers: sc, ts: Date.now() };
       setMatches(ms);
       setGroups(gr);
+      setScorers(sc);
       setError(null);
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
@@ -204,5 +258,5 @@ export function useWorldCup() {
     };
   }, [fetchAll]);
 
-  return { matches, groups, loading, error, refetch: fetchAll };
+  return { matches, groups, scorers, loading, error, refetch: fetchAll };
 }

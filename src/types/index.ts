@@ -111,3 +111,13 @@ export interface MatchDetail {
   venue: string;
   attendance: number | null;
 }
+
+// Tournament top scorers, aggregated from the per-team `leaders` array
+// in ESPN's scoreboard response. One row per distinct player.
+export interface TopScorer {
+  athleteId: string;
+  name: string;
+  teamId: string;
+  teamName: string; // resolved via the team name cache inside useWorldCup
+  goals: number;
+}
