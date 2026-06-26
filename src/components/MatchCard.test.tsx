@@ -185,4 +185,36 @@ describe('MatchCard', () => {
     expect(screen.queryByText(/⚽/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\+[0-9]+ more/)).not.toBeInTheDocument();
   });
+
+  it('shows the venue in the header next to the stage label when provided', () => {
+    renderCard({
+      homeName: 'Mexico',
+      awayName: 'South Africa',
+      homeScore: 2,
+      awayScore: 0,
+      status: 'finished',
+      kickoff: null,
+      stage: 'group',
+      group: 'A',
+      venue: 'Estadio Azteca · Mexico City',
+    });
+    expect(screen.getByText('Group A')).toBeInTheDocument();
+    // Venue renders with a · separator prefix in the header
+    expect(screen.getByText(/· Estadio Azteca · Mexico City/)).toBeInTheDocument();
+  });
+
+  it('omits the venue section entirely when no venue is provided', () => {
+    renderCard({
+      homeName: 'Mexico',
+      awayName: 'South Africa',
+      homeScore: 2,
+      awayScore: 0,
+      status: 'finished',
+      kickoff: null,
+      stage: 'group',
+      group: 'A',
+    });
+    expect(screen.queryByText(/· /)).not.toBeInTheDocument();
+    expect(screen.queryByText('Estadio')).not.toBeInTheDocument();
+  });
 });

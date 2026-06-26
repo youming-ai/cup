@@ -124,12 +124,22 @@ export default memo(function MatchCard({
         clickable ? 'hover:border-pitch cursor-pointer' : 'hover:border-chalkdim'
       }`}
     >
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-line">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
-          {stageLabel}
-        </span>
+      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-line">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
+            {stageLabel}
+          </span>
+          {venue && (
+            <span
+              className="font-mono text-[10px] text-chalkdim/60 truncate hidden sm:inline"
+              title={venue}
+            >
+              · {venue}
+            </span>
+          )}
+        </div>
         {kickoff && (
-          <span className="font-mono text-[10px] tabular-nums text-chalkdim/70 shrink-0 ml-2">
+          <span className="font-mono text-[10px] tabular-nums text-chalkdim/70 shrink-0">
             {kickoff.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
         )}
@@ -192,7 +202,7 @@ export default memo(function MatchCard({
       </div>
 
       {venue && (
-        <div className="px-4 py-2 border-t border-line">
+        <div className="px-4 py-2 border-t border-line sm:hidden">
           <span className="font-mono text-[10px] text-chalkdim/70 truncate block">{venue}</span>
         </div>
       )}
