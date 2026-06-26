@@ -100,6 +100,7 @@ export default function FixturesView({
             kickoff={m.kickoff}
             stage={m.stage}
             group={m.group}
+            progress={m.progress}
             homeScorers={m.homeScorers}
             awayScorers={m.awayScorers}
             venue={m.venue}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WCGroup, WCMatch, WCStanding } from '../types';
 import {
   parseScore,
+  progressFromStatus,
   scorerLabel,
   sortStandings,
   stageFromSlug,
@@ -112,7 +113,8 @@ export function useWorldCup() {
         const away = competitors.find((c) => c.homeAway === 'away') || competitors[1] || {};
         const homeTeam = obj(home.team);
         const awayTeam = obj(away.team);
-        const status = statusFromState(str(obj(obj(comp.status).type).state));
+        const statusObj = obj(comp.status);
+        const status = statusFromState(str(obj(statusObj.type).state));
 
         // goals: scoring plays from competition.details, split by team id
         const homeId = str(homeTeam.id);
@@ -133,6 +135,21 @@ export function useWorldCup() {
         const date = str(ev.date);
         const kickoff = date ? new Date(date) : null;
 
+        // Richer status: clock, displayClock, period (only set for live/finished).
+        const progress =
+          status === 'upcoming'
+            ? undefined
+            : progressFromStatus({
+                clock: Number(statusObj.clock) || 0,
+                displayClock: str(statusObj.displayClock),
+                type: {
+                  state: str(obj(statusObj.type).state),
+                  period: Number(obj(statusObj.type).period) || 0,
+                },
+                // Some ESPN responses put period at the top level of `status`.
+                period: Number(statusObj.period) || 0,
+              });
+
         return {
           id: str(ev.id),
           homeName: str(homeTeam.displayName),
@@ -148,6 +165,7 @@ export function useWorldCup() {
           homeScorers: status === 'upcoming' ? [] : homeScorers,
           awayScorers: status === 'upcoming' ? [] : awayScorers,
           venue: venueName && city ? `${venueName} · ${city}` : venueName,
+          ...(progress ? { progress } : {}),
         };
       });
 

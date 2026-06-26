@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { WCStanding } from '../types';
-import { parseScore, scorerLabel, sortStandings, stageFromSlug, statusFromState } from './wc';
+import {
+  parseScore,
+  progressFromStatus,
+  scorerLabel,
+  sortStandings,
+  stageFromSlug,
+  statusFromState,
+} from './wc';
 
 describe('parseScore', () => {
   it('parses numeric strings and numbers', () => {
@@ -21,8 +28,109 @@ describe('statusFromState', () => {
   it('maps ESPN state to MatchStatus', () => {
     expect(statusFromState('post')).toBe('finished');
     expect(statusFromState('in')).toBe('live');
+    expect(statusFromState('halftime')).toBe('live');
     expect(statusFromState('pre')).toBe('upcoming');
     expect(statusFromState(undefined)).toBe('upcoming');
+  });
+});
+
+describe('progressFromStatus', () => {
+  it('returns undefined for pre-game state', () => {
+    expect(
+      progressFromStatus({
+        clock: 0,
+        displayClock: "0'",
+        type: { state: 'pre', period: 0 },
+      }),
+    ).toBeUndefined();
+    expect(progressFromStatus(null)).toBeUndefined();
+    expect(progressFromStatus(undefined)).toBeUndefined();
+  });
+
+  it('returns post status with FT clock for completed games', () => {
+    const p = progressFromStatus({
+      clock: 95,
+      displayClock: "90'+5'",
+      type: { state: 'post', period: 2 },
+    });
+    expect(p).toEqual({ status: 'post', clock: 95, displayClock: "90'+5'", period: 2 });
+  });
+
+  it('falls back to FT when displayClock is empty for post state', () => {
+    const p = progressFromStatus({
+      clock: 0,
+      displayClock: '',
+      type: { state: 'post', period: 2 },
+    });
+    expect(p?.status).toBe('post');
+    expect(p?.displayClock).toBe('FT');
+  });
+
+  it('returns in status with the current minute for live games', () => {
+    const p = progressFromStatus({
+      clock: 67.5,
+      displayClock: "67'",
+      type: { state: 'in', period: 2 },
+    });
+    expect(p).toEqual({ status: 'in', clock: 67.5, displayClock: "67'", period: 2 });
+  });
+
+  it('treats `in` + `displayClock: HT` as half-time (ESPN sometimes uses this shape)', () => {
+    const p = progressFromStatus({
+      clock: 45,
+      displayClock: 'HT',
+      type: { state: 'in', period: 1 },
+    });
+    expect(p?.status).toBe('halftime');
+    expect(p?.period).toBe(1);
+  });
+
+  it('treats explicit `state: halftime` as half-time', () => {
+    const p = progressFromStatus({
+      clock: 45,
+      displayClock: 'HT',
+      type: { state: 'halftime', period: 1 },
+    });
+    expect(p?.status).toBe('halftime');
+    expect(p?.displayClock).toBe('HT');
+  });
+
+  it('preserves stoppage-time notation like 45+2', () => {
+    const p = progressFromStatus({
+      clock: 47,
+      displayClock: "45'+2'",
+      type: { state: 'in', period: 1 },
+    });
+    expect(p?.displayClock).toBe("45'+2'");
+    expect(p?.clock).toBe(47);
+  });
+
+  it('reads period from top-level status.period when type.period is absent', () => {
+    const p = progressFromStatus({
+      clock: 30,
+      displayClock: "30'",
+      type: { state: 'in' },
+      period: 2,
+    });
+    expect(p?.period).toBe(2);
+  });
+
+  it('falls back to a derived displayClock when ESPN omits it (in + clock > 0)', () => {
+    const p = progressFromStatus({
+      clock: 23,
+      displayClock: '',
+      type: { state: 'in', period: 1 },
+    });
+    expect(p?.displayClock).toBe("23'");
+  });
+
+  it('defaults period to 1 for live games with no period info', () => {
+    const p = progressFromStatus({
+      clock: 10,
+      displayClock: "10'",
+      type: { state: 'in' },
+    });
+    expect(p?.period).toBe(1);
   });
 });
 

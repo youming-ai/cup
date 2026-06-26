@@ -18,6 +18,20 @@ export interface Match {
 
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
 
+// ESPN's finer-grained status for an in-progress or recently-completed match.
+// `status` mirrors the upstream status.type.state; `clock` is the current
+// minute (0 when not playing); `displayClock` is what the UI should render
+// (e.g. "23'", "45'+2'", "HT", "FT", "90'+5'"); `period` is the half number
+// (1, 2 — or 3/4 for ET, 5 for penalties during knockouts).
+export type ProgressStatus = 'pre' | 'in' | 'halftime' | 'post';
+
+export interface MatchProgress {
+  status: ProgressStatus;
+  clock: number;
+  displayClock: string;
+  period: number;
+}
+
 export type Stage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'third' | 'final';
 
 export interface WCMatch {
@@ -35,6 +49,9 @@ export interface WCMatch {
   homeScorers: string[];
   awayScorers: string[];
   venue: string; // "Estadio Azteca · Mexico City" or '' when unknown
+  // Optional richer status (only set when not 'upcoming'). For 'finished' this
+  // carries the FT clock; for 'live' it carries the current minute or HT.
+  progress?: MatchProgress;
 }
 
 export interface WCStanding {

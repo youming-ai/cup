@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useT } from '../i18n';
-import type { MatchStatus } from '../types';
+import type { MatchProgress, MatchStatus } from '../types';
 
 interface MatchCardProps {
   homeName: string;
@@ -16,10 +16,49 @@ interface MatchCardProps {
   homeScorers?: string[];
   awayScorers?: string[];
   venue?: string;
+  // Optional richer progress (clock + displayClock + period). When omitted
+  // the card renders the legacy 3-state pill (live / ft / upcoming).
+  progress?: MatchProgress;
   onOpen?: () => void;
 }
 
-function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => string }) {
+// What to render under the score on a live/HT card. Returns null for FT /
+// upcoming (the FT pill is enough; upcoming shows kickoff time instead).
+function ClockLabel({ progress }: { progress: MatchProgress | undefined }) {
+  if (!progress) return null;
+  if (progress.status === 'post') return null;
+  if (progress.status === 'halftime') {
+    return <span className="font-mono text-[10px] tracking-widest uppercase text-pitch">HT</span>;
+  }
+  if (progress.status === 'in') {
+    // Prefer ESPN's displayClock (e.g. "45'+2'"); fall back to a derived
+    // value from the numeric clock field.
+    const text =
+      progress.displayClock || (progress.clock > 0 ? `${Math.floor(progress.clock)}'` : '');
+    if (!text) return null;
+    return (
+      <span className="font-mono text-[10px] tracking-widest tabular-nums text-live">{text}</span>
+    );
+  }
+  return null;
+}
+
+function StatusPill({
+  status,
+  progress,
+  t,
+}: {
+  status: MatchStatus;
+  progress: MatchProgress | undefined;
+  t: (k: string) => string;
+}) {
+  // Halftime: distinct amber pill so it's visible at a glance and never
+  // confused with a regular in-progress minute.
+  if (progress?.status === 'halftime') {
+    return (
+      <span className="font-mono text-[10px] tracking-widest text-pitch">{t('status.ht')}</span>
+    );
+  }
   if (status === 'live') {
     return (
       <span className="flex items-center gap-1 font-mono text-[10px] tracking-widest text-live">
@@ -61,6 +100,7 @@ export default memo(function MatchCard({
   homeScorers = [],
   awayScorers = [],
   venue,
+  progress,
   onOpen,
 }: MatchCardProps) {
   const t = useT();
@@ -117,7 +157,8 @@ export default memo(function MatchCard({
               <span aria-hidden>{`${homeScore ?? 0} : ${awayScore ?? 0}`}</span>
             </span>
           )}
-          <StatusPill status={status} t={t} />
+          <StatusPill status={status} progress={progress} t={t} />
+          <ClockLabel progress={progress} />
         </div>
 
         <div className="flex flex-col items-center gap-2 min-w-0">
