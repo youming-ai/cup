@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
+import type { LineupPlayer, TeamLineup } from '../../types';
 import { layoutStarters } from '../../utils/espn';
-import type { TeamLineup, LineupPlayer } from '../../types';
 
 function Pitch({ starters }: { starters: LineupPlayer[] }) {
   const placed = layoutStarters(starters);
@@ -17,9 +17,18 @@ function Pitch({ starters }: { starters: LineupPlayer[] }) {
           <span className="flex items-center justify-center w-7 h-7 bg-panel border border-chalkdim font-mono text-xs text-chalk">
             {p.jersey}
           </span>
-          <span className="font-display text-[10px] text-chalk truncate w-full mt-0.5">{p.name}</span>
-          {p.card && <span className={`mt-0.5 w-2 h-3 ${p.card === 'red' ? 'bg-live' : 'bg-yellow-400'}`} aria-hidden />}
-          {p.subbedOutAt && <span className="font-mono text-[10px] text-live">↓ {p.subbedOutAt}</span>}
+          <span className="font-display text-[10px] text-chalk truncate w-full mt-0.5">
+            {p.name}
+          </span>
+          {p.card && (
+            <span
+              className={`mt-0.5 w-2 h-3 ${p.card === 'red' ? 'bg-live' : 'bg-yellow-400'}`}
+              aria-hidden
+            />
+          )}
+          {p.subbedOutAt && (
+            <span className="font-mono text-[10px] text-live">↓ {p.subbedOutAt}</span>
+          )}
         </div>
       ))}
     </div>
@@ -32,14 +41,23 @@ function Bench({ players }: { players: LineupPlayer[] }) {
   if (subs.length === 0) return null;
   return (
     <div className="mt-4">
-      <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim mb-2">{t('detail.bench')}</h4>
+      <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim mb-2">
+        {t('detail.bench')}
+      </h4>
       <ul className="space-y-1">
         {subs.map((p) => (
-          <li key={p.jersey + p.name} className="flex items-center gap-2 font-body text-sm text-chalkdim">
+          <li
+            key={p.jersey + p.name}
+            className="flex items-center gap-2 font-body text-sm text-chalkdim"
+          >
             <span className="font-mono text-xs w-6 text-right">{p.jersey}</span>
             <span className="text-chalk">{p.name}</span>
-            {p.card && <span className={`w-2.5 h-3.5 ${p.card === 'red' ? 'bg-live' : 'bg-yellow-400'}`} />}
-            {p.subbedInAt && <span className="font-mono text-[10px] text-pitch">↑ {p.subbedInAt}</span>}
+            {p.card && (
+              <span className={`w-2.5 h-3.5 ${p.card === 'red' ? 'bg-live' : 'bg-yellow-400'}`} />
+            )}
+            {p.subbedInAt && (
+              <span className="font-mono text-[10px] text-pitch">↑ {p.subbedInAt}</span>
+            )}
           </li>
         ))}
       </ul>
@@ -51,7 +69,9 @@ export default function LineupTab({ lineups, homeId }: { lineups: TeamLineup[]; 
   const t = useT();
   const [side, setSide] = useState<'home' | 'away'>('home');
   if (lineups.length === 0) {
-    return <p className="font-mono text-xs tracking-wider text-chalkdim p-4">{t('detail.noData')}</p>;
+    return (
+      <p className="font-mono text-xs tracking-wider text-chalkdim p-4">{t('detail.noData')}</p>
+    );
   }
   const home = lineups.find((l) => l.teamId === homeId) ?? lineups[0];
   const away = lineups.find((l) => l.teamId !== homeId) ?? lineups[1] ?? home;
@@ -66,6 +86,7 @@ export default function LineupTab({ lineups, homeId }: { lineups: TeamLineup[]; 
             return (
               <button
                 key={s}
+                type="button"
                 onClick={() => setSide(s)}
                 aria-pressed={side === s}
                 className={`flex-1 px-3 py-1.5 font-display text-sm transition-colors ${
@@ -90,6 +111,7 @@ export default function LineupTab({ lineups, homeId }: { lineups: TeamLineup[]; 
           return (
             <button
               key={s}
+              type="button"
               onClick={() => setSide(s)}
               aria-pressed={side === s}
               className={`flex-1 px-3 py-1.5 font-display text-sm transition-colors ${

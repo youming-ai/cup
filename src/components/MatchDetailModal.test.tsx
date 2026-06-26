@@ -1,12 +1,14 @@
-import { it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import MatchDetailModal from './MatchDetailModal';
 import type { WCMatch } from '../types';
+import MatchDetailModal from './MatchDetailModal';
 
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+  fetchMock.mockReset();
+});
 
 const match: WCMatch = {
   id: '760420',
@@ -28,7 +30,9 @@ const match: WCMatch = {
 function summaryJson() {
   return {
     header: { competitions: [{ competitors: [{ homeAway: 'home', team: { id: '203' } }] }] },
-    boxscore: { teams: [{ team: { id: '203' }, statistics: [{ label: 'Shots', displayValue: '21' }] }] },
+    boxscore: {
+      teams: [{ team: { id: '203' }, statistics: [{ label: 'Shots', displayValue: '21' }] }],
+    },
     commentary: [],
     keyEvents: [],
     rosters: [],

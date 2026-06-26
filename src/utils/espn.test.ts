@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { parseSummary, layoutStarters } from './espn';
+import { describe, expect, it } from 'vitest';
 import type { LineupPlayer } from '../types';
+import { layoutStarters, parseSummary } from './espn';
 
 const summary = {
   header: {
@@ -94,7 +94,12 @@ describe('parseSummary', () => {
 
   it('reads commentary as allPlays and keyEvents as keyPlays', () => {
     expect(d.allPlays).toHaveLength(2);
-    expect(d.allPlays[1]).toEqual({ clock: "3'", text: 'Foul by Aubrey Modiba.', teamId: null, type: '' });
+    expect(d.allPlays[1]).toEqual({
+      clock: "3'",
+      text: 'Foul by Aubrey Modiba.',
+      teamId: null,
+      type: '',
+    });
     expect(d.keyPlays[0]).toEqual({
       clock: "9'",
       text: 'Goal! Mexico 1, South Africa 0.',
@@ -106,7 +111,12 @@ describe('parseSummary', () => {
   it('parses lineups with sub minute and card from player.plays', () => {
     const mex = d.lineups[0];
     expect(mex.formation).toBe('4-1-4-1');
-    expect(mex.players[0]).toMatchObject({ jersey: '1', name: 'Raúl Rangel', pos: 'G', starter: true });
+    expect(mex.players[0]).toMatchObject({
+      jersey: '1',
+      name: 'Raúl Rangel',
+      pos: 'G',
+      starter: true,
+    });
     expect(mex.players[1]).toMatchObject({ subbedOutAt: "76'", card: 'yellow' });
   });
 
@@ -137,7 +147,12 @@ describe('parseSummary', () => {
       ...summary,
       keyEvents: [
         { clock: { displayValue: "0'" }, type: { text: 'Kickoff' }, team: { id: '203' }, text: '' },
-        { clock: { displayValue: "9'" }, type: { text: 'Goal' }, team: { id: '203' }, text: 'Goal!' },
+        {
+          clock: { displayValue: "9'" },
+          type: { text: 'Goal' },
+          team: { id: '203' },
+          text: 'Goal!',
+        },
       ],
     };
     const parsed = parseSummary(withAdmin);

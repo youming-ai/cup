@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { Languages } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLang, useT } from '../i18n';
 import type { Lang } from '../i18n/messages';
 
@@ -43,47 +43,55 @@ export default function LanguageSwitcher() {
     triggerRef.current?.focus();
   }, []);
 
-  const select = useCallback((code: Lang) => {
-    setLang(code);
-    close();
-  }, [setLang, close]);
+  const select = useCallback(
+    (code: Lang) => {
+      setLang(code);
+      close();
+    },
+    [setLang, close],
+  );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!isOpen) return;
-    const items = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
-    );
-    const idx = items.indexOf(document.activeElement as HTMLElement);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isOpen) return;
+      const items = Array.from(
+        listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
+      );
+      const idx = items.indexOf(document.activeElement as HTMLElement);
 
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        close();
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        items[(idx + 1) % items.length]?.focus();
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        items[(idx - 1 + items.length) % items.length]?.focus();
-        break;
-      case 'Home':
-        e.preventDefault();
-        items[0]?.focus();
-        break;
-      case 'End':
-        e.preventDefault();
-        items[items.length - 1]?.focus();
-        break;
-    }
-  }, [isOpen, close]);
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          close();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          items[(idx + 1) % items.length]?.focus();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          items[(idx - 1 + items.length) % items.length]?.focus();
+          break;
+        case 'Home':
+          e.preventDefault();
+          items[0]?.focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          items[items.length - 1]?.focus();
+          break;
+      }
+    },
+    [isOpen, close],
+  );
 
   return (
-    <div className="relative inline-block text-left" ref={containerRef} onKeyDown={handleKeyDown}>
+    <div className="relative inline-block text-left" ref={containerRef}>
       <button
         ref={triggerRef}
+        type="button"
         onClick={() => setIsOpen((v) => !v)}
+        onKeyDown={!isOpen ? handleKeyDown : undefined}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={t('common.changeLanguage')}
@@ -99,6 +107,8 @@ export default function LanguageSwitcher() {
           aria-label={t('common.changeLanguage')}
           aria-activedescendant={`lang-opt-${lang}`}
           className="absolute right-0 mt-1 w-20 border border-line bg-panel/100 shadow-lg py-1 z-50 focus:outline-none"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
         >
           {OPTS.map((o) => (
             <div

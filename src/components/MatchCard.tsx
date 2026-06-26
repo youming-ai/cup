@@ -29,9 +29,15 @@ function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => stri
     );
   }
   if (status === 'finished') {
-    return <span className="font-mono text-[10px] tracking-widest text-chalkdim">{t('status.ft')}</span>;
+    return (
+      <span className="font-mono text-[10px] tracking-widest text-chalkdim">{t('status.ft')}</span>
+    );
   }
-  return <span className="font-mono text-[10px] tracking-widest text-chalkdim/70">{t('status.upcoming')}</span>;
+  return (
+    <span className="font-mono text-[10px] tracking-widest text-chalkdim/70">
+      {t('status.upcoming')}
+    </span>
+  );
 }
 
 function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
@@ -103,11 +109,12 @@ export default memo(function MatchCard({
                 : tbd}
             </span>
           ) : (
-            <span
-              className="font-mono text-2xl sm:text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap"
-              aria-label={`${homeName || tbd} ${homeScore ?? 0} - ${awayName || tbd} ${awayScore ?? 0}`}
-            >
-              {`${homeScore ?? 0} : ${awayScore ?? 0}`}
+            <span className="font-mono text-2xl sm:text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap">
+              {/* Screen-reader-friendly full-score announcement; visually hidden. */}
+              <span className="sr-only">
+                {`${homeName || tbd} ${homeScore ?? 0} - ${awayName || tbd} ${awayScore ?? 0}`}
+              </span>
+              <span aria-hidden>{`${homeScore ?? 0} : ${awayScore ?? 0}`}</span>
             </span>
           )}
           <StatusPill status={status} t={t} />

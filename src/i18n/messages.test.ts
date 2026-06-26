@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { messages, LANGS } from './messages';
+import { describe, expect, it } from 'vitest';
 import { translate } from './index';
+import { LANGS, messages } from './messages';
 
 describe('i18n messages', () => {
   it('every language has the same keys as en', () => {

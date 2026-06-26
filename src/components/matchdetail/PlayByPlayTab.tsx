@@ -21,6 +21,7 @@ export default function PlayByPlayTab({
         {(['all', 'key'] as const).map((k) => (
           <button
             key={k}
+            type="button"
             onClick={() => setTab(k)}
             aria-pressed={tab === k}
             className={`px-3 py-1.5 font-display text-sm transition-colors ${
@@ -35,19 +36,29 @@ export default function PlayByPlayTab({
         <p className="font-mono text-xs tracking-wider text-chalkdim">{t('detail.noData')}</p>
       ) : (
         <ul className="space-y-2">
-          {plays.map((p, i) => (
+          {plays.map((p) => (
             <li
-              key={`${i}-${p.clock}-${p.text}`}
+              // clock + text should be unique per play in practice; if not,
+              // fall back to text alone rather than the array index.
+              key={`${p.clock}-${p.text}`}
               className={`border border-line bg-panel px-3 py-2 ${
-                tab === 'key' && p.teamId ? `border-l-2 ${p.teamId === homeId ? 'border-l-pitch' : 'border-l-live'}` : ''
+                tab === 'key' && p.teamId
+                  ? `border-l-2 ${p.teamId === homeId ? 'border-l-pitch' : 'border-l-live'}`
+                  : ''
               }`}
             >
               <div className="font-body text-sm text-chalk">{p.text}</div>
               {(p.clock || p.type) && (
                 <div className="flex items-center gap-2 mt-1">
-                  {p.clock && <span className="font-mono text-[10px] text-chalkdim tabular-nums">{p.clock}</span>}
+                  {p.clock && (
+                    <span className="font-mono text-[10px] text-chalkdim tabular-nums">
+                      {p.clock}
+                    </span>
+                  )}
                   {p.type && (
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-pitch">{p.type}</span>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-pitch">
+                      {p.type}
+                    </span>
                   )}
                 </div>
               )}

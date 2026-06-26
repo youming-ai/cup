@@ -30,7 +30,9 @@ export function useFavorites() {
       if (e.key !== KEY || !e.newValue) return;
       try {
         setFavorites(new Set(JSON.parse(e.newValue) as string[]));
-      } catch { /* ignore parse errors */ }
+      } catch {
+        /* ignore parse errors */
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);

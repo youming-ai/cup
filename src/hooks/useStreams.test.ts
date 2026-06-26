@@ -1,12 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStreams } from './useStreams';
 
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
 describe('useStreams (football only)', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
 
   it('keeps only the Football category and ignores American Football', async () => {
     const payload = {
@@ -27,7 +29,14 @@ describe('useStreams (football only)', () => {
               poster: 'p.jpg',
               colors: ['#112855', '#691a40'],
               substreams: [
-                { id: 23638, name: 'B vs Q', tag: 'WC', source_tag: 'FS1', locale: 'en', iframe: 'fox' },
+                {
+                  id: 23638,
+                  name: 'B vs Q',
+                  tag: 'WC',
+                  source_tag: 'FS1',
+                  locale: 'en',
+                  iframe: 'https://embedindia.st/embed/wc/bih-qat-fs1',
+                },
               ],
             },
           ],
@@ -47,6 +56,33 @@ describe('useStreams (football only)', () => {
     expect(result.current.matches[0].slug).toBe('bosnia-herzegovina-vs-qatar');
   });
 
+  it('drops Football streams that do not expose a trusted iframe URL', async () => {
+    const payload = {
+      streams: [
+        {
+          category: 'Football',
+          streams: [
+            {
+              id: 1,
+              name: 'Unsafe Game',
+              iframe: 'javascript:alert(1)',
+              substreams: [
+                { name: 'bad', source_tag: 'bad', iframe: 'https://evil.example/embed' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
+
+    const { result } = renderHook(() => useStreams());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.matches).toHaveLength(0);
+  });
+
   it('sets error on non-ok response', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false });
     const { result } = renderHook(() => useStreams());
@@ -64,9 +100,7 @@ describe('useStreams (football only)', () => {
 
   it('returns empty matches when Football category has no streams', async () => {
     const payload = {
-      streams: [
-        { category: 'Football', streams: [] },
-      ],
+      streams: [{ category: 'Football', streams: [] }],
     };
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
     const { result } = renderHook(() => useStreams());
@@ -89,29 +123,42 @@ describe('useStreams (football only)', () => {
 
   it('aborts the in-flight request when refetch is called', async () => {
     let firstSignal: AbortSignal | undefined;
-    const { promise, resolve } = Promise.withResolvers<never>();
     fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {
       if (!firstSignal) firstSignal = options?.signal;
-      return promise;
+      return new Promise<never>((_resolve, reject) => {
+        options.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          {
+            once: true,
+          },
+        );
+      });
     });
 
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(firstSignal?.aborted).toBe(false);
 
-    act(() => { result.current.refetch(); });
+    act(() => {
+      result.current.refetch();
+    });
     expect(firstSignal?.aborted).toBe(true);
-
-    // Avoid unhandled rejection from the dangling promise
-    resolve(undefined as never);
   });
 
   it('aborts the in-flight request on unmount', async () => {
     let firstSignal: AbortSignal | undefined;
-    const { promise, resolve } = Promise.withResolvers<never>();
     fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {
       if (!firstSignal) firstSignal = options?.signal;
-      return promise;
+      return new Promise<never>((_resolve, reject) => {
+        options.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          {
+            once: true,
+          },
+        );
+      });
     });
 
     const { unmount } = renderHook(() => useStreams());
@@ -120,7 +167,5 @@ describe('useStreams (football only)', () => {
 
     unmount();
     expect(firstSignal?.aborted).toBe(true);
-
-    resolve(undefined as never);
   });
 });

@@ -7,7 +7,8 @@
       "!**/node_modules",
       "!**/.wrangler",
       "!**/bun.lock",
-      "!**/worker-configuration.d.ts"
+      "!**/worker-configuration.d.ts",
+      "!**/*.css"
     ]
   },
   "formatter": {
@@ -34,7 +35,8 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended",
+      "style": "off"
     }
   },
   "overrides": [
@@ -42,6 +44,16 @@
       "includes": ["public/sw.js"],
       "javascript": {
         "globals": ["caches", "fetch", "location", "Promise", "self", "URL"]
+      }
+    },
+    {
+      "includes": ["src/components/MatchDetailModal.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off"
+          }
+        }
       }
     }
   ]

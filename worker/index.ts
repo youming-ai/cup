@@ -15,13 +15,13 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 1): Prom
       if (res.ok || i === retries) return res;
       // 仅对 5xx 重试
       if (res.status >= 500) {
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
         continue;
       }
       return res;
     } catch (err) {
       if (i === retries) throw err;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
     }
   }
   throw new Error('unreachable');
@@ -121,7 +121,9 @@ async function cached(
       if (!res.ok) throw new Error(`upstream ${res.status}`);
       const body = await res.text();
       ctx.waitUntil(
-        env.CACHE.put(cacheKey, JSON.stringify({ body, at: now } satisfies Entry), { expirationTtl: keep }),
+        env.CACHE.put(cacheKey, JSON.stringify({ body, at: now } satisfies Entry), {
+          expirationTtl: keep,
+        }),
       );
       return { body, status: 200, cache: stored ? 'REVALIDATED' : 'MISS' };
     } catch (err) {
@@ -143,7 +145,11 @@ export async function serve(name: string, env: Env, ctx: ExecutionContext): Prom
   return cached(name, src.url, src.fresh, src.keep, env, ctx);
 }
 
-export async function serveSummary(eventId: string, env: Env, ctx: ExecutionContext): Promise<Response> {
+export async function serveSummary(
+  eventId: string,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
   if (!/^\d+$/.test(eventId)) return json('{"error":"bad event id"}', 400, 'MISS');
   const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`;
   return cached(`summary:${eventId}`, url, 30, 86400, env, ctx);

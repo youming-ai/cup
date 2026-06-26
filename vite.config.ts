@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
@@ -18,7 +19,8 @@ export default defineConfig({
             return '/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300';
           if (path === '/api/wc/standings')
             return '/apis/v2/sports/soccer/fifa.world/standings?season=2026&level=3';
-          if (path === '/api/wc/summary') // forward the ?event=… id
+          if (path === '/api/wc/summary')
+            // forward the ?event=… id
             return `/apis/site/v2/sports/soccer/fifa.world/summary?${query}`;
           return p;
         },
@@ -29,12 +31,15 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test-setup.ts',
+    fileParallelism: false,
   },
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
+        manualChunks(id) {
+          if (id.includes('/node_modules/react') || id.includes('/node_modules/react-dom')) {
+            return 'react-vendor';
+          }
         },
       },
     },

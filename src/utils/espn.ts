@@ -1,10 +1,4 @@
-import type {
-  MatchDetail,
-  PlayEvent,
-  TeamLineup,
-  LineupPlayer,
-  TeamStatRow,
-} from '../types';
+import type { LineupPlayer, MatchDetail, PlayEvent, TeamLineup, TeamStatRow } from '../types';
 
 // local json guards (kept here so this module is self-contained)
 type Obj = Record<string, unknown>;
@@ -93,7 +87,12 @@ export function parseSummary(json: unknown): MatchDetail {
         ...(cardOf(plays) ? { card: cardOf(plays) } : {}),
       };
     });
-    return { teamId: str(team.id), teamName: str(team.displayName), formation: str(r.formation), players };
+    return {
+      teamId: str(team.id),
+      teamName: str(team.displayName),
+      formation: str(r.formation),
+      players,
+    };
   });
   // Enforce the [home, away] contract regardless of ESPN roster order.
   const rank = (l: TeamLineup) => (l.teamId === homeId ? 0 : l.teamId === awayId ? 1 : 2);
@@ -147,7 +146,10 @@ export function layoutStarters(starters: LineupPlayer[]): PositionedPlayer[] {
   }
   const out: PositionedPlayer[] = [];
   for (const [g, list] of rows) {
-    list.sort((a, b) => sideScore(a.pos) - sideScore(b.pos) || (Number(a.jersey) || 0) - (Number(b.jersey) || 0));
+    list.sort(
+      (a, b) =>
+        sideScore(a.pos) - sideScore(b.pos) || (Number(a.jersey) || 0) - (Number(b.jersey) || 0),
+    );
     const n = list.length;
     list.forEach((pl, i) => {
       const x = n === 1 ? 0.5 : 0.15 + (i * 0.7) / (n - 1);

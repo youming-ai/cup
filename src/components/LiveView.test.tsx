@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import LiveView from './LiveView';
 import type { Match } from '../types';
+import LiveView from './LiveView';
 
 function renderLiveView(matches: Match[]) {
   return render(

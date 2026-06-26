@@ -1,4 +1,4 @@
-import type { MatchStatus, WCStanding, Stage } from '../types';
+import type { MatchStatus, Stage, WCStanding } from '../types';
 
 export function parseScore(s: string | number | null | undefined): number | null {
   if (s == null) return null;
