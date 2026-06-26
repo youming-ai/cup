@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { parseScore, statusFromState, stageFromSlug, scorerLabel, sortStandings } from './wc';
+import { describe, expect, it } from 'vitest';
 import type { WCStanding } from '../types';
+import { parseScore, scorerLabel, sortStandings, stageFromSlug, statusFromState } from './wc';
 
 describe('parseScore', () => {
   it('parses numeric strings and numbers', () => {

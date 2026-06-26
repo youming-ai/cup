@@ -1,6 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WCMatch, WCGroup, WCStanding } from '../types';
-import { parseScore, statusFromState, stageFromSlug, scorerLabel, sortStandings } from '../utils/wc';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { WCGroup, WCMatch, WCStanding } from '../types';
+import {
+  parseScore,
+  scorerLabel,
+  sortStandings,
+  stageFromSlug,
+  statusFromState,
+} from '../utils/wc';
 
 // same-origin Worker that edge-caches ESPN's public API in KV (see worker/index.ts)
 const BASE = '/api/wc';
@@ -63,6 +69,7 @@ export function useWorldCup() {
         fetch(`${BASE}/scoreboard`, { signal }),
         fetch(`${BASE}/standings`, { signal }),
       ]);
+      if (signal.aborted) return;
       if (!sbRes.ok || !stRes.ok) throw new Error('Failed to load World Cup data');
       const [sbJson, stJson] = await Promise.all([sbRes.json(), stRes.json()]);
 
@@ -152,7 +159,8 @@ export function useWorldCup() {
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
       console.error('useWorldCup fetch failed:', err);
-      if (!cacheRef.current) setError(err instanceof Error ? err.message : 'Failed to load World Cup data');
+      if (!cacheRef.current)
+        setError(err instanceof Error ? err.message : 'Failed to load World Cup data');
     } finally {
       if (!signal.aborted) {
         setLoading(false);

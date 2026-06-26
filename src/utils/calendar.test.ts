@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { googleCalUrl, icsDataUri } from './calendar';
 
 const event = { title: 'Brazil vs France', start: new Date(Date.UTC(2026, 5, 24, 18, 0, 0)) };

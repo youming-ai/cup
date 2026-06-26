@@ -7,7 +7,13 @@ import type { WCGroup, WCMatch, Stage } from '../types';
 
 const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
 
-export default function FixturesView({ matches, groups }: { matches: WCMatch[]; groups: WCGroup[] }) {
+export default function FixturesView({
+  matches,
+  groups,
+}: {
+  matches: WCMatch[];
+  groups: WCGroup[];
+}) {
   const t = useT();
   const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
@@ -112,7 +118,9 @@ export default function FixturesView({ matches, groups }: { matches: WCMatch[]; 
                 onClick={() => setStage(s)}
                 aria-pressed={stage === s}
                 className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
-                  stage === s ? 'border-pitch text-chalk' : 'border-transparent text-chalkdim hover:text-chalk'
+                  stage === s
+                    ? 'border-pitch text-chalk'
+                    : 'border-transparent text-chalkdim hover:text-chalk'
                 }`}
               >
                 {s === 'all' ? t('filter.all') : t(`stage.${s}`)}

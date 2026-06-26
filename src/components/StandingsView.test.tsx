@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import StandingsView from './StandingsView';
 import type { WCGroup, WCStanding } from '../types';
+import StandingsView from './StandingsView';
 
 function renderView(groups: WCGroup[]) {
   return render(
@@ -15,7 +15,14 @@ function renderView(groups: WCGroup[]) {
 function team(overrides: Partial<WCStanding> & { teamId: string; name: string }): WCStanding {
   return {
     flag: '',
-    mp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0,
+    mp: 0,
+    w: 0,
+    d: 0,
+    l: 0,
+    gf: 0,
+    ga: 0,
+    gd: 0,
+    pts: 0,
     ...overrides,
   };
 }
@@ -154,7 +161,18 @@ describe('StandingsView', () => {
       {
         name: 'A',
         standings: [
-          team({ teamId: '1', name: 'Mexico', mp: 3, w: 2, d: 1, l: 0, gf: 5, ga: 1, gd: 4, pts: 7 }),
+          team({
+            teamId: '1',
+            name: 'Mexico',
+            mp: 3,
+            w: 2,
+            d: 1,
+            l: 0,
+            gf: 5,
+            ga: 1,
+            gd: 4,
+            pts: 7,
+          }),
         ],
       },
     ];
@@ -169,7 +187,18 @@ describe('StandingsView', () => {
       {
         name: 'A',
         standings: [
-          team({ teamId: '1', name: 'Loser', mp: 3, w: 0, d: 0, l: 3, gf: 1, ga: 7, gd: -6, pts: 0 }),
+          team({
+            teamId: '1',
+            name: 'Loser',
+            mp: 3,
+            w: 0,
+            d: 0,
+            l: 3,
+            gf: 1,
+            ga: 7,
+            gd: -6,
+            pts: 0,
+          }),
         ],
       },
     ];
@@ -181,9 +210,7 @@ describe('StandingsView', () => {
     const groups: WCGroup[] = [
       {
         name: 'A',
-        standings: [
-          team({ teamId: '1', name: 'Only', pts: 3 }),
-        ],
+        standings: [team({ teamId: '1', name: 'Only', pts: 3 })],
       },
     ];
     renderView(groups);

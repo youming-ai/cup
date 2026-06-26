@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { MatchDetail } from '../types';
 import { parseSummary } from '../utils/espn';
 
@@ -6,8 +6,11 @@ export function useMatchDetail(eventId: string | null) {
   const [detail, setDetail] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // `attempt` is intentionally unused in the body — `reload()` bumps it to
+  // re-trigger the fetch effect. The biome lint rule on the deps array below
+  // acknowledges this pattern.
   const [attempt, setAttempt] = useState(0);
-
+  // biome-ignore lint/correctness/useExhaustiveDependencies(attempt): bumped by reload() to force a re-fetch
   useEffect(() => {
     if (!eventId) {
       setDetail(null);
@@ -30,7 +33,8 @@ export function useMatchDetail(eventId: string | null) {
         setDetail(parseSummary(json));
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
+        if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError'))
+          return;
         // Raw message is for the console/internal only; the UI surfaces an i18n string.
         console.error('useMatchDetail:', err);
         setError(err instanceof Error ? err.message : 'Failed to load match detail');

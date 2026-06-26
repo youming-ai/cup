@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWorldCup } from './useWorldCup';
 
 const fetchMock = vi.fn();
@@ -21,8 +21,16 @@ const scoreboard = {
           status: { type: { state: 'post' } },
           venue: { fullName: "Levi's Stadium", address: { city: 'Santa Clara, California' } },
           competitors: [
-            { homeAway: 'home', score: '2', team: { id: '1', displayName: 'Mexico', logo: 'mex.png' } },
-            { homeAway: 'away', score: '0', team: { id: '2', displayName: 'South Africa', logo: 'rsa.png' } },
+            {
+              homeAway: 'home',
+              score: '2',
+              team: { id: '1', displayName: 'Mexico', logo: 'mex.png' },
+            },
+            {
+              homeAway: 'away',
+              score: '0',
+              team: { id: '2', displayName: 'South Africa', logo: 'rsa.png' },
+            },
           ],
           details: [
             {
@@ -53,8 +61,16 @@ const scoreboard = {
           status: { type: { state: 'pre' } },
           venue: { fullName: 'MetLife Stadium', address: { city: 'East Rutherford' } },
           competitors: [
-            { homeAway: 'home', score: '0', team: { id: '9', displayName: 'Brazil', logos: [{ href: 'bra.png' }] } },
-            { homeAway: 'away', score: '0', team: { id: '12', displayName: 'Scotland', logos: [{ href: 'sco.png' }] } },
+            {
+              homeAway: 'home',
+              score: '0',
+              team: { id: '9', displayName: 'Brazil', logos: [{ href: 'bra.png' }] },
+            },
+            {
+              homeAway: 'away',
+              score: '0',
+              team: { id: '12', displayName: 'Scotland', logos: [{ href: 'sco.png' }] },
+            },
           ],
           details: [],
         },
@@ -103,7 +119,7 @@ const standings = {
 
 describe('useWorldCup', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    fetchMock.mockReset();
   });
 
   it('normalizes ESPN scoreboard + standings', async () => {
@@ -164,10 +180,17 @@ describe('useWorldCup', () => {
 
   it('aborts the in-flight request on refetch', async () => {
     let firstSignal: AbortSignal | undefined;
-    const { promise, resolve } = Promise.withResolvers<never>();
     fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {
       if (!firstSignal) firstSignal = options?.signal;
-      return promise;
+      return new Promise<never>((_resolve, reject) => {
+        options.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          {
+            once: true,
+          },
+        );
+      });
     });
 
     const { result } = renderHook(() => useWorldCup());
@@ -178,16 +201,21 @@ describe('useWorldCup', () => {
       result.current.refetch();
     });
     expect(firstSignal?.aborted).toBe(true);
-
-    resolve(undefined as never);
   });
 
   it('aborts the in-flight request on unmount', async () => {
     let firstSignal: AbortSignal | undefined;
-    const { promise, resolve } = Promise.withResolvers<never>();
     fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {
       if (!firstSignal) firstSignal = options?.signal;
-      return promise;
+      return new Promise<never>((_resolve, reject) => {
+        options.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          {
+            once: true,
+          },
+        );
+      });
     });
 
     const { unmount } = renderHook(() => useWorldCup());
@@ -196,7 +224,5 @@ describe('useWorldCup', () => {
 
     unmount();
     expect(firstSignal?.aborted).toBe(true);
-
-    resolve(undefined as never);
   });
 });

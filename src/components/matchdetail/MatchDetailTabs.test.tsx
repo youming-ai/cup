@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { LanguageProvider } from '../../i18n';
-import TeamStatsTab from './TeamStatsTab';
-import PlayByPlayTab from './PlayByPlayTab';
-import LineupTab from './LineupTab';
-import type { TeamStatRow, PlayEvent, TeamLineup } from '../../types';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { describe, expect, it } from 'vitest';
+import { LanguageProvider } from '../../i18n';
+import type { PlayEvent, TeamLineup, TeamStatRow } from '../../types';
+import LineupTab from './LineupTab';
+import PlayByPlayTab from './PlayByPlayTab';
+import TeamStatsTab from './TeamStatsTab';
 
 const wrap = (ui: ReactNode) => render(<LanguageProvider>{ui}</LanguageProvider>);
 
@@ -65,7 +65,7 @@ describe('PlayByPlayTab', () => {
 
   it('does NOT apply border-l-2 in All Plays even when teamId is set, but DOES in Key Plays', () => {
     const { container } = wrap(
-      <PlayByPlayTab allPlays={allPlaysWithTeam} keyPlays={keyPlays} homeId="203" />
+      <PlayByPlayTab allPlays={allPlaysWithTeam} keyPlays={keyPlays} homeId="203" />,
     );
     // All Plays tab is active by default — teamId is set but border should NOT appear
     let li = container.querySelector('li')!;

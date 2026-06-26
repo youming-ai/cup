@@ -1,5 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { messages, LANGS, type Lang } from './messages';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { LANGS, type Lang, messages } from './messages';
 
 export function translate(lang: Lang, key: string, vars?: Record<string, string | number>): string {
   let s = messages[lang]?.[key] ?? messages.en[key] ?? key;
@@ -37,7 +45,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
   }, [lang]);
   const setLang = useCallback((l: Lang) => {
-    try { localStorage.setItem('lang', l); } catch { /* private/full */ }
+    try {
+      localStorage.setItem('lang', l);
+    } catch {
+      /* private/full */
+    }
     setLangState(l);
   }, []);
   const value = useMemo(() => ({ lang, setLang }), [lang, setLang]);

@@ -20,7 +20,9 @@ function homePct(home: string, away: string): number | null {
 export default function TeamStatsTab({ stats }: { stats: TeamStatRow[] }) {
   const t = useT();
   if (stats.length === 0) {
-    return <p className="font-mono text-xs tracking-wider text-chalkdim p-4">{t('detail.noData')}</p>;
+    return (
+      <p className="font-mono text-xs tracking-wider text-chalkdim p-4">{t('detail.noData')}</p>
+    );
   }
   return (
     <div className="space-y-4 p-4">

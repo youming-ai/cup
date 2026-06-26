@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
+import { isTrustedStreamUrl } from '../utils/streamSources';
 
 interface PlayerProps {
   match: Match | null;
@@ -28,16 +29,41 @@ function qualityBadge(label: string): string | null {
 
 export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl }: PlayerProps) {
   const t = useT();
+  const sources = useMemo(() => {
+    if (!match) return [];
+    const raw = [
+      { iframe: match.iframe, label: match.sourceTag || t('live.source') },
+      ...(match.substreams ?? []).map((s) => ({ iframe: s.iframe, label: s.source_tag || s.name })),
+    ];
+    return raw
+      .filter((src) => isTrustedStreamUrl(src.iframe))
+      .filter((src, index, all) => all.findIndex((item) => item.iframe === src.iframe) === index);
+  }, [match, t]);
+  const activeIframeUrl = sources.some((src) => src.iframe === selectedIframeUrl)
+    ? selectedIframeUrl
+    : '';
+
   // 切换线路 / 进入直播时，iframe 重新加载 —— 在其 onLoad 前盖一层信号接入动画
   const [loading, setLoading] = useState(true);
-  useEffect(() => { setLoading(true); }, [selectedIframeUrl]);
+  useEffect(() => {
+    setLoading(true);
+  }, []);
+  useEffect(() => {
+    if (!match) return;
+    const fallback = sources[0]?.iframe ?? '';
+    if (selectedIframeUrl !== fallback && !activeIframeUrl) {
+      setSelectedIframeUrl(fallback);
+    }
+  }, [activeIframeUrl, match, selectedIframeUrl, setSelectedIframeUrl, sources]);
 
   if (!match) {
     return (
       <div className="relative h-full min-h-[60vh] border border-line bg-panel overflow-hidden flex items-center justify-center">
         <CornerTicks />
         <div className="text-center px-8">
-          <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">{t('common.standby')}</div>
+          <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">
+            {t('common.standby')}
+          </div>
           <h2 className="font-display font-bold text-3xl text-chalk tracking-wide mb-3">
             {t('live.standbyTitle')}
           </h2>
@@ -49,11 +75,6 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     );
   }
 
-  const sources = [
-    { iframe: match.iframe, label: match.sourceTag || t('live.source') },
-    ...(match.substreams ?? []).map((s) => ({ iframe: s.iframe, label: s.source_tag || s.name })),
-  ];
-
   return (
     <div className="space-y-4">
       <div className="relative aspect-video w-full border border-line bg-black overflow-hidden">
@@ -63,10 +84,10 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
           <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
         </div>
 
-        {selectedIframeUrl && (
-        <iframe
-            key={selectedIframeUrl}
-            src={selectedIframeUrl}
+        {activeIframeUrl && (
+          <iframe
+            key={activeIframeUrl}
+            src={activeIframeUrl}
             title={match.name}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowFullScreen
@@ -75,8 +96,11 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
           />
         )}
 
-        {selectedIframeUrl && loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black" aria-live="polite">
+        {activeIframeUrl && loading && (
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black"
+            aria-live="polite"
+          >
             <span className="live-dot" />
             <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
               {t('common.loading')}
@@ -106,12 +130,17 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
             {t('live.sources')}
           </p>
           <div className="flex flex-wrap gap-2">
-            {sources.map((src, i) => {
-              const active = selectedIframeUrl === src.iframe;
+            {sources.map((src) => {
+              const active = activeIframeUrl === src.iframe;
               const q = qualityBadge(src.label);
               return (
                 <button
-                  key={`${i}-${src.iframe}`}
+                  // iframe URL is unique per source, so it's a stable key on
+                  // its own — array index would only matter if the same URL
+                  // could appear twice in `sources`, which the dedupe above
+                  // already prevents.
+                  key={src.iframe}
+                  type="button"
                   onClick={() => setSelectedIframeUrl(src.iframe)}
                   aria-pressed={active}
                   className={`inline-flex items-center gap-2 px-3 py-2 border text-sm font-medium transition-colors ${

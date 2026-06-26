@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { slugify } from './helpers';
 
 describe('slugify', () => {
   it('should convert mixed case and spaces to kebab-case', () => {
     expect(slugify('Colombia vs. Congo DR')).toBe('colombia-vs-congo-dr');
-    expect(slugify('Atlanta Braves vs. San Diego Padres')).toBe('atlanta-braves-vs-san-diego-padres');
+    expect(slugify('Atlanta Braves vs. San Diego Padres')).toBe(
+      'atlanta-braves-vs-san-diego-padres',
+    );
   });
 
   it('should handle special characters', () => {
@@ -16,7 +18,7 @@ describe('slugify', () => {
     expect(slugify('  Hello   World  ')).toBe('hello-world');
   });
 
-  it('strips accented letters via NFD normalization (Côte d\'Ivoire, São Paulo)', () => {
+  it("strips accented letters via NFD normalization (Côte d'Ivoire, São Paulo)", () => {
     expect(slugify("Côte d'Ivoire")).toBe('cote-divoire');
     expect(slugify('São Paulo')).toBe('sao-paulo');
     expect(slugify('Ñoño FC')).toBe('nono-fc');

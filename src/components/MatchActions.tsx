@@ -1,4 +1,4 @@
-import { Star, Bell } from 'lucide-react';
+import { Bell, Star } from 'lucide-react';
 import { googleCalUrl, icsDataUri } from '../utils/calendar';
 
 type T = (k: string) => string;
@@ -36,7 +36,13 @@ export function ReminderMenu({ title, start, t }: { title: string; start: Date; 
   const itemCls =
     'block px-3 py-2 text-xs text-chalk hover:bg-panel2 whitespace-nowrap transition-colors';
   return (
-    <details className="relative" onClick={(e) => e.stopPropagation()}>
+    <details
+      className="relative"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+      }}
+    >
       <summary
         className="list-none cursor-pointer p-1 text-chalkdim hover:text-chalk transition-colors"
         aria-label={t('card.reminder')}

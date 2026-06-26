@@ -1,6 +1,6 @@
-import { Radio, CalendarDays, type LucideIcon } from 'lucide-react';
-import LanguageSwitcher from './LanguageSwitcher';
+import { CalendarDays, type LucideIcon, Radio } from 'lucide-react';
 import { useT } from '../i18n';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export type View = 'live' | 'schedule';
 
@@ -29,13 +29,13 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
           </h1>
 
           <nav
-            role="tablist"
             aria-label={t('nav.mainLabel')}
             className={`flex items-center gap-1 p-1 border border-line bg-night`}
           >
             {VIEWS.map(({ key, Icon }) => (
               <button
                 key={key}
+                type="button"
                 role="tab"
                 onClick={() => setView(key)}
                 aria-selected={view === key}

@@ -1,7 +1,7 @@
-import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import Footer from './components/Footer';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
-import Footer from './components/Footer';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
@@ -31,9 +31,12 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center h-full bg-night p-6 text-center gap-3">
       <div className="font-mono text-xs tracking-[0.3em] text-live">{t('common.signalLost')}</div>
-      <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">{t('common.error')}</h2>
+      <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">
+        {t('common.error')}
+      </h2>
       <p className="font-body text-sm text-chalkdim max-w-sm">{message}</p>
       <button
+        type="button"
         onClick={onRetry}
         className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide hover:brightness-110 transition"
       >
@@ -70,20 +73,28 @@ export default function App() {
 
       {view === 'live' && (
         <div className="flex-1 flex flex-col">
-          {streams.loading ? <Loading /> :
-            streams.error ? <ErrorState message={streams.error} onRetry={streams.refetch} /> :
-            <LiveView matches={streams.matches} />}
+          {streams.loading ? (
+            <Loading />
+          ) : streams.error ? (
+            <ErrorState message={streams.error} onRetry={streams.refetch} />
+          ) : (
+            <LiveView matches={streams.matches} />
+          )}
         </div>
       )}
 
       {view === 'schedule' && (
         <div className="flex-1 p-4 md:p-6 bg-night flex flex-col justify-between">
           <div className="flex-1">
-            {wc.loading ? <Loading /> :
-              wc.error ? <ErrorState message={wc.error} onRetry={wc.refetch} /> :
+            {wc.loading ? (
+              <Loading />
+            ) : wc.error ? (
+              <ErrorState message={wc.error} onRetry={wc.refetch} />
+            ) : (
               <Suspense fallback={<Loading />}>
                 <FixturesView matches={wc.matches} groups={wc.groups} />
-              </Suspense>}
+              </Suspense>
+            )}
           </div>
           <Footer />
         </div>
