@@ -8,6 +8,12 @@ import TopScorersView from './TopScorersView';
 
 const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
 
+// Finished day sections are never auto-scroll targets, so they skip ref
+// registration — otherwise today's *finished* section would share `todayKey`
+// with today's upcoming one and (rendering later) clobber it, landing the
+// auto-scroll in the Results area instead of on scheduled content.
+const NOOP_REF = (_key: string, _el: HTMLElement | null) => {};
+
 // Quick filter: which match statuses to show. Tournament-stage chips below
 // further narrow by stage; this is a coarser "is the match still to play or
 // already played?" toggle.
@@ -264,7 +270,7 @@ export default function FixturesView({
                         <span className="h-px flex-1 bg-line" />
                       </div>
                     )}
-                    {finished.map((d) => renderDay(d, attachDayRef))}
+                    {finished.map((d) => renderDay(d, NOOP_REF))}
                   </>
                 )}
               </>
