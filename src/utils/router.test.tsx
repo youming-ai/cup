@@ -36,6 +36,14 @@ describe('parseRoute', () => {
   it('falls back to home for unknown paths', () => {
     expect(parseRoute('/something/random')).toEqual({ kind: 'home' });
   });
+
+  it('falls back to home on malformed percent-encoding instead of throwing', () => {
+    // decodeURIComponent throws URIError on these; parseRoute must not.
+    expect(() => parseRoute('/match/%')).not.toThrow();
+    expect(parseRoute('/match/%')).toEqual({ kind: 'home' });
+    expect(parseRoute('/team/%E0%A4%A')).toEqual({ kind: 'home' });
+    expect(parseRoute('/player/%C3%28')).toEqual({ kind: 'home' });
+  });
 });
 
 describe('pathFor', () => {

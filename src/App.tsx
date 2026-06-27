@@ -119,6 +119,16 @@ export default function App() {
     }
   }, [setView]);
 
+  // A live-stream deep link (/match/<slug>, no wc: prefix) is the live tab's
+  // content. Persist view='live' so Back (→ '/') returns to the live list
+  // rather than whatever tab was last stored (default 'schedule'). This also
+  // covers legacy ?match= links, which migrate to the same route above.
+  useEffect(() => {
+    if (route.kind === 'match' && !route.slug.startsWith('wc:')) {
+      setView('live');
+    }
+  }, [route, setView]);
+
   // Build the content for the current route.
   let content: ReactNode;
   if (route.kind === 'match') {

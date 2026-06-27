@@ -12,19 +12,40 @@ export type Route =
   | { kind: 'team'; teamId: string }
   | { kind: 'player'; athleteId: string };
 
+// decodeURIComponent throws URIError on malformed input (e.g. "/match/%").
+// Path segments are untrusted (anyone can craft a deep link), so decode
+// defensively and treat a bad segment as no match → home fallback, never a
+// thrown error that crashes the React tree.
+function safeDecode(segment: string): string | null {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return null;
+  }
+}
+
 export function parseRoute(pathname: string): Route {
   // Normalise: strip query and trailing slash.
   const path = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
   if (path === '/' || path === '') return { kind: 'home' };
 
   const m = path.match(/^\/match\/([^/]+)$/);
-  if (m) return { kind: 'match', slug: decodeURIComponent(m[1]!) };
+  if (m) {
+    const slug = safeDecode(m[1]!);
+    if (slug !== null) return { kind: 'match', slug };
+  }
 
   const t = path.match(/^\/team\/([^/]+)$/);
-  if (t) return { kind: 'team', teamId: decodeURIComponent(t[1]!) };
+  if (t) {
+    const teamId = safeDecode(t[1]!);
+    if (teamId !== null) return { kind: 'team', teamId };
+  }
 
   const p = path.match(/^\/player\/([^/]+)$/);
-  if (p) return { kind: 'player', athleteId: decodeURIComponent(p[1]!) };
+  if (p) {
+    const athleteId = safeDecode(p[1]!);
+    if (athleteId !== null) return { kind: 'player', athleteId };
+  }
 
   return { kind: 'home' };
 }

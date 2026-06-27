@@ -140,6 +140,31 @@ describe('PlayerPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Vega' })).toBeInTheDocument();
   });
 
+  it('attributes an away scorer (absent from top scorers) to their own team', () => {
+    renderPage({
+      athleteId: 'p9',
+      scorers: [], // not in the top-scorers feed → fall back to goal side
+      groups: [
+        group([
+          { teamId: '203', name: 'Mexico' },
+          { teamId: '224', name: 'Canada' },
+        ]),
+      ],
+      matches: [
+        match({
+          id: 'm1',
+          homeId: '203', // Mexico (home)
+          awayId: '224', // Canada (away)
+          awayScorers: [scorer('Vega', 'p9', "45'")],
+        }),
+      ],
+    });
+    // Vega scored for the away side (Canada) — the team link must be Canada,
+    // not the home opponent Mexico.
+    expect(screen.getByRole('button', { name: 'Canada' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mexico' })).not.toBeInTheDocument();
+  });
+
   it('clicking the back button calls onBack', () => {
     const onBack = vi.fn();
     renderPage({ onBack });

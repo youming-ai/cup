@@ -62,7 +62,16 @@ export default function PlayerPage({
   const t = useT();
   const topScorerEntry = scorers.find((s) => s.athleteId === athleteId);
   const goals = playerGoals(matches, athleteId);
-  const teamId = topScorerEntry?.teamId ?? goals[0]?.match.homeId ?? goals[0]?.match.awayId;
+  // Fallback team (player not in the top-scorers feed): use the side they
+  // scored on, not always home — otherwise away scorers get attributed to the
+  // opponent.
+  const firstGoal = goals[0];
+  const fallbackTeamId = firstGoal
+    ? firstGoal.side === 'home'
+      ? firstGoal.match.homeId
+      : firstGoal.match.awayId
+    : undefined;
+  const teamId = topScorerEntry?.teamId ?? fallbackTeamId;
   const teamName = topScorerEntry?.teamName || teamNameFor(groups, teamId);
 
   if (!topScorerEntry && goals.length === 0) {
