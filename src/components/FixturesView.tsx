@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import { navigate } from '../utils/router';
@@ -8,12 +8,6 @@ import StandingsView from './StandingsView';
 import TopScorersView from './TopScorersView';
 
 const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
-
-// Finished day sections are never auto-scroll targets, so they skip ref
-// registration — otherwise today's *finished* section would share `todayKey`
-// with today's upcoming one and (rendering later) clobber it, landing the
-// auto-scroll in the Results area instead of on scheduled content.
-const NOOP_REF = (_key: string, _el: HTMLElement | null) => {};
 
 // Quick filter: which match statuses to show. Tournament-stage chips below
 // further narrow by stage; this is a coarser "is the match still to play or
@@ -39,19 +33,6 @@ export default function FixturesView({
     // MatchDetailPage (plain /match/<slug> is a streamed.pk live stream).
     navigate(`/match/wc:${encodeURIComponent(m.slug)}`);
   }, []);
-
-  // Auto-scroll: on first render (and whenever the upcoming day groups
-  // change), scroll the viewport to the first upcoming day whose date is
-  // >= today. If no such day exists (e.g. all upcoming matches are TBD),
-  // scroll to the very first upcoming day so the user lands at the start
-  // of the live/scheduled content rather than at finished results.
-  const dayRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const attachDayRef = useCallback((key: string, el: HTMLElement | null) => {
-    if (el) dayRefs.current.set(key, el);
-    else dayRefs.current.delete(key);
-  }, []);
-
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));
@@ -101,27 +82,8 @@ export default function FixturesView({
     };
   }, [matches, stage]);
 
-  // Auto-scroll: on first render (and whenever the upcoming day groups
-  // change), scroll the viewport to today's day section. If today has no
-  // matches, fall back to the first upcoming day so the user lands on
-  // scheduled content rather than at finished results.
-  useEffect(() => {
-    if (tab !== 'schedule') return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const target =
-      dayRefs.current.get(todayKey) ??
-      (upcoming[0] ? dayRefs.current.get(upcoming[0][0]) : undefined);
-    if (!target) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [tab, upcoming]);
-
-  const renderDay = (
-    [key, list]: [string, WCMatch[]],
-    attachRef: (key: string, el: HTMLElement | null) => void,
-  ) => (
-    <section key={key} ref={(el) => attachRef(key, el)} className="space-y-3">
+  const renderDay = ([key, list]: [string, WCMatch[]]) => (
+    <section key={key} className="space-y-3">
       <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
         {list[0].kickoff
           ? list[0].kickoff.toLocaleDateString(undefined, {
@@ -158,7 +120,7 @@ export default function FixturesView({
   );
 
   return (
-    <div ref={containerRef} className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       {/* 赛程 | 积分 子切换 */}
       <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
         {(['schedule', 'standings', 'scorers', 'bracket'] as const).map((k) => (
@@ -255,10 +217,7 @@ export default function FixturesView({
                 <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
               );
             }
-            // Upcoming sections register scroll refs (auto-scroll targets);
-            // finished ones never do — see NOOP_REF.
-            const attach = statusFilter === 'finished' ? NOOP_REF : attachDayRef;
-            return <>{days.map((d) => renderDay(d, attach))}</>;
+            return <>{days.map(renderDay)}</>;
           })()}
         </>
       )}
