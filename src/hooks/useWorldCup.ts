@@ -113,6 +113,12 @@ export function useWorldCup() {
         .sort((a, b) => a.name.localeCompare(b.name));
 
       // --- scoreboard → matches ---
+      // Per-team form (last-5 W/D/L string). Aggregated across every event
+      // the team appears in: a team plays 3 group matches, each event's
+      // `competitor.form` covers a different sliding window. We pick the
+      // first 5 chars of any form we see; the most-recent one is the one
+      // attached to the team's latest event in the data.
+      const teamForm = new Map<string, string>();
       const ms: WCMatch[] = arr(obj(sbJson).events).map((rawEvent): WCMatch => {
         const ev = obj(rawEvent);
         const comp = obj(arr(ev.competitions)[0]);
@@ -123,6 +129,17 @@ export function useWorldCup() {
         const awayTeam = obj(away.team);
         const statusObj = obj(comp.status);
         const status = statusFromState(str(obj(statusObj.type).state));
+
+        // Form: per-team most-recent 5 results as a 5-char W/D/L string,
+        // oldest first. ESPN's scoreboard puts this directly on each
+        // competitor object (not inside records[]). We capture it in the
+        // outer teamForm map so the standings view can attach it later.
+        for (const rawC of competitors) {
+          const c = obj(rawC);
+          const tid = str(obj(c.team).id);
+          const form = str(c.form);
+          if (tid && form && !teamForm.has(tid)) teamForm.set(tid, form);
+        }
 
         // goals: scoring plays from competition.details, split by team id
         const homeId = str(homeTeam.id);
@@ -177,6 +194,16 @@ export function useWorldCup() {
           ...(progress ? { progress } : {}),
         };
       });
+
+      // Form is collected from the scoreboard (it isn't on the standings
+      // feed). Attach it to each standing row after the scoreboard has
+      // populated teamForm.
+      for (const g of gr) {
+        for (const s of g.standings) {
+          const form = teamForm.get(s.teamId);
+          if (form) s.form = form;
+        }
+      }
 
       // --- top scorers (tournament-level) ---
       // Each competitor in each event has a `leaders` array; we want the

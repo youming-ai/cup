@@ -75,6 +75,12 @@ export interface WCStanding {
   ga: number;
   gd: number;
   pts: number;
+  // Last-5 form as a 5-character string of W/D/L codes, oldest first
+  // (the rightmost character is the most recent result). Built from
+  // ESPN's `competitor.form` field, captured at the same time as the
+  // scoreboard parse. May be undefined for teams that haven't played
+  // 5 matches yet.
+  form?: string;
 }
 
 export interface WCGroup {
