@@ -38,15 +38,25 @@ function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
 }
 
 describe('FixturesView status filter', () => {
-  it('renders the All / Upcoming / Finished chips with counts', () => {
+  it('renders the Upcoming / Finished chips with counts and no All chip', () => {
     renderView([
       match({ id: '1', status: 'finished', homeScore: 2, awayScore: 1 }),
       match({ id: '2', status: 'finished', homeScore: 0, awayScore: 0 }),
       match({ id: '3', status: 'upcoming' }),
     ]);
-    expect(screen.getByRole('button', { name: /^All\s+3$/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Upcoming\s+1$/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Finished\s+2$/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^All\s+\d+$/ })).not.toBeInTheDocument();
+  });
+
+  it('defaults to the Upcoming filter (finished matches hidden)', () => {
+    renderView([
+      match({ id: '1', status: 'finished', homeName: 'A', awayName: 'B' }),
+      match({ id: '2', status: 'upcoming', homeName: 'C', awayName: 'D' }),
+    ]);
+    // Upcoming match visible, finished hidden by default.
+    expect(screen.getByText('C')).toBeInTheDocument();
+    expect(screen.queryByText('A')).not.toBeInTheDocument();
   });
 
   it('hides upcoming matches when Finished is selected', () => {
@@ -54,7 +64,7 @@ describe('FixturesView status filter', () => {
       match({ id: '1', status: 'finished', homeName: 'A', awayName: 'B' }),
       match({ id: '2', status: 'upcoming', homeName: 'C', awayName: 'D' }),
     ]);
-    // Both match cards visible initially
+    // Default Upcoming view: the upcoming match is visible.
     expect(screen.getByText('C')).toBeInTheDocument();
     expect(screen.getByText('D')).toBeInTheDocument();
 
@@ -89,34 +99,6 @@ describe('FixturesView status filter', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Finished\s+0$/ }));
 
     expect(screen.getByText('No finished matches yet')).toBeInTheDocument();
-  });
-
-  it('shows the "Results" divider only in All view', () => {
-    renderView([
-      match({ id: '1', status: 'finished', homeName: 'A', awayName: 'B' }),
-      match({ id: '2', status: 'upcoming', homeName: 'C', awayName: 'D' }),
-    ]);
-
-    // In All view, the divider is present
-    expect(screen.getByText('Results')).toBeInTheDocument();
-
-    // In Finished-only view, the divider is suppressed (no need to label a single section)
-    fireEvent.click(screen.getByRole('button', { name: /^Finished\s+1$/ }));
-    expect(screen.queryByText('Results')).not.toBeInTheDocument();
-  });
-
-  it('All chip restores both sections', () => {
-    renderView([
-      match({ id: '1', status: 'finished', homeName: 'A', awayName: 'B' }),
-      match({ id: '2', status: 'upcoming', homeName: 'C', awayName: 'D' }),
-    ]);
-
-    fireEvent.click(screen.getByRole('button', { name: /^Finished\s+1$/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^All\s+2$/ }));
-
-    expect(screen.getByText('A')).toBeInTheDocument();
-    expect(screen.getByText('C')).toBeInTheDocument();
-    expect(screen.getByText('Results')).toBeInTheDocument();
   });
 
   it('keeps stage filter chips functional alongside the status filter', () => {

@@ -68,6 +68,7 @@ describe('navigate', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/' },
       writable: true,
+      configurable: true,
     });
   });
 
@@ -92,6 +93,7 @@ describe('navigate', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/match/abc' },
       writable: true,
+      configurable: true,
     });
     navigate('/match/abc');
     expect(window.history.pushState).not.toHaveBeenCalled();
@@ -116,6 +118,7 @@ describe('useRouter', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/match/foo' },
       writable: true,
+      configurable: true,
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
@@ -126,6 +129,7 @@ describe('useRouter', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/' },
       writable: true,
+      configurable: true,
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
@@ -135,6 +139,7 @@ describe('useRouter', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/match/foo' },
       writable: true,
+      configurable: true,
     });
     act(() => {
       window.dispatchEvent(new PopStateEvent('popstate'));
@@ -147,6 +152,7 @@ describe('useRouter', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/' },
       writable: true,
+      configurable: true,
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
@@ -157,6 +163,7 @@ describe('useRouter', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/match/foo' },
       writable: true,
+      configurable: true,
     });
     act(() => {
       window.dispatchEvent(new Event('app:routechange'));
@@ -169,6 +176,7 @@ describe('useRouter', () => {
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/' },
       writable: true,
+      configurable: true,
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);

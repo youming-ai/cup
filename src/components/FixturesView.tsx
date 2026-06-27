@@ -16,8 +16,8 @@ const NOOP_REF = (_key: string, _el: HTMLElement | null) => {};
 
 // Quick filter: which match statuses to show. Tournament-stage chips below
 // further narrow by stage; this is a coarser "is the match still to play or
-// already played?" toggle.
-type StatusFilter = 'all' | 'upcoming' | 'finished';
+// already played?" toggle. Defaults to Upcoming so users land on what's next.
+type StatusFilter = 'upcoming' | 'finished';
 type Tab = 'schedule' | 'standings' | 'scorers';
 
 export default function FixturesView({
@@ -32,7 +32,7 @@ export default function FixturesView({
   const t = useT();
   const [tab, setTab] = useState<Tab>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback((m: WCMatch) => {
     // `wc:` namespaces ESPN schedule matches so App routes them to
     // MatchDetailPage (plain /match/<slug> is a streamed.pk live stream).
@@ -69,7 +69,7 @@ export default function FixturesView({
       if (m.status === 'finished') finished++;
       else upcoming++;
     }
-    return { all: matches.length, upcoming, finished };
+    return { upcoming, finished };
   }, [matches]);
 
   // 按开球当天分组；组内按开球时间正序。未完赛(upcoming/live)在前(日期正序)，
@@ -181,13 +181,12 @@ export default function FixturesView({
         <TopScorersView scorers={scorers} />
       ) : (
         <>
-          {/* Quick filter: All / Upcoming / Finished. Counts are taken from
-              the unfiltered match list so users always see how many matches
-              exist in each bucket regardless of the stage selection below. */}
+          {/* Quick filter: Upcoming / Finished. Counts are taken from the
+              unfiltered match list so users always see how many matches exist
+              in each bucket regardless of the stage selection below. */}
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {(
               [
-                { key: 'all', label: t('filter.all'), count: counts.all },
                 {
                   key: 'upcoming',
                   label: t('fixtures.filterUpcoming'),
@@ -236,10 +235,8 @@ export default function FixturesView({
           </div>
 
           {(() => {
-            // Pick which sections to render based on the status filter.
-            const showUpcoming = statusFilter !== 'finished' && upcoming.length > 0;
-            const showFinished = statusFilter !== 'upcoming' && finished.length > 0;
-            if (!showUpcoming && !showFinished) {
+            const days = statusFilter === 'finished' ? finished : upcoming;
+            if (days.length === 0) {
               // The status-filter counts above are unfiltered by stage, so a
               // status-specific message ("No finished matches yet") would
               // contradict a non-zero chip count when an empty stage is also
@@ -250,31 +247,15 @@ export default function FixturesView({
                   ? 'common.empty'
                   : statusFilter === 'finished'
                     ? 'fixtures.finishedEmpty'
-                    : statusFilter === 'upcoming'
-                      ? 'fixtures.upcomingEmpty'
-                      : 'common.empty';
+                    : 'fixtures.upcomingEmpty';
               return (
                 <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
               );
             }
-            return (
-              <>
-                {showUpcoming && upcoming.map((d) => renderDay(d, attachDayRef))}
-                {showFinished && (
-                  <>
-                    {statusFilter === 'all' && finished.length > 0 && (
-                      <div className="flex items-center gap-3 pt-2">
-                        <span className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase shrink-0">
-                          {t('fixtures.results')}
-                        </span>
-                        <span className="h-px flex-1 bg-line" />
-                      </div>
-                    )}
-                    {finished.map((d) => renderDay(d, NOOP_REF))}
-                  </>
-                )}
-              </>
-            );
+            // Upcoming sections register scroll refs (auto-scroll targets);
+            // finished ones never do — see NOOP_REF.
+            const attach = statusFilter === 'finished' ? NOOP_REF : attachDayRef;
+            return <>{days.map((d) => renderDay(d, attach))}</>;
           })()}
         </>
       )}

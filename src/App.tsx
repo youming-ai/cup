@@ -102,6 +102,21 @@ export default function App() {
     [setView],
   );
 
+  // Backward-compat: bookmarks/shares from before the /match route used query
+  // strings (e.g. /?view=live&match=live-game). Translate those once on mount
+  // into the new route so old links still open the right tab/player.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const legacyMatch = params.get('match');
+    const legacyView = params.get('view');
+    if (legacyMatch) {
+      navigate(`/match/${encodeURIComponent(legacyMatch)}`, { replace: true });
+    } else if (legacyView === 'live' || legacyView === 'schedule') {
+      setView(legacyView);
+      navigate('/', { replace: true });
+    }
+  }, [setView]);
+
   // Build the content for the current route.
   let content: ReactNode;
   if (route.kind === 'match') {
@@ -110,12 +125,25 @@ export default function App() {
     // player iframe view). LiveView reads the URL on mount.
     if (route.slug.startsWith('wc:')) {
       const wcSlug = route.slug.slice('wc:'.length);
-      const match = wc.matches.find((m) => m.slug === wcSlug);
-      content = match ? (
-        <MatchDetailPage match={match} onBack={() => navigate('/', { replace: true })} />
-      ) : (
-        <NotFound onBack={() => navigate('/', { replace: true })} />
-      );
+      // A cold load of a shared /match/wc:… URL hits this while the schedule
+      // is still fetching: wait for data (and surface fetch errors) before
+      // deciding the match doesn't exist, otherwise valid links flash 404.
+      if (wc.loading) {
+        content = <Loading />;
+      } else if (wc.error) {
+        content = <ErrorState message={wc.error} onRetry={wc.refetch} />;
+      } else {
+        const match = wc.matches.find((m) => m.slug === wcSlug);
+        content = match ? (
+          <MatchDetailPage match={match} onBack={() => navigate('/', { replace: true })} />
+        ) : (
+          <NotFound onBack={() => navigate('/', { replace: true })} />
+        );
+      }
+    } else if (streams.loading) {
+      content = <Loading />;
+    } else if (streams.error) {
+      content = <ErrorState message={streams.error} onRetry={streams.refetch} />;
     } else {
       content = <LiveView matches={streams.matches} initialSlug={route.slug} />;
     }
