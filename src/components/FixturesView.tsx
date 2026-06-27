@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import { navigate } from '../utils/router';
+import BracketView from './BracketView';
 import MatchCard from './MatchCard';
 import StandingsView from './StandingsView';
 import TopScorersView from './TopScorersView';
@@ -18,7 +19,7 @@ const NOOP_REF = (_key: string, _el: HTMLElement | null) => {};
 // further narrow by stage; this is a coarser "is the match still to play or
 // already played?" toggle. Defaults to Upcoming so users land on what's next.
 type StatusFilter = 'upcoming' | 'finished';
-type Tab = 'schedule' | 'standings' | 'scorers';
+type Tab = 'schedule' | 'standings' | 'scorers' | 'bracket';
 
 export default function FixturesView({
   matches,
@@ -160,7 +161,7 @@ export default function FixturesView({
     <div ref={containerRef} className="max-w-6xl mx-auto space-y-6">
       {/* 赛程 | 积分 子切换 */}
       <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
-        {(['schedule', 'standings', 'scorers'] as const).map((k) => (
+        {(['schedule', 'standings', 'scorers', 'bracket'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -179,6 +180,8 @@ export default function FixturesView({
         <StandingsView groups={groups} />
       ) : tab === 'scorers' ? (
         <TopScorersView scorers={scorers} />
+      ) : tab === 'bracket' ? (
+        <BracketView groups={groups} matches={matches} />
       ) : (
         <>
           {/* Quick filter: Upcoming / Finished. Counts are taken from the
