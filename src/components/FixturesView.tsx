@@ -192,12 +192,19 @@ export default function FixturesView({
             const showUpcoming = statusFilter !== 'finished' && upcoming.length > 0;
             const showFinished = statusFilter !== 'upcoming' && finished.length > 0;
             if (!showUpcoming && !showFinished) {
+              // The status-filter counts above are unfiltered by stage, so a
+              // status-specific message ("No finished matches yet") would
+              // contradict a non-zero chip count when an empty stage is also
+              // selected. Only assert that global truth when no stage narrows
+              // the view; otherwise fall back to the neutral "no results".
               const emptyKey =
-                statusFilter === 'finished'
-                  ? 'fixtures.finishedEmpty'
-                  : statusFilter === 'upcoming'
-                    ? 'fixtures.upcomingEmpty'
-                    : 'common.empty';
+                stage !== 'all'
+                  ? 'common.empty'
+                  : statusFilter === 'finished'
+                    ? 'fixtures.finishedEmpty'
+                    : statusFilter === 'upcoming'
+                      ? 'fixtures.upcomingEmpty'
+                      : 'common.empty';
               return (
                 <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
               );
