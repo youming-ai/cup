@@ -181,6 +181,8 @@ export function useWorldCup() {
           awayName: str(awayTeam.displayName),
           homeFlag: teamLogo(homeTeam),
           awayFlag: teamLogo(awayTeam),
+          homeId: homeId,
+          awayId: str(awayTeam.id),
           homeScore: status === 'upcoming' ? null : parseScore(str(home.score)),
           awayScore: status === 'upcoming' ? null : parseScore(str(away.score)),
           group: teamGroup.get(homeId) || teamGroup.get(str(awayTeam.id)) || '',

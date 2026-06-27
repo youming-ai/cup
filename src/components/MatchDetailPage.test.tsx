@@ -16,6 +16,8 @@ const match: WCMatch = {
   awayName: 'South Africa',
   homeFlag: '',
   awayFlag: '',
+  homeId: '203',
+  awayId: '492',
   homeScore: 2,
   awayScore: 0,
   group: 'A',

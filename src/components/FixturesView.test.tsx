@@ -23,6 +23,8 @@ function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
     awayName: 'Canada',
     homeFlag: '',
     awayFlag: '',
+    homeId: '203',
+    awayId: '224',
     homeScore: 0,
     awayScore: 0,
     status: 'upcoming',

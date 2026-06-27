@@ -45,6 +45,8 @@ export interface WCMatch {
   awayName: string;
   homeFlag: string;
   awayFlag: string;
+  homeId: string; // ESPN team id for the home side
+  awayId: string; // ESPN team id for the away side
   homeScore: number | null;
   awayScore: number | null;
   group: string;

@@ -3,6 +3,7 @@ import Footer from './components/Footer';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
 import MatchDetailPage from './components/MatchDetailPage';
+import TeamPage from './components/TeamPage';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
@@ -147,7 +148,24 @@ export default function App() {
     } else {
       content = <LiveView matches={streams.matches} initialSlug={route.slug} />;
     }
-  } else if (route.kind === 'team' || route.kind === 'player') {
+  } else if (route.kind === 'team') {
+    // /team/[id] is a deep link into the schedule view's data — render
+    // only after the WC data has loaded so a cold-loaded shared link
+    // doesn't flash 404.
+    content = wc.loading ? (
+      <Loading />
+    ) : wc.error ? (
+      <ErrorState message={wc.error} onRetry={wc.refetch} />
+    ) : (
+      <TeamPage
+        teamId={route.teamId}
+        groups={wc.groups}
+        matches={wc.matches}
+        scorers={wc.scorers}
+        onBack={() => navigate('/', { replace: true })}
+      />
+    );
+  } else if (route.kind === 'player') {
     content = <NotFound onBack={() => navigate('/', { replace: true })} />;
   } else {
     // Home: render whichever tab is selected.
