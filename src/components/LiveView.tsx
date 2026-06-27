@@ -141,13 +141,17 @@ function Section({
   );
 }
 
-export default function LiveView({ matches }: { matches: Match[] }) {
+export default function LiveView({
+  matches,
+  initialSlug,
+}: {
+  matches: Match[];
+  initialSlug?: string;
+}) {
   const t = useT();
   const { toggle, isFavorite } = useFavorites();
   const favKey = (m: Match) => `live:${m.slug}`;
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(() =>
-    new URLSearchParams(window.location.search).get('match'),
-  );
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null);
 
   // 只有正在直播的场次可进入播放页；指向"即将开始"的 ?match 深链回退到列表
   const selected = useMemo(() => {

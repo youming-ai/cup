@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
 import type { WCMatch } from '../types';
-import MatchDetailModal from './MatchDetailModal';
+import MatchDetailPage from './MatchDetailPage';
 
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
@@ -25,6 +25,7 @@ const match: WCMatch = {
   homeScorers: [],
   awayScorers: [],
   venue: '',
+  slug: 'mexico-vs-south-africa',
 };
 
 function summaryJson() {
@@ -40,60 +41,29 @@ function summaryJson() {
   };
 }
 
-it('loads the summary and shows the stats tab, closes on the close button', async () => {
+it('renders the match header (home : away) and the back button', async () => {
   fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const onClose = vi.fn();
+  const onBack = vi.fn();
   render(
     <LanguageProvider>
-      <MatchDetailModal match={match} onClose={onClose} />
+      <MatchDetailPage match={match} onBack={onBack} />
     </LanguageProvider>,
   );
   await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
-  fireEvent.click(screen.getByLabelText('Close'));
-  expect(onClose).toHaveBeenCalled();
-});
-
-it('closes on Escape', async () => {
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const onClose = vi.fn();
-  render(
-    <LanguageProvider>
-      <MatchDetailModal match={match} onClose={onClose} />
-    </LanguageProvider>,
-  );
-  fireEvent.keyDown(window, { key: 'Escape' });
-  expect(onClose).toHaveBeenCalled();
-});
-
-it('restores focus to the opener element after closing', async () => {
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const opener = document.createElement('button');
-  opener.textContent = 'open';
-  document.body.appendChild(opener);
-  opener.focus();
-  expect(document.activeElement).toBe(opener);
-
-  const onClose = vi.fn();
-  const { unmount } = render(
-    <LanguageProvider>
-      <MatchDetailModal match={match} onClose={onClose} />
-    </LanguageProvider>,
-  );
-  await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
-  // Closing the modal (caller would unmount it on onClose) restores opener focus.
-  unmount();
-  expect(document.activeElement).toBe(opener);
-  opener.remove();
+  // Header is rendered with the score and team names.
+  expect(screen.getByText('Mexico 2 : 0 South Africa')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Back/ }));
+  expect(onBack).toHaveBeenCalled();
 });
 
 it('shows an i18n error with a retry button that refetches', async () => {
   fetchMock
     .mockResolvedValueOnce({ ok: false })
     .mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const onClose = vi.fn();
+  const onBack = vi.fn();
   render(
     <LanguageProvider>
-      <MatchDetailModal match={match} onClose={onClose} />
+      <MatchDetailPage match={match} onBack={onBack} />
     </LanguageProvider>,
   );
   await waitFor(() => expect(screen.getByText('Failed to load data')).toBeInTheDocument());

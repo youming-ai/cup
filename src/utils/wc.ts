@@ -1,4 +1,5 @@
 import type { MatchStatus, Stage, WCStanding } from '../types';
+import { slugify } from './helpers';
 
 export function parseScore(s: string | number | null | undefined): number | null {
   if (s == null) return null;
@@ -26,6 +27,13 @@ const SLUG_TO_STAGE: Record<string, Stage> = {
 };
 export function stageFromSlug(slug: string | undefined): Stage {
   return (slug && SLUG_TO_STAGE[slug]) || 'group';
+}
+
+// Build a URL-friendly slug from a match's home/away team names. Used by
+// the /match/[slug] route for deep linking. Same slugify pipeline as the
+// streamed.pk Match type so URL shapes match across data sources.
+export function matchSlug(homeName: string, awayName: string): string {
+  return slugify(`${homeName}-vs-${awayName}`);
 }
 
 // Build a display scorer line from an ESPN scoring play, e.g.

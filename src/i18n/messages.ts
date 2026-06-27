@@ -74,6 +74,8 @@ const en: Dict = {
   'detail.attendance': 'Attendance',
   'detail.noData': 'No data yet',
   'detail.close': 'Close',
+  'detail.back': 'Back',
+  'detail.tabsLabel': 'Match detail tabs',
 };
 
 const zh: Dict = {
@@ -146,6 +148,8 @@ const zh: Dict = {
   'detail.attendance': '上座',
   'detail.noData': '暂无数据',
   'detail.close': '关闭',
+  'detail.back': '返回',
+  'detail.tabsLabel': '比赛详情标签页',
 };
 
 const ja: Dict = {
@@ -218,6 +222,8 @@ const ja: Dict = {
   'detail.attendance': '観客数',
   'detail.noData': 'データなし',
   'detail.close': '閉じる',
+  'detail.back': '戻る',
+  'detail.tabsLabel': '試合詳細のタブ',
 };
 
 const ko: Dict = {
@@ -290,6 +296,8 @@ const ko: Dict = {
   'detail.attendance': '관중',
   'detail.noData': '데이터 없음',
   'detail.close': '닫기',
+  'detail.back': '뒤로',
+  'detail.tabsLabel': '경기 상세 탭',
 };
 
 export const messages: Record<Lang, Dict> = { en, zh, ja, ko };

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WCGroup, WCMatch, WCStanding } from '../types';
 import {
+  matchSlug,
   parseScore,
   scorerLabel,
   sortStandings,
@@ -148,6 +149,7 @@ export function useWorldCup() {
           homeScorers: status === 'upcoming' ? [] : homeScorers,
           awayScorers: status === 'upcoming' ? [] : awayScorers,
           venue: venueName && city ? `${venueName} · ${city}` : venueName,
+          slug: matchSlug(str(homeTeam.displayName), str(awayTeam.displayName)),
         };
       });
 

@@ -35,6 +35,10 @@ export interface WCMatch {
   homeScorers: string[];
   awayScorers: string[];
   venue: string; // "Estadio Azteca · Mexico City" or '' when unknown
+  // URL-friendly identifier (home-vs-away, lowercased, hyphenated). Used
+  // by the /match/[slug] route to deep-link directly to a match detail
+  // page. Derived in useWorldCup from the team names via slugify().
+  slug: string;
 }
 
 export interface WCStanding {

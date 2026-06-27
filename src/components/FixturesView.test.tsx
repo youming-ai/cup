@@ -27,6 +27,7 @@ function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
     homeScorers: [],
     awayScorers: [],
     venue: '',
+    slug: 'mexico-vs-canada',
     ...overrides,
   };
 }

@@ -1,19 +1,14 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
 import Footer from './components/Footer';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
+import MatchDetailPage from './components/MatchDetailPage';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
+import { navigate, useRouter } from './utils/router';
 
 const FixturesView = lazy(() => import('./components/FixturesView'));
-
-const KNOWN_VIEWS: View[] = ['live', 'schedule'];
-
-function initialView(): View {
-  const v = new URLSearchParams(window.location.search).get('view');
-  return v && (KNOWN_VIEWS as string[]).includes(v) ? (v as View) : 'schedule';
-}
 
 function Loading() {
   const t = useT();
@@ -46,59 +41,117 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
+function NotFound({ onBack }: { onBack: () => void }) {
+  const t = useT();
+  return (
+    <div className="flex flex-col items-center justify-center h-full bg-night gap-3 p-6 text-center">
+      <div className="font-mono text-xs tracking-[0.3em] text-chalkdim">404</div>
+      <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">
+        {t('common.error')}
+      </h2>
+      <button
+        type="button"
+        onClick={onBack}
+        className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide hover:brightness-110 transition"
+      >
+        {t('detail.back')}
+      </button>
+    </div>
+  );
+}
+
+// Tiny local hook: persist the last-selected tab to localStorage so
+// returning visitors land where they left off.
+function usePersistedView(): [View, (v: View) => void] {
+  const [view, setView] = useState<View>(() => {
+    try {
+      const stored = localStorage.getItem('cup:view');
+      if (stored === 'live' || stored === 'schedule') return stored;
+    } catch {
+      /* ignore */
+    }
+    return 'schedule';
+  });
+  const setViewPersisted = useCallback((v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem('cup:view', v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  return [view, setViewPersisted];
+}
+
 export default function App() {
-  const [view, setViewState] = useState<View>(initialView);
   const { lang } = useLang();
   const streams = useStreams();
   const wc = useWorldCup();
+  const { route } = useRouter();
 
   useEffect(() => {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
   }, [lang]);
 
-  const setView = useCallback((v: View) => {
-    setViewState(v);
-    // 保留既有查询参数（尤其是 ?match），仅更新 view，避免切 tab 丢失直播深链
-    const params = new URLSearchParams(window.location.search);
-    params.set('view', v);
-    window.history.replaceState(null, '', `?${params.toString()}`);
-  }, []);
+  const [view, setView] = usePersistedView();
+  const onSelectView = useCallback(
+    (v: View) => {
+      setView(v);
+      navigate('/', { replace: true });
+    },
+    [setView],
+  );
+
+  // Build the content for the current route.
+  let content: ReactNode;
+  if (route.kind === 'match') {
+    // Two slug spaces share /match/. wc:<slug> → ESPN schedule match
+    // (MatchDetailPage); anything else → streamed.pk match (LiveView's
+    // player iframe view). LiveView reads the URL on mount.
+    if (route.slug.startsWith('wc:')) {
+      const wcSlug = route.slug.slice('wc:'.length);
+      const match = wc.matches.find((m) => m.slug === wcSlug);
+      content = match ? (
+        <MatchDetailPage match={match} onBack={() => navigate('/', { replace: true })} />
+      ) : (
+        <NotFound onBack={() => navigate('/', { replace: true })} />
+      );
+    } else {
+      content = <LiveView matches={streams.matches} initialSlug={route.slug} />;
+    }
+  } else if (route.kind === 'team' || route.kind === 'player') {
+    content = <NotFound onBack={() => navigate('/', { replace: true })} />;
+  } else {
+    // Home: render whichever tab is selected.
+    if (view === 'live') {
+      content = streams.loading ? (
+        <Loading />
+      ) : streams.error ? (
+        <ErrorState message={streams.error} onRetry={streams.refetch} />
+      ) : (
+        <LiveView matches={streams.matches} />
+      );
+    } else {
+      content = wc.loading ? (
+        <Loading />
+      ) : wc.error ? (
+        <ErrorState message={wc.error} onRetry={wc.refetch} />
+      ) : (
+        <Suspense fallback={<Loading />}>
+          <FixturesView matches={wc.matches} groups={wc.groups} />
+        </Suspense>
+      );
+    }
+  }
 
   return (
     // Single scroll container for the whole app, so the sticky Header shares the
     // SAME scrollbar gutter as the content below — they line up on desktop
     // (classic scrollbar) and mobile (overlay) with no per-platform padding hack.
     <div className="flex flex-col h-dvh overflow-y-auto [scrollbar-gutter:stable_both-edges] bg-night">
-      <Header view={view} setView={setView} />
-
-      {view === 'live' && (
-        <div className="flex-1 flex flex-col">
-          {streams.loading ? (
-            <Loading />
-          ) : streams.error ? (
-            <ErrorState message={streams.error} onRetry={streams.refetch} />
-          ) : (
-            <LiveView matches={streams.matches} />
-          )}
-        </div>
-      )}
-
-      {view === 'schedule' && (
-        <div className="flex-1 p-4 md:p-6 bg-night flex flex-col justify-between">
-          <div className="flex-1">
-            {wc.loading ? (
-              <Loading />
-            ) : wc.error ? (
-              <ErrorState message={wc.error} onRetry={wc.refetch} />
-            ) : (
-              <Suspense fallback={<Loading />}>
-                <FixturesView matches={wc.matches} groups={wc.groups} />
-              </Suspense>
-            )}
-          </div>
-          <Footer />
-        </div>
-      )}
+      <Header view={view} setView={onSelectView} />
+      <div className="flex-1 flex flex-col">{content}</div>
+      {route.kind === 'home' && view === 'schedule' && <Footer />}
     </div>
   );
 }

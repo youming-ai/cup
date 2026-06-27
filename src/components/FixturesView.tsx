@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Stage, WCGroup, WCMatch } from '../types';
+import { navigate } from '../utils/router';
 import MatchCard from './MatchCard';
-import MatchDetailModal from './MatchDetailModal';
 import StandingsView from './StandingsView';
 
 const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
@@ -23,8 +23,9 @@ export default function FixturesView({
   const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [openMatch, setOpenMatch] = useState<WCMatch | null>(null);
-  const closeDetail = useCallback(() => setOpenMatch(null), []);
+  const openMatch = useCallback((m: WCMatch) => {
+    navigate(`/match/${encodeURIComponent(m.slug)}`);
+  }, []);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));
@@ -103,7 +104,7 @@ export default function FixturesView({
             homeScorers={m.homeScorers}
             awayScorers={m.awayScorers}
             venue={m.venue}
-            onOpen={m.status === 'upcoming' ? undefined : () => setOpenMatch(m)}
+            onOpen={m.status === 'upcoming' ? undefined : () => openMatch(m)}
           />
         ))}
       </div>
@@ -223,7 +224,6 @@ export default function FixturesView({
           })()}
         </>
       )}
-      {openMatch && <MatchDetailModal match={openMatch} onClose={closeDetail} />}
     </div>
   );
 }
