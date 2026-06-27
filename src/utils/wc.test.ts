@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { WCStanding } from '../types';
 import {
+  matchSlug,
   parseScore,
   progressFromStatus,
   scorerLabel,
@@ -131,6 +132,22 @@ describe('progressFromStatus', () => {
       type: { state: 'in' },
     });
     expect(p?.period).toBe(1);
+  });
+});
+
+describe('matchSlug', () => {
+  it('builds a readable slug from team names plus the event id', () => {
+    expect(matchSlug('Argentina', 'France', '401547')).toBe('argentina-vs-france-401547');
+  });
+
+  it('disambiguates repeat fixtures by event id', () => {
+    // Same teams meeting twice (group + knockout) must get distinct slugs so
+    // the /match route resolves to the right event, not the first match.
+    expect(matchSlug('Brazil', 'Spain', '1')).not.toBe(matchSlug('Brazil', 'Spain', '2'));
+  });
+
+  it('omits the trailing dash when the event id is missing', () => {
+    expect(matchSlug('Mexico', 'Canada', '')).toBe('mexico-vs-canada');
   });
 });
 

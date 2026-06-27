@@ -173,7 +173,7 @@ export function useWorldCup() {
           homeScorers: status === 'upcoming' ? [] : homeScorers,
           awayScorers: status === 'upcoming' ? [] : awayScorers,
           venue: venueName && city ? `${venueName} · ${city}` : venueName,
-          slug: matchSlug(str(homeTeam.displayName), str(awayTeam.displayName)),
+          slug: matchSlug(str(homeTeam.displayName), str(awayTeam.displayName), str(ev.id)),
           ...(progress ? { progress } : {}),
         };
       });

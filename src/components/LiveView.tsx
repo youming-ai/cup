@@ -3,6 +3,7 @@ import { memo, type ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { useFavorites } from '../hooks/useFavorites';
 import { useT } from '../i18n';
 import type { Match } from '../types';
+import { navigate } from '../utils/router';
 import Footer from './Footer';
 import { FavoriteButton, ReminderMenu } from './MatchActions';
 import Player from './Player';
@@ -180,28 +181,26 @@ export default function LiveView({
   const t = useT();
   const { toggle, isFavorite } = useFavorites();
   const favKey = (m: Match) => `live:${m.slug}`;
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null);
   const [iframeUrl, setIframeUrl] = useState('');
 
-  // 只有正在直播的场次可进入播放页；指向"即将开始"的 ?match 深链回退到列表
+  // Player mode is route-driven: /match/<slug> renders this view with
+  // `initialSlug`. Only a currently-live match opens the player; a slug that
+  // points at an upcoming/unknown match falls back to the list. Deriving from
+  // the prop (not local state) means refresh + share links resolve correctly.
   const selected = useMemo(() => {
-    if (!selectedSlug) return null;
-    const m = matches.find((x) => x.slug === selectedSlug);
+    if (!initialSlug) return null;
+    const m = matches.find((x) => x.slug === initialSlug);
     if (!m) return null;
     return classify(m, Date.now()) === 'live' ? m : null;
-  }, [selectedSlug, matches]);
+  }, [initialSlug, matches]);
 
-  // 深链：?match 已存在但 iframe 尚未设置时，等 matches 加载出来后补上默认线路
-  useEffect(() => {
-    if (selected && !iframeUrl) setIframeUrl(selected.iframe);
-  }, [selected, iframeUrl]);
+  // Player owns the default-source selection (it filters to trusted streams
+  // and seeds sources[0] itself). LiveView must NOT also seed `iframeUrl` from
+  // match.iframe: if that URL isn't a trusted source, Player clears it and
+  // LiveView re-seeds it, looping forever and freezing the tab.
 
   const backToList = useCallback(() => {
-    setSelectedSlug(null);
-    setIframeUrl('');
-    const params = new URLSearchParams(window.location.search);
-    params.delete('match');
-    window.history.replaceState(null, '', `?${params.toString()}`);
+    navigate('/');
   }, []);
 
   // Escape 键退出播放页
@@ -228,12 +227,7 @@ export default function LiveView({
   }, [matches]);
 
   const openMatch = useCallback((m: Match) => {
-    setSelectedSlug(m.slug);
-    setIframeUrl(m.iframe);
-    const params = new URLSearchParams(window.location.search);
-    params.set('view', 'live');
-    params.set('match', m.slug);
-    window.history.replaceState(null, '', `?${params.toString()}`);
+    navigate(`/match/${encodeURIComponent(m.slug)}`);
   }, []);
 
   // favorited matches (live + upcoming) get pinned into a section at the top,

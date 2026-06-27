@@ -4,10 +4,10 @@ import { LanguageProvider } from '../i18n';
 import type { Match } from '../types';
 import LiveView from './LiveView';
 
-function renderLiveView(matches: Match[]) {
+function renderLiveView(matches: Match[], initialSlug?: string) {
   return render(
     <LanguageProvider>
-      <LiveView matches={matches} />
+      <LiveView matches={matches} initialSlug={initialSlug} />
     </LanguageProvider>,
   );
 }
@@ -106,34 +106,31 @@ describe('LiveView', () => {
     expect(screen.queryByText('Back to matches')).not.toBeInTheDocument();
   });
 
-  it('enters player mode when URL has a valid live match slug', () => {
-    window.history.replaceState(null, '', '?view=live&match=live-game');
+  it('enters player mode when initialSlug points at a live match', () => {
     const matches: Match[] = [
       mk({ id: 1, name: 'Live Game', iframe: 'https://a', alwaysLive: true }),
     ];
-    renderLiveView(matches);
+    renderLiveView(matches, 'live-game');
     // Should show the player with a back button
     expect(screen.getByText('Back to matches')).toBeInTheDocument();
     expect(screen.getByText('Live Game')).toBeInTheDocument(); // title in player
   });
 
-  it('ignores deep link for an upcoming match and shows list', () => {
+  it('ignores initialSlug for an upcoming match and shows list', () => {
     const future = Math.floor((Date.now() + 7200000) / 1000);
-    window.history.replaceState(null, '', '?view=live&match=future-match');
     const matches: Match[] = [
       mk({ id: 1, name: 'Future Match', iframe: 'https://a', startsAt: future }),
     ];
-    renderLiveView(matches);
+    renderLiveView(matches, 'future-match');
     // Should stay on list view since future matches are not playable
     expect(screen.queryByText('Back to matches')).not.toBeInTheDocument();
   });
 
-  it('ignores deep link when match slug does not exist', () => {
-    window.history.replaceState(null, '', '?view=live&match=nonexistent');
+  it('ignores initialSlug when the match does not exist', () => {
     const matches: Match[] = [
       mk({ id: 1, name: 'Live Game', iframe: 'https://a', alwaysLive: true }),
     ];
-    renderLiveView(matches);
+    renderLiveView(matches, 'nonexistent');
     expect(screen.queryByText('Back to matches')).not.toBeInTheDocument();
   });
 });

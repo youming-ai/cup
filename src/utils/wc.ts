@@ -103,8 +103,13 @@ export function stageFromSlug(slug: string | undefined): Stage {
 // Build a URL-friendly slug from a match's home/away team names. Used by
 // the /match/[slug] route for deep linking. Same slugify pipeline as the
 // streamed.pk Match type so URL shapes match across data sources.
-export function matchSlug(homeName: string, awayName: string): string {
-  return slugify(`${homeName}-vs-${awayName}`);
+//
+// The ESPN event id is appended so the slug is unique: the same two teams can
+// meet more than once in a tournament (group stage + a knockout rematch), and
+// resolving a route by team names alone would always open the first fixture.
+export function matchSlug(homeName: string, awayName: string, eventId: string): string {
+  const base = slugify(`${homeName}-vs-${awayName}`);
+  return eventId ? `${base}-${eventId}` : base;
 }
 
 // Build a display scorer line from an ESPN scoring play, e.g.

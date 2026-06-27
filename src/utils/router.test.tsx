@@ -97,6 +97,13 @@ describe('navigate', () => {
     expect(window.history.pushState).not.toHaveBeenCalled();
     expect(window.history.replaceState).not.toHaveBeenCalled();
   });
+
+  it('dispatches a route-change event so useRouter can sync', () => {
+    const spy = vi.spyOn(window, 'dispatchEvent');
+    navigate('/match/abc');
+    expect(spy.mock.calls.some(([e]) => (e as Event).type === 'app:routechange')).toBe(true);
+    spy.mockRestore();
+  });
 });
 
 describe('useRouter', () => {
@@ -131,6 +138,28 @@ describe('useRouter', () => {
     });
     act(() => {
       window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(captured.route).toEqual({ kind: 'match', slug: 'foo' });
+  });
+
+  it('reacts to route-change events from a programmatic navigate()', () => {
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, pathname: '/' },
+      writable: true,
+    });
+    let captured!: ReturnType<typeof useRouter>;
+    render(<Harness onReady={(route) => (captured = route)} />);
+    expect(captured.route).toEqual({ kind: 'home' });
+
+    // A direct navigate() (as FixturesView/LiveView do) updates history and
+    // fires the route-change event; useRouter must re-parse off it.
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, pathname: '/match/foo' },
+      writable: true,
+    });
+    act(() => {
+      window.dispatchEvent(new Event('app:routechange'));
     });
 
     expect(captured.route).toEqual({ kind: 'match', slug: 'foo' });

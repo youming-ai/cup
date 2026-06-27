@@ -42,6 +42,12 @@ export function pathFor(route: Route): string {
   }
 }
 
+// pushState/replaceState do NOT emit `popstate`, so `useRouter` can't see a
+// programmatic navigation on its own. Every `navigate()` dispatches this event
+// and the hook re-parses on it — that's what keeps any caller (FixturesView,
+// LiveView, App) in sync without threading a setter through props.
+const ROUTE_CHANGE = 'app:routechange';
+
 // Programmatic navigation. Default behaviour: pushState (back/forward works).
 // Pass `{ replace: true }` for state-only updates that shouldn't grow the
 // history stack (e.g. tab switches).
@@ -54,10 +60,11 @@ export function navigate(path: string, opts: { replace?: boolean; scroll?: boole
     window.history.pushState(null, '', path);
   }
   if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
+  window.dispatchEvent(new Event(ROUTE_CHANGE));
 }
 
-// React hook: subscribes to popstate + mount, returns the current Route
-// and a setter for navigating.
+// React hook: subscribes to popstate (back/forward) + our route-change event
+// (programmatic navigate), returns the current Route and a `go` alias.
 export function useRouter(): {
   route: Route;
   go: (path: string, opts?: { replace?: boolean; scroll?: boolean }) => void;
@@ -65,10 +72,13 @@ export function useRouter(): {
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
 
   useEffect(() => {
-    // Re-parse on back/forward.
-    const onPop = () => setRoute(parseRoute(window.location.pathname));
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
+    const sync = () => setRoute(parseRoute(window.location.pathname));
+    window.addEventListener('popstate', sync);
+    window.addEventListener(ROUTE_CHANGE, sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener(ROUTE_CHANGE, sync);
+    };
   }, []);
 
   const go = useCallback((path: string, opts?: { replace?: boolean; scroll?: boolean }) => {
