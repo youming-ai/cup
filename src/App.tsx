@@ -1,4 +1,4 @@
-import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useCallback, useEffect } from 'react';
 import Footer from './components/Footer';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
@@ -62,29 +62,6 @@ function NotFound({ onBack }: { onBack: () => void }) {
   );
 }
 
-// Tiny local hook: persist the last-selected tab to localStorage so
-// returning visitors land where they left off.
-function usePersistedView(): [View, (v: View) => void] {
-  const [view, setView] = useState<View>(() => {
-    try {
-      const stored = localStorage.getItem('cup:view');
-      if (stored === 'live' || stored === 'schedule') return stored;
-    } catch {
-      /* ignore */
-    }
-    return 'schedule';
-  });
-  const setViewPersisted = useCallback((v: View) => {
-    setView(v);
-    try {
-      localStorage.setItem('cup:view', v);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  return [view, setViewPersisted];
-}
-
 export default function App() {
   const { lang } = useLang();
   const streams = useStreams();
@@ -95,74 +72,72 @@ export default function App() {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
   }, [lang]);
 
-  const [view, setView] = usePersistedView();
-  const onSelectView = useCallback(
-    (v: View) => {
-      setView(v);
-      navigate('/', { replace: true });
-    },
-    [setView],
-  );
+  // Top-nav highlight is derived from the route — single source of truth, no
+  // separate persisted "view" state. Selecting a tab just navigates.
+  const view: View = route.kind === 'live' || route.kind === 'stream' ? 'live' : 'schedule';
+  const onSelectView = useCallback((v: View) => navigate(v === 'live' ? '/live' : '/'), []);
+  const backHome = useCallback(() => navigate('/', { replace: true }), []);
 
-  // Backward-compat: bookmarks/shares from before the /match route used query
-  // strings (e.g. /?view=live&match=live-game). Translate those once on mount
-  // into the new route so old links still open the right tab/player.
+  // Backward-compat for pre-route bookmarks: /?view=live → /live,
+  // /?view=schedule → /, /?match=<slug> → /live/<slug> (the old ?match was
+  // always a live stream). Run once on mount.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const legacyMatch = params.get('match');
     const legacyView = params.get('view');
     if (legacyMatch) {
-      navigate(`/match/${encodeURIComponent(legacyMatch)}`, { replace: true });
-    } else if (legacyView === 'live' || legacyView === 'schedule') {
-      setView(legacyView);
+      navigate(`/live/${encodeURIComponent(legacyMatch)}`, { replace: true });
+    } else if (legacyView === 'live') {
+      navigate('/live', { replace: true });
+    } else if (legacyView === 'schedule') {
       navigate('/', { replace: true });
     }
-  }, [setView]);
+  }, []);
 
-  // A live-stream deep link (/match/<slug>, no wc: prefix) is the live tab's
-  // content. Persist view='live' so Back (→ '/') returns to the live list
-  // rather than whatever tab was last stored (default 'schedule'). This also
-  // covers legacy ?match= links, which migrate to the same route above.
-  useEffect(() => {
-    if (route.kind === 'match' && !route.slug.startsWith('wc:')) {
-      setView('live');
-    }
-  }, [route, setView]);
-
-  // Build the content for the current route.
+  // Build the content for the current route. WC-data pages wait for the
+  // schedule fetch (and surface its error) before deciding anything is
+  // missing, so a cold-loaded shared link never flashes 404.
   let content: ReactNode;
-  if (route.kind === 'match') {
-    // Two slug spaces share /match/. wc:<slug> → ESPN schedule match
-    // (MatchDetailPage); anything else → streamed.pk match (LiveView's
-    // player iframe view). LiveView reads the URL on mount.
-    if (route.slug.startsWith('wc:')) {
-      const wcSlug = route.slug.slice('wc:'.length);
-      // A cold load of a shared /match/wc:… URL hits this while the schedule
-      // is still fetching: wait for data (and surface fetch errors) before
-      // deciding the match doesn't exist, otherwise valid links flash 404.
-      if (wc.loading) {
-        content = <Loading />;
-      } else if (wc.error) {
-        content = <ErrorState message={wc.error} onRetry={wc.refetch} />;
-      } else {
-        const match = wc.matches.find((m) => m.slug === wcSlug);
-        content = match ? (
-          <MatchDetailPage match={match} onBack={() => navigate('/', { replace: true })} />
-        ) : (
-          <NotFound onBack={() => navigate('/', { replace: true })} />
-        );
-      }
-    } else if (streams.loading) {
+  if (route.kind === 'section') {
+    content = wc.loading ? (
+      <Loading />
+    ) : wc.error ? (
+      <ErrorState message={wc.error} onRetry={wc.refetch} />
+    ) : (
+      <Suspense fallback={<Loading />}>
+        <FixturesView
+          section={route.section}
+          matches={wc.matches}
+          groups={wc.groups}
+          scorers={wc.scorers}
+        />
+      </Suspense>
+    );
+  } else if (route.kind === 'live' || route.kind === 'stream') {
+    content = streams.loading ? (
+      <Loading />
+    ) : streams.error ? (
+      <ErrorState message={streams.error} onRetry={streams.refetch} />
+    ) : (
+      <LiveView
+        matches={streams.matches}
+        initialSlug={route.kind === 'stream' ? route.slug : undefined}
+      />
+    );
+  } else if (route.kind === 'match') {
+    if (wc.loading) {
       content = <Loading />;
-    } else if (streams.error) {
-      content = <ErrorState message={streams.error} onRetry={streams.refetch} />;
+    } else if (wc.error) {
+      content = <ErrorState message={wc.error} onRetry={wc.refetch} />;
     } else {
-      content = <LiveView matches={streams.matches} initialSlug={route.slug} />;
+      const match = wc.matches.find((m) => m.slug === route.slug);
+      content = match ? (
+        <MatchDetailPage match={match} onBack={backHome} />
+      ) : (
+        <NotFound onBack={backHome} />
+      );
     }
   } else if (route.kind === 'team') {
-    // /team/[id] is a deep link into the schedule view's data — render
-    // only after the WC data has loaded so a cold-loaded shared link
-    // doesn't flash 404.
     content = wc.loading ? (
       <Loading />
     ) : wc.error ? (
@@ -173,10 +148,10 @@ export default function App() {
         groups={wc.groups}
         matches={wc.matches}
         scorers={wc.scorers}
-        onBack={() => navigate('/', { replace: true })}
+        onBack={backHome}
       />
     );
-  } else if (route.kind === 'player') {
+  } else {
     content = wc.loading ? (
       <Loading />
     ) : wc.error ? (
@@ -187,30 +162,9 @@ export default function App() {
         groups={wc.groups}
         matches={wc.matches}
         scorers={wc.scorers}
-        onBack={() => navigate('/', { replace: true })}
+        onBack={backHome}
       />
     );
-  } else {
-    // Home: render whichever tab is selected.
-    if (view === 'live') {
-      content = streams.loading ? (
-        <Loading />
-      ) : streams.error ? (
-        <ErrorState message={streams.error} onRetry={streams.refetch} />
-      ) : (
-        <LiveView matches={streams.matches} />
-      );
-    } else {
-      content = wc.loading ? (
-        <Loading />
-      ) : wc.error ? (
-        <ErrorState message={wc.error} onRetry={wc.refetch} />
-      ) : (
-        <Suspense fallback={<Loading />}>
-          <FixturesView matches={wc.matches} groups={wc.groups} scorers={wc.scorers} />
-        </Suspense>
-      );
-    }
   }
 
   return (
@@ -220,7 +174,7 @@ export default function App() {
     <div className="flex flex-col h-dvh overflow-y-auto [scrollbar-gutter:stable_both-edges] bg-night">
       <Header view={view} setView={onSelectView} />
       <div className="flex-1 flex flex-col">{content}</div>
-      {route.kind === 'home' && view === 'schedule' && <Footer />}
+      {route.kind === 'section' && <Footer />}
     </div>
   );
 }

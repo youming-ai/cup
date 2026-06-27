@@ -132,9 +132,23 @@ describe('TeamPage', () => {
 
   it('renders the team scorers section when scorers are present', () => {
     const scorers: TopScorer[] = [
-      { athleteId: '1', name: 'Alvarado', teamId: '203', teamName: 'Mexico', teamFlag: '', goals: 3 },
+      {
+        athleteId: '1',
+        name: 'Alvarado',
+        teamId: '203',
+        teamName: 'Mexico',
+        teamFlag: '',
+        goals: 3,
+      },
       { athleteId: '2', name: 'Vega', teamId: '203', teamName: 'Mexico', teamFlag: '', goals: 1 },
-      { athleteId: '3', name: 'Other Player', teamId: '999', teamName: 'Other', teamFlag: '', goals: 5 },
+      {
+        athleteId: '3',
+        name: 'Other Player',
+        teamId: '999',
+        teamName: 'Other',
+        teamFlag: '',
+        goals: 5,
+      },
     ];
     renderPage({ scorers });
     expect(screen.getByRole('heading', { level: 2, name: 'Top scorers' })).toBeInTheDocument();

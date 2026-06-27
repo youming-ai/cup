@@ -2,14 +2,27 @@ import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { navigate, parseRoute, pathFor, useRouter } from './router';
 
+const MATCHES = { kind: 'section', section: 'matches' } as const;
+
 describe('parseRoute', () => {
-  it('returns home for / and empty path', () => {
-    expect(parseRoute('/')).toEqual({ kind: 'home' });
-    expect(parseRoute('')).toEqual({ kind: 'home' });
-    expect(parseRoute('/?view=schedule')).toEqual({ kind: 'home' });
+  it('maps / and empty path to the matches section', () => {
+    expect(parseRoute('/')).toEqual(MATCHES);
+    expect(parseRoute('')).toEqual(MATCHES);
+    expect(parseRoute('/?foo=bar')).toEqual(MATCHES);
   });
 
-  it('returns home for trailing slashes', () => {
+  it('parses the section routes', () => {
+    expect(parseRoute('/standings')).toEqual({ kind: 'section', section: 'standings' });
+    expect(parseRoute('/scorers')).toEqual({ kind: 'section', section: 'scorers' });
+    expect(parseRoute('/bracket')).toEqual({ kind: 'section', section: 'bracket' });
+  });
+
+  it('parses /live (list) and /live/<slug> (stream)', () => {
+    expect(parseRoute('/live')).toEqual({ kind: 'live' });
+    expect(parseRoute('/live/echo-1')).toEqual({ kind: 'stream', slug: 'echo-1' });
+  });
+
+  it('strips a trailing slash', () => {
     expect(parseRoute('/match/foo/')).toEqual({ kind: 'match', slug: 'foo' });
   });
 
@@ -18,11 +31,8 @@ describe('parseRoute', () => {
     expect(parseRoute('/match/foo?tab=stats')).toEqual({ kind: 'match', slug: 'foo' });
   });
 
-  it('parses /team/<id>', () => {
+  it('parses /team/<id> and /player/<id>', () => {
     expect(parseRoute('/team/464')).toEqual({ kind: 'team', teamId: '464' });
-  });
-
-  it('parses /player/<id>', () => {
     expect(parseRoute('/player/12345')).toEqual({ kind: 'player', athleteId: '12345' });
   });
 
@@ -33,23 +43,28 @@ describe('parseRoute', () => {
     });
   });
 
-  it('falls back to home for unknown paths', () => {
-    expect(parseRoute('/something/random')).toEqual({ kind: 'home' });
+  it('falls back to the matches section for unknown paths', () => {
+    expect(parseRoute('/something/random')).toEqual(MATCHES);
   });
 
-  it('falls back to home on malformed percent-encoding instead of throwing', () => {
+  it('falls back to matches on malformed percent-encoding instead of throwing', () => {
     // decodeURIComponent throws URIError on these; parseRoute must not.
     expect(() => parseRoute('/match/%')).not.toThrow();
-    expect(parseRoute('/match/%')).toEqual({ kind: 'home' });
-    expect(parseRoute('/team/%E0%A4%A')).toEqual({ kind: 'home' });
-    expect(parseRoute('/player/%C3%28')).toEqual({ kind: 'home' });
+    expect(parseRoute('/match/%')).toEqual(MATCHES);
+    expect(parseRoute('/team/%E0%A4%A')).toEqual(MATCHES);
+    expect(parseRoute('/live/%C3%28')).toEqual(MATCHES);
   });
 });
 
 describe('pathFor', () => {
   it('round-trips parseRoute → pathFor → parseRoute', () => {
     const cases: Array<ReturnType<typeof parseRoute>> = [
-      { kind: 'home' },
+      { kind: 'section', section: 'matches' },
+      { kind: 'section', section: 'standings' },
+      { kind: 'section', section: 'scorers' },
+      { kind: 'section', section: 'bracket' },
+      { kind: 'live' },
+      { kind: 'stream', slug: 'echo-1' },
       { kind: 'match', slug: 'argentina-vs-france' },
       { kind: 'team', teamId: '464' },
       { kind: 'player', athleteId: '12345' },
@@ -62,6 +77,7 @@ describe('pathFor', () => {
   it('URI-encodes special characters in slugs', () => {
     expect(pathFor({ kind: 'match', slug: 'foo bar' })).toBe('/match/foo%20bar');
     expect(pathFor({ kind: 'team', teamId: 'a/b' })).toBe('/team/a%2Fb');
+    expect(pathFor({ kind: 'stream', slug: 'a b' })).toBe('/live/a%20b');
   });
 });
 
@@ -141,7 +157,7 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'home' });
+    expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
 
     // Simulate back navigation to /match/foo.
     Object.defineProperty(window, 'location', {
@@ -164,7 +180,7 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'home' });
+    expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
 
     // A direct navigate() (as FixturesView/LiveView do) updates history and
     // fires the route-change event; useRouter must re-parse off it.
@@ -188,7 +204,7 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'home' });
+    expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
 
     act(() => {
       captured.go('/match/abc');

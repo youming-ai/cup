@@ -29,7 +29,9 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+    // max-w-6xl matches the schedule so detail pages share its width instead
+    // of sitting in a narrower, off-aligned column.
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"

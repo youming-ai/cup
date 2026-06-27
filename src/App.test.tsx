@@ -7,7 +7,6 @@ beforeEach(() => {
   // App 挂载即发起 fetch；用永不 resolve 的 mock 让其停在加载态
   globalThis.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof globalThis.fetch;
   localStorage.setItem('lang', 'en');
-  localStorage.removeItem('cup:view');
   window.history.pushState(null, '', '/');
 });
 
@@ -21,15 +20,15 @@ describe('App', () => {
     expect(screen.getByText('Loading…')).toBeInTheDocument();
   });
 
-  it('persists view=live for a live-stream deep link so Back returns to live', () => {
-    window.history.pushState(null, '', '/match/some-live-slug');
+  it('marks the top-nav active from the route (/live → Live tab selected)', () => {
+    window.history.pushState(null, '', '/live');
     render(
       <LanguageProvider>
         <App />
       </LanguageProvider>,
     );
-    // The live-route effect must store the tab as 'live', so the eventual
-    // Back (→ '/') lands on the live list rather than the schedule.
-    expect(localStorage.getItem('cup:view')).toBe('live');
+    // The active top-nav tab is derived from the route, not from stored state.
+    expect(screen.getByRole('tab', { name: /Live/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /Schedule/ })).toHaveAttribute('aria-selected', 'false');
   });
 });

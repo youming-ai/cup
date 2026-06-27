@@ -3,7 +3,7 @@ import { memo, type ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { useFavorites } from '../hooks/useFavorites';
 import { useT } from '../i18n';
 import type { Match } from '../types';
-import { navigate } from '../utils/router';
+import { navigate, pathFor } from '../utils/router';
 import Footer from './Footer';
 import { FavoriteButton, ReminderMenu } from './MatchActions';
 import Player from './Player';
@@ -202,7 +202,7 @@ export default function LiveView({
   const backToList = useCallback(() => {
     // Replace, not push: this closes the player, so the browser Back button
     // should go to wherever the user was before — not back into the player.
-    navigate('/', { replace: true });
+    navigate(pathFor({ kind: 'live' }), { replace: true });
   }, []);
 
   // Escape 键退出播放页
@@ -229,7 +229,7 @@ export default function LiveView({
   }, [matches]);
 
   const openMatch = useCallback((m: Match) => {
-    navigate(`/match/${encodeURIComponent(m.slug)}`);
+    navigate(pathFor({ kind: 'stream', slug: m.slug }));
   }, []);
 
   // favorited matches (live + upcoming) get pinned into a section at the top,

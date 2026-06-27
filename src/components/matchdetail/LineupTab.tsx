@@ -6,7 +6,7 @@ import { layoutStarters } from '../../utils/espn';
 function Pitch({ starters }: { starters: LineupPlayer[] }) {
   const placed = layoutStarters(starters);
   return (
-    <div className="relative w-full aspect-[3/4] bg-pitch/15 border border-line overflow-hidden">
+    <div className="relative w-full max-w-md mx-auto aspect-[3/4] bg-pitch/15 border border-line overflow-hidden">
       <div className="absolute inset-x-0 top-1/2 h-px bg-chalkdim/30" />
       {placed.map((p) => (
         <div

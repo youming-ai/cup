@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
-import { navigate } from '../utils/router';
+import { navigate, pathFor, type Section } from '../utils/router';
 import BracketView from './BracketView';
 import MatchCard from './MatchCard';
 import StandingsView from './StandingsView';
@@ -13,25 +13,32 @@ const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'fina
 // further narrow by stage; this is a coarser "is the match still to play or
 // already played?" toggle. Defaults to Upcoming so users land on what's next.
 type StatusFilter = 'upcoming' | 'finished';
-type Tab = 'schedule' | 'standings' | 'scorers' | 'bracket';
+
+// The sub-tabs map 1:1 to section routes; the matches section uses the
+// 'fixtures.schedule' label. Clicking a tab navigates (each section is a URL).
+const SECTION_TABS: { section: Section; labelKey: string }[] = [
+  { section: 'matches', labelKey: 'fixtures.schedule' },
+  { section: 'standings', labelKey: 'fixtures.standings' },
+  { section: 'scorers', labelKey: 'fixtures.scorers' },
+  { section: 'bracket', labelKey: 'fixtures.bracket' },
+];
 
 export default function FixturesView({
+  section,
   matches,
   groups,
   scorers,
 }: {
+  section: Section;
   matches: WCMatch[];
   groups: WCGroup[];
   scorers: TopScorer[];
 }) {
   const t = useT();
-  const [tab, setTab] = useState<Tab>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback((m: WCMatch) => {
-    // `wc:` namespaces ESPN schedule matches so App routes them to
-    // MatchDetailPage (plain /match/<slug> is a streamed.pk live stream).
-    navigate(`/match/wc:${encodeURIComponent(m.slug)}`);
+    navigate(pathFor({ kind: 'match', slug: m.slug }));
   }, []);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
@@ -126,28 +133,28 @@ export default function FixturesView({
     // 1152–1200px band where only the header's max-w is squeezed by its px).
     <div className="px-4 md:px-6 py-4 md:py-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* 赛程 | 积分 子切换 */}
+        {/* 对阵 | 积分 | 射手 | 淘汰赛 — each is a section route */}
         <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
-          {(['schedule', 'standings', 'scorers', 'bracket'] as const).map((k) => (
+          {SECTION_TABS.map(({ section: s, labelKey }) => (
             <button
-              key={k}
+              key={s}
               type="button"
-              onClick={() => setTab(k)}
-              aria-pressed={tab === k}
+              onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
+              aria-pressed={section === s}
               className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
-                tab === k ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
+                section === s ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
               }`}
             >
-              {t(`fixtures.${k}`)}
+              {t(labelKey)}
             </button>
           ))}
         </div>
 
-        {tab === 'standings' ? (
+        {section === 'standings' ? (
           <StandingsView groups={groups} />
-        ) : tab === 'scorers' ? (
+        ) : section === 'scorers' ? (
           <TopScorersView scorers={scorers} />
-        ) : tab === 'bracket' ? (
+        ) : section === 'bracket' ? (
           <BracketView groups={groups} matches={matches} />
         ) : (
           <>

@@ -76,7 +76,7 @@ export default function PlayerPage({
 
   if (!topScorerEntry && goals.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
         <button
           type="button"
           onClick={onBack}
@@ -90,7 +90,7 @@ export default function PlayerPage({
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       <button
         type="button"
         onClick={onBack}
@@ -150,7 +150,7 @@ export default function PlayerPage({
                     <span className="text-chalk tabular-nums w-12 shrink-0">{g.entry.minute}</span>
                     <button
                       type="button"
-                      onClick={() => navigate(`/match/wc:${encodeURIComponent(g.match.slug)}`)}
+                      onClick={() => navigate(`/match/${encodeURIComponent(g.match.slug)}`)}
                       className="font-display text-sm text-chalk hover:text-pitch transition-colors truncate text-left"
                     >
                       {g.match.homeName} vs {g.match.awayName}

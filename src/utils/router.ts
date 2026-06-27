@@ -1,16 +1,39 @@
 import { useCallback, useEffect, useState } from 'react';
 
 // One-route-fits-all router built on the History API. No react-router /
-// wouter dep — the surface area needed here is tiny (3 paths) so a 60-line
-// module is enough. The Worker already serves index.html for unknown paths
+// wouter dep — the surface area is small enough that a single module is
+// enough. The Worker serves index.html for unknown paths
 // (assets.not_found_handling = single-page-application), so deep links
-// like /match/<slug> resolve to the SPA at page refresh.
+// resolve to the SPA at page refresh.
+//
+// Route scheme (every view is addressable — shareable, back/forward, refresh):
+//   /            matches (schedule)        ┐ "schedule" top-nav sections
+//   /standings   group standings           │
+//   /scorers     top scorers               │
+//   /bracket     knockout bracket          ┘
+//   /live        live-stream list          ┐ "live" top-nav
+//   /live/<slug> live-stream player        ┘
+//   /match/<slug>  ESPN fixture detail     (WC matches only — no more wc: prefix)
+//   /team/<id>     team page
+//   /player/<id>   player page
+
+// The four sections under the "schedule" top-nav.
+export type Section = 'matches' | 'standings' | 'scorers' | 'bracket';
 
 export type Route =
-  | { kind: 'home' }
+  | { kind: 'section'; section: Section }
+  | { kind: 'live' }
+  | { kind: 'stream'; slug: string }
   | { kind: 'match'; slug: string }
   | { kind: 'team'; teamId: string }
   | { kind: 'player'; athleteId: string };
+
+const SECTION_PATH: Record<Section, string> = {
+  matches: '/',
+  standings: '/standings',
+  scorers: '/scorers',
+  bracket: '/bracket',
+};
 
 // decodeURIComponent throws URIError on malformed input (e.g. "/match/%").
 // Path segments are untrusted (anyone can craft a deep link), so decode
@@ -27,7 +50,17 @@ function safeDecode(segment: string): string | null {
 export function parseRoute(pathname: string): Route {
   // Normalise: strip query and trailing slash.
   const path = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
-  if (path === '/' || path === '') return { kind: 'home' };
+  if (path === '/' || path === '') return { kind: 'section', section: 'matches' };
+  if (path === '/standings') return { kind: 'section', section: 'standings' };
+  if (path === '/scorers') return { kind: 'section', section: 'scorers' };
+  if (path === '/bracket') return { kind: 'section', section: 'bracket' };
+  if (path === '/live') return { kind: 'live' };
+
+  const stream = path.match(/^\/live\/([^/]+)$/);
+  if (stream) {
+    const slug = safeDecode(stream[1]!);
+    if (slug !== null) return { kind: 'stream', slug };
+  }
 
   const m = path.match(/^\/match\/([^/]+)$/);
   if (m) {
@@ -47,13 +80,17 @@ export function parseRoute(pathname: string): Route {
     if (athleteId !== null) return { kind: 'player', athleteId };
   }
 
-  return { kind: 'home' };
+  return { kind: 'section', section: 'matches' };
 }
 
 export function pathFor(route: Route): string {
   switch (route.kind) {
-    case 'home':
-      return '/';
+    case 'section':
+      return SECTION_PATH[route.section];
+    case 'live':
+      return '/live';
+    case 'stream':
+      return `/live/${encodeURIComponent(route.slug)}`;
     case 'match':
       return `/match/${encodeURIComponent(route.slug)}`;
     case 'team':

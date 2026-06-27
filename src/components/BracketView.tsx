@@ -37,7 +37,7 @@ export default function BracketView({
 function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string) => string }) {
   const onClick = () => {
     if (match.match) {
-      navigate(`/match/wc:${encodeURIComponent(match.match.slug)}`);
+      navigate(`/match/${encodeURIComponent(match.match.slug)}`);
     }
   };
   return (
