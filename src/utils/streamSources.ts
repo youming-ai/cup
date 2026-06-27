@@ -1,4 +1,4 @@
-const TRUSTED_STREAM_HOSTS = ['embed.st'];
+const TRUSTED_STREAM_HOSTS = ['embedindia.st', 'ppv.to'];
 
 export function isTrustedStreamUrl(value: string | null | undefined): value is string {
   if (!value) return false;
