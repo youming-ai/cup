@@ -158,7 +158,7 @@ export default function FixturesView({
   );
 
   return (
-    <div ref={containerRef} className="max-w-6xl mx-auto space-y-6">
+    <div ref={containerRef} className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       {/* 赛程 | 积分 子切换 */}
       <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
         {(['schedule', 'standings', 'scorers', 'bracket'] as const).map((k) => (
