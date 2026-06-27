@@ -4,10 +4,15 @@ import { LanguageProvider } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
 import FixturesView from './FixturesView';
 
-function renderView(matches: WCMatch[], groups: WCGroup[] = []) {
+function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
+  // jsdom doesn't implement scrollIntoView; stub it on HTMLElement.prototype
+  // so the FixturesView auto-scroll effect doesn't throw.
+  if (typeof HTMLElement !== 'undefined' && !HTMLElement.prototype.scrollIntoView) {
+    HTMLElement.prototype.scrollIntoView = () => {};
+  }
   return render(
     <LanguageProvider>
-      <FixturesView matches={matches} groups={groups} />
+      <FixturesView matches={matches} groups={groups} scorers={scorers} />
     </LanguageProvider>,
   );
 }

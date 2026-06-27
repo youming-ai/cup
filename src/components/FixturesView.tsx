@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '../i18n';
-import type { Stage, WCGroup, WCMatch } from '../types';
+import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import MatchCard from './MatchCard';
 import MatchDetailModal from './MatchDetailModal';
 import StandingsView from './StandingsView';
+import TopScorersView from './TopScorersView';
 
 const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
 
@@ -11,20 +12,36 @@ const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'fina
 // further narrow by stage; this is a coarser "is the match still to play or
 // already played?" toggle.
 type StatusFilter = 'all' | 'upcoming' | 'finished';
+type Tab = 'schedule' | 'standings' | 'scorers';
 
 export default function FixturesView({
   matches,
   groups,
+  scorers,
 }: {
   matches: WCMatch[];
   groups: WCGroup[];
+  scorers: TopScorer[];
 }) {
   const t = useT();
-  const [tab, setTab] = useState<'schedule' | 'standings'>('schedule');
+  const [tab, setTab] = useState<Tab>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [openMatch, setOpenMatch] = useState<WCMatch | null>(null);
   const closeDetail = useCallback(() => setOpenMatch(null), []);
+
+  // Auto-scroll: on first render (and whenever the upcoming day groups
+  // change), scroll the viewport to the first upcoming day whose date is
+  // >= today. If no such day exists (e.g. all upcoming matches are TBD),
+  // scroll to the very first upcoming day so the user lands at the start
+  // of the live/scheduled content rather than at finished results.
+  const dayRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const attachDayRef = useCallback((key: string, el: HTMLElement | null) => {
+    if (el) dayRefs.current.set(key, el);
+    else dayRefs.current.delete(key);
+  }, []);
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));
@@ -65,17 +82,36 @@ export default function FixturesView({
       return [...map.entries()];
     };
     return {
-      upcoming: group(filtered.filter((m) => m.status !== 'finished')).sort((a, b) =>
-        a[0].localeCompare(b[0]),
+      upcoming: group(filtered.filter((m) => m.status !== 'finished')).sort((a, _b) =>
+        a[0].localeCompare(_b[0]),
       ),
-      finished: group(filtered.filter((m) => m.status === 'finished')).sort((a, b) =>
-        b[0].localeCompare(a[0]),
+      finished: group(filtered.filter((m) => m.status === 'finished')).sort((a, _b) =>
+        _b[0].localeCompare(a[0]),
       ),
     };
   }, [matches, stage]);
 
-  const renderDay = ([key, list]: [string, WCMatch[]]) => (
-    <section key={key} className="space-y-3">
+  // Auto-scroll: on first render (and whenever the upcoming day groups
+  // change), scroll the viewport to today's day section. If today has no
+  // matches, fall back to the first upcoming day so the user lands on
+  // scheduled content rather than at finished results.
+  useEffect(() => {
+    if (tab !== 'schedule') return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const target =
+      dayRefs.current.get(todayKey) ??
+      (upcoming[0] ? dayRefs.current.get(upcoming[0][0]) : undefined);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [tab, upcoming]);
+
+  const renderDay = (
+    [key, list]: [string, WCMatch[]],
+    attachRef: (key: string, el: HTMLElement | null) => void,
+  ) => (
+    <section key={key} ref={(el) => attachRef(key, el)} className="space-y-3">
       <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
         {list[0].kickoff
           ? list[0].kickoff.toLocaleDateString(undefined, {
@@ -100,6 +136,7 @@ export default function FixturesView({
             kickoff={m.kickoff}
             stage={m.stage}
             group={m.group}
+            progress={m.progress}
             homeScorers={m.homeScorers}
             awayScorers={m.awayScorers}
             venue={m.venue}
@@ -111,10 +148,10 @@ export default function FixturesView({
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div ref={containerRef} className="max-w-6xl mx-auto space-y-6">
       {/* 赛程 | 积分 子切换 */}
       <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
-        {(['schedule', 'standings'] as const).map((k) => (
+        {(['schedule', 'standings', 'scorers'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -131,6 +168,8 @@ export default function FixturesView({
 
       {tab === 'standings' ? (
         <StandingsView groups={groups} />
+      ) : tab === 'scorers' ? (
+        <TopScorersView scorers={scorers} />
       ) : (
         <>
           {/* Quick filter: All / Upcoming / Finished. Counts are taken from
@@ -211,7 +250,7 @@ export default function FixturesView({
             }
             return (
               <>
-                {showUpcoming && upcoming.map(renderDay)}
+                {showUpcoming && upcoming.map((d) => renderDay(d, attachDayRef))}
                 {showFinished && (
                   <>
                     {statusFilter === 'all' && finished.length > 0 && (
@@ -222,7 +261,7 @@ export default function FixturesView({
                         <span className="h-px flex-1 bg-line" />
                       </div>
                     )}
-                    {finished.map(renderDay)}
+                    {finished.map((d) => renderDay(d, attachDayRef))}
                   </>
                 )}
               </>

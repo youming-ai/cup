@@ -27,6 +27,68 @@ function qualityBadge(label: string): string | null {
   return /\b4k\b/i.test(label) || /\buhd\b/i.test(label) ? '4K' : null;
 }
 
+// Derive a coarse live-state for the player overlay from the match's
+// `alwaysLive` flag + kickoff window. The feed only carries a 2-state status,
+// so HT/FT detection here is best-effort:
+//   - alwaysLive matches are treated as `live`
+//   - now past endsAt = `finished`; before startsAt = `upcoming`
+//   - 35-60min into a non-alwaysLive window = likely HT (heuristic)
+// The detailed HT/FT state for ESPN-backed matches lives on `WCMatch.progress`
+// (MatchCard); this overlay is intentionally simpler.
+function playerStatus(match: Match): 'live' | 'ht' | 'finished' | 'upcoming' {
+  if (match.alwaysLive) return 'live';
+  const now = Math.floor(Date.now() / 1000);
+  if (match.endsAt && now > match.endsAt) return 'finished';
+  if (match.startsAt && now < match.startsAt) return 'upcoming';
+  // ponytail: HT heuristic — 35-60min after kickoff is the likely break window
+  if (match.startsAt) {
+    const minutesIn = (now - match.startsAt) / 60;
+    if (minutesIn >= 35 && minutesIn <= 60) return 'ht';
+  }
+  return 'live';
+}
+
+// Top-left status badge over the iframe. Mirrors MatchCard's status pill but
+// tuned for the dark video background: live → red pulse, ht → amber, finished
+// / upcoming → muted.
+function PlayerStatusBadge({
+  status,
+  t,
+}: {
+  status: 'live' | 'ht' | 'finished' | 'upcoming';
+  t: (k: string) => string;
+}) {
+  if (status === 'ht') {
+    return (
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-pitch/60 shadow-[0_0_10px_rgb(var(--c-pitch)_/_0.35)]">
+        <span className="font-mono text-xs tracking-widest text-pitch">{t('status.ht')}</span>
+      </div>
+    );
+  }
+  if (status === 'live') {
+    return (
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgb(var(--c-live)_/_0.35)]">
+        <span className="live-dot" />
+        <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
+      </div>
+    );
+  }
+  if (status === 'finished') {
+    return (
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-chalkdim/40">
+        <span className="font-mono text-xs tracking-widest text-chalkdim">{t('status.ft')}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-chalkdim/40">
+      <span className="font-mono text-xs tracking-widest text-chalkdim/70">
+        {t('status.upcoming')}
+      </span>
+    </div>
+  );
+}
+
 export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl }: PlayerProps) {
   const t = useT();
   const sources = useMemo(() => {
@@ -79,10 +141,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
     <div className="space-y-4">
       <div className="relative aspect-video w-full border border-line bg-black overflow-hidden">
         <CornerTicks />
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgb(var(--c-live)_/_0.35)]">
-          <span className="live-dot" />
-          <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
-        </div>
+        <PlayerStatusBadge status={playerStatus(match)} t={t} />
 
         {activeIframeUrl && (
           <iframe
