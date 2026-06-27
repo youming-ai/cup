@@ -49,8 +49,8 @@ interface CachedResult {
 // ESPN's public site API (no key, CORS-open) carries the full 2026 World Cup:
 // scoreboard = all 104 matches (scores, status, venue, scorers); standings =
 // the 12 group tables. KV-cache both: scoreboard refreshes often (live scores),
-// standings change slowly. The streamed.pk live-stream APIs are fetched
-// browser-side (they're CORS-open), so they don't go through this Worker.
+// standings change slowly. ppv.to is still fetched browser-side (it IP-blocks
+// datacenter requests).
 const ESPN = 'https://site.api.espn.com/apis';
 const SOURCES: Record<string, { url: string; fresh: number; keep: number }> = {
   scoreboard: {

@@ -9,6 +9,16 @@ import Player from './Player';
 
 type LiveKind = 'live' | 'upcoming';
 
+// 用 ppv 的 starts_at/ends_at/always_live 判定状态；已结束的场次不展示
+function classify(m: Match, now: number): LiveKind | 'ended' {
+  if (m.alwaysLive) return 'live';
+  const start = m.startsAt ? m.startsAt * 1000 : null;
+  const end = m.endsAt ? m.endsAt * 1000 : null;
+  if (start && now < start) return 'upcoming';
+  if (end && now >= end) return 'ended';
+  return 'live'; // 已开始（或无开始时间）且未结束
+}
+
 function formatKickoff(startsAt?: number): string {
   if (!startsAt) return '';
   return new Date(startsAt * 1000).toLocaleString(undefined, {
@@ -36,7 +46,10 @@ const LiveCard = memo(function LiveCard({
   isFavorite: boolean;
   onToggleFavorite: () => void;
 }) {
-  const grad = 'linear-gradient(140deg, rgb(var(--c-surface2)), rgb(var(--c-bg)))';
+  const grad =
+    m.colors && m.colors.length >= 2
+      ? `linear-gradient(140deg, ${m.colors[0]}, ${m.colors[1]})`
+      : 'linear-gradient(140deg, rgb(var(--c-surface2)), rgb(var(--c-bg)))';
 
   const media = (
     <>
@@ -74,12 +87,28 @@ const LiveCard = memo(function LiveCard({
       </div>
 
       <div className="p-3">
+        {m.tag && (
+          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-pitch/80 mb-1">
+            {m.tag}
+          </p>
+        )}
         <h3 className="font-display font-bold text-base text-chalk leading-tight truncate">
           {m.name}
         </h3>
+        {kind === 'live' && (
+          <p className="mt-1 font-mono text-[10px] text-chalkdim flex items-center gap-1">
+            <span className="w-1 h-1 bg-pitch" />
+            {t('common.watching', { n: m.viewers })}
+          </p>
+        )}
       </div>
 
-      <div className="h-0.5 w-full bg-pitch" aria-hidden />
+      {/* thin accent line in the stream's own brand colour */}
+      <div
+        className="h-0.5 w-full"
+        style={{ background: m.colors?.[0] || 'rgb(var(--c-pitch))' }}
+        aria-hidden
+      />
     </>
   );
 
@@ -148,17 +177,24 @@ export default function LiveView({ matches }: { matches: Match[] }) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(() =>
     new URLSearchParams(window.location.search).get('match'),
   );
+  const [iframeUrl, setIframeUrl] = useState('');
 
   // 只有正在直播的场次可进入播放页；指向"即将开始"的 ?match 深链回退到列表
   const selected = useMemo(() => {
     if (!selectedSlug) return null;
     const m = matches.find((x) => x.slug === selectedSlug);
     if (!m) return null;
-    return m.status === 'live' ? m : null;
+    return classify(m, Date.now()) === 'live' ? m : null;
   }, [selectedSlug, matches]);
+
+  // 深链：?match 已存在但 iframe 尚未设置时，等 matches 加载出来后补上默认线路
+  useEffect(() => {
+    if (selected && !iframeUrl) setIframeUrl(selected.iframe);
+  }, [selected, iframeUrl]);
 
   const backToList = useCallback(() => {
     setSelectedSlug(null);
+    setIframeUrl('');
     const params = new URLSearchParams(window.location.search);
     params.delete('match');
     window.history.replaceState(null, '', `?${params.toString()}`);
@@ -175,11 +211,13 @@ export default function LiveView({ matches }: { matches: Match[] }) {
   }, [selected, backToList]);
 
   const { live, upcoming } = useMemo(() => {
+    const now = Date.now();
     const live: Match[] = [];
     const upcoming: Match[] = [];
     for (const m of matches) {
-      if (m.status === 'live') live.push(m);
-      else upcoming.push(m);
+      const kind = classify(m, now);
+      if (kind === 'live') live.push(m);
+      else if (kind === 'upcoming') upcoming.push(m);
     }
     upcoming.sort((a, b) => (a.startsAt ?? 0) - (b.startsAt ?? 0));
     return { live, upcoming };
@@ -187,6 +225,7 @@ export default function LiveView({ matches }: { matches: Match[] }) {
 
   const openMatch = useCallback((m: Match) => {
     setSelectedSlug(m.slug);
+    setIframeUrl(m.iframe);
     const params = new URLSearchParams(window.location.search);
     params.set('view', 'live');
     params.set('match', m.slug);
@@ -236,7 +275,11 @@ export default function LiveView({ matches }: { matches: Match[] }) {
             <ChevronLeft className="w-4 h-4" />
             {t('live.back')}
           </button>
-          <Player match={selected} />
+          <Player
+            match={selected}
+            selectedIframeUrl={iframeUrl}
+            setSelectedIframeUrl={setIframeUrl}
+          />
         </div>
         <Footer />
       </div>
