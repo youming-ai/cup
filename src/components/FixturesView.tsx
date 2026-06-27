@@ -120,107 +120,113 @@ export default function FixturesView({
   );
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      {/* 赛程 | 积分 子切换 */}
-      <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
-        {(['schedule', 'standings', 'scorers', 'bracket'] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setTab(k)}
-            aria-pressed={tab === k}
-            className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
-              tab === k ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
-            }`}
-          >
-            {t(`fixtures.${k}`)}
-          </button>
-        ))}
-      </div>
+    // Match the Header's layout exactly — px on the OUTER wrapper, max-w-6xl
+    // INSIDE — so the content column lines up with the header box at every
+    // viewport width (otherwise the two max-w boxes diverge in the
+    // 1152–1200px band where only the header's max-w is squeezed by its px).
+    <div className="px-4 md:px-6 py-4 md:py-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* 赛程 | 积分 子切换 */}
+        <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
+          {(['schedule', 'standings', 'scorers', 'bracket'] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setTab(k)}
+              aria-pressed={tab === k}
+              className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
+                tab === k ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
+              }`}
+            >
+              {t(`fixtures.${k}`)}
+            </button>
+          ))}
+        </div>
 
-      {tab === 'standings' ? (
-        <StandingsView groups={groups} />
-      ) : tab === 'scorers' ? (
-        <TopScorersView scorers={scorers} />
-      ) : tab === 'bracket' ? (
-        <BracketView groups={groups} matches={matches} />
-      ) : (
-        <>
-          {/* Quick filter: Upcoming / Finished. Counts are taken from the
+        {tab === 'standings' ? (
+          <StandingsView groups={groups} />
+        ) : tab === 'scorers' ? (
+          <TopScorersView scorers={scorers} />
+        ) : tab === 'bracket' ? (
+          <BracketView groups={groups} matches={matches} />
+        ) : (
+          <>
+            {/* Quick filter: Upcoming / Finished. Counts are taken from the
               unfiltered match list so users always see how many matches exist
               in each bucket regardless of the stage selection below. */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {(
-              [
-                {
-                  key: 'upcoming',
-                  label: t('fixtures.filterUpcoming'),
-                  count: counts.upcoming,
-                },
-                {
-                  key: 'finished',
-                  label: t('fixtures.filterFinished'),
-                  count: counts.finished,
-                },
-              ] as { key: StatusFilter; label: string; count: number }[]
-            ).map(({ key, label, count }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setStatusFilter(key)}
-                aria-pressed={statusFilter === key}
-                className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
-                  statusFilter === key
-                    ? 'border-pitch text-chalk'
-                    : 'border-transparent text-chalkdim hover:text-chalk'
-                }`}
-              >
-                {label}
-                <span className="ml-1.5 tabular-nums text-chalkdim/70">{count}</span>
-              </button>
-            ))}
-          </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {(
+                [
+                  {
+                    key: 'upcoming',
+                    label: t('fixtures.filterUpcoming'),
+                    count: counts.upcoming,
+                  },
+                  {
+                    key: 'finished',
+                    label: t('fixtures.filterFinished'),
+                    count: counts.finished,
+                  },
+                ] as { key: StatusFilter; label: string; count: number }[]
+              ).map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setStatusFilter(key)}
+                  aria-pressed={statusFilter === key}
+                  className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                    statusFilter === key
+                      ? 'border-pitch text-chalk'
+                      : 'border-transparent text-chalkdim hover:text-chalk'
+                  }`}
+                >
+                  {label}
+                  <span className="ml-1.5 tabular-nums text-chalkdim/70">{count}</span>
+                </button>
+              ))}
+            </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {stages.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStage(s)}
-                aria-pressed={stage === s}
-                className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
-                  stage === s
-                    ? 'border-pitch text-chalk'
-                    : 'border-transparent text-chalkdim hover:text-chalk'
-                }`}
-              >
-                {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
-              </button>
-            ))}
-          </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {stages.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStage(s)}
+                  aria-pressed={stage === s}
+                  className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                    stage === s
+                      ? 'border-pitch text-chalk'
+                      : 'border-transparent text-chalkdim hover:text-chalk'
+                  }`}
+                >
+                  {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
+                </button>
+              ))}
+            </div>
 
-          {(() => {
-            const days = statusFilter === 'finished' ? finished : upcoming;
-            if (days.length === 0) {
-              // The status-filter counts above are unfiltered by stage, so a
-              // status-specific message ("No finished matches yet") would
-              // contradict a non-zero chip count when an empty stage is also
-              // selected. Only assert that global truth when no stage narrows
-              // the view; otherwise fall back to the neutral "no results".
-              const emptyKey =
-                stage !== 'all'
-                  ? 'common.empty'
-                  : statusFilter === 'finished'
-                    ? 'fixtures.finishedEmpty'
-                    : 'fixtures.upcomingEmpty';
-              return (
-                <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
-              );
-            }
-            return <>{days.map(renderDay)}</>;
-          })()}
-        </>
-      )}
+            {(() => {
+              const days = statusFilter === 'finished' ? finished : upcoming;
+              if (days.length === 0) {
+                // The status-filter counts above are unfiltered by stage, so a
+                // status-specific message ("No finished matches yet") would
+                // contradict a non-zero chip count when an empty stage is also
+                // selected. Only assert that global truth when no stage narrows
+                // the view; otherwise fall back to the neutral "no results".
+                const emptyKey =
+                  stage !== 'all'
+                    ? 'common.empty'
+                    : statusFilter === 'finished'
+                      ? 'fixtures.finishedEmpty'
+                      : 'fixtures.upcomingEmpty';
+                return (
+                  <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
+                );
+              }
+              return <>{days.map(renderDay)}</>;
+            })()}
+          </>
+        )}
+      </div>
     </div>
   );
 }
