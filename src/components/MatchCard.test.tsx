@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { LanguageProvider } from '../i18n';
+import type { ScorerEntry } from '../types';
 import MatchCard from './MatchCard';
 
 function renderCard(props: Parameters<typeof MatchCard>[0]) {
@@ -9,6 +10,12 @@ function renderCard(props: Parameters<typeof MatchCard>[0]) {
       <MatchCard {...props} />
     </LanguageProvider>,
   );
+}
+
+// Build a ScorerEntry from a "name minute" string. The tests don't
+// care about id; a stable per-test id keeps the React keys unique.
+function scorer(name: string, minute: string, tag: '' | ' (p)' | ' (OG)' = ''): ScorerEntry {
+  return { playerId: `pid-${name}-${minute}-${tag}`, name, minute, tag };
 }
 
 describe('MatchCard', () => {
@@ -189,7 +196,7 @@ describe('MatchCard', () => {
       kickoff: null,
       stage: 'group',
       group: 'A',
-      homeScorers: ["Alvarado 45'", "Vega 67'"],
+      homeScorers: [scorer('Alvarado', "45'"), scorer('Vega', "67'")],
       awayScorers: [],
     });
     // The full scorer line including the minute marker is rendered under
@@ -208,7 +215,13 @@ describe('MatchCard', () => {
       kickoff: null,
       stage: 'group',
       group: 'G',
-      homeScorers: ["P1 10'", "P2 20'", "P3 30'", "P4 40'", "P5 50'"],
+      homeScorers: [
+        scorer('P1', "10'"),
+        scorer('P2', "20'"),
+        scorer('P3', "30'"),
+        scorer('P4', "40'"),
+        scorer('P5', "50'"),
+      ],
       awayScorers: [],
     });
     // First three are shown

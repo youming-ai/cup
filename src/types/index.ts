@@ -39,6 +39,18 @@ export interface MatchProgress {
 
 export type Stage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'third' | 'final';
 
+// One scoring play: a player scoring in a specific match minute. Carries
+// the ESPN athlete id so the /player/[id] page can find goals without
+// name-matching. `tag` is a display-only suffix (e.g. " (p)" for
+// penalties, " (OG)" for own goals) derived from the scoring play's
+// `type.text`.
+export interface ScorerEntry {
+  playerId: string;
+  name: string;
+  minute: string; // "45'", "45'+2'", "67'", etc.
+  tag: '' | ' (p)' | ' (OG)';
+}
+
 export interface WCMatch {
   id: string;
   homeName: string;
@@ -53,8 +65,8 @@ export interface WCMatch {
   kickoff: Date | null;
   status: MatchStatus;
   stage: Stage;
-  homeScorers: string[];
-  awayScorers: string[];
+  homeScorers: ScorerEntry[];
+  awayScorers: ScorerEntry[];
   venue: string; // "Estadio Azteca · Mexico City" or '' when unknown
   // URL-friendly identifier (home-vs-away, lowercased, hyphenated). Used
   // by the /match/[slug] route to deep-link directly to a match detail

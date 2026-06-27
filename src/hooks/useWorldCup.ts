@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
+import type { ScorerEntry, TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
 import {
   matchSlug,
   parseScore,
   progressFromStatus,
-  scorerLabel,
   sortStandings,
   stageFromSlug,
   statusFromState,
@@ -141,17 +140,28 @@ export function useWorldCup() {
           if (tid && form && !teamForm.has(tid)) teamForm.set(tid, form);
         }
 
-        // goals: scoring plays from competition.details, split by team id
+        // goals: scoring plays from competition.details, split by team id.
+        // Build ScorerEntry records so the /player/[id] page can find
+        // goals by athlete id (not by name matching).
         const homeId = str(homeTeam.id);
-        const homeScorers: string[] = [];
-        const awayScorers: string[] = [];
+        const homeScorers: ScorerEntry[] = [];
+        const awayScorers: ScorerEntry[] = [];
         for (const rawDetail of arr(comp.details)) {
           const d = obj(rawDetail);
           if (!d.scoringPlay) continue;
-          const who = str(obj(arr(d.athletesInvolved)[0]).displayName);
-          if (!who) continue;
-          const label = scorerLabel(who, str(obj(d.clock).displayValue), str(obj(d.type).text));
-          (str(obj(d.team).id) === homeId ? homeScorers : awayScorers).push(label);
+          const athlete = obj(arr(d.athletesInvolved)[0]);
+          const id = str(athlete.id);
+          const name = str(athlete.displayName) || str(athlete.shortName);
+          if (!id || !name) continue;
+          const typeText = str(obj(d.type).text);
+          const minute = str(obj(d.clock).displayValue);
+          const tag = typeText.toLowerCase().includes('own')
+            ? ' (OG)'
+            : typeText.toLowerCase().includes('penalty')
+              ? ' (p)'
+              : '';
+          const entry: ScorerEntry = { playerId: id, name, minute, tag };
+          (str(obj(d.team).id) === homeId ? homeScorers : awayScorers).push(entry);
         }
 
         const venue = obj(comp.venue);

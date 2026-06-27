@@ -38,14 +38,14 @@ const scoreboard = {
               clock: { displayValue: "22'" },
               type: { text: 'Goal' },
               team: { id: '1' },
-              athletesInvolved: [{ displayName: 'H. Lozano' }],
+              athletesInvolved: [{ id: '4577', displayName: 'H. Lozano' }],
             },
             {
               scoringPlay: true,
               clock: { displayValue: "80'" },
               type: { text: 'Penalty - Scored' },
               team: { id: '1' },
-              athletesInvolved: [{ displayName: 'R. Jiménez' }],
+              athletesInvolved: [{ id: '4579', displayName: 'R. Jiménez' }],
             },
             { scoringPlay: false, type: { text: 'Yellow Card' }, team: { id: '2' } },
           ],
@@ -137,7 +137,10 @@ describe('useWorldCup', () => {
     expect(finished.homeFlag).toBe('mex.png');
     expect(finished.stage).toBe('group');
     expect(finished.group).toBe('A'); // resolved from standings membership
-    expect(finished.homeScorers).toEqual(["H. Lozano 22'", "R. Jiménez 80' (p)"]);
+    expect(finished.homeScorers).toEqual([
+      { playerId: '4577', name: 'H. Lozano', minute: "22'", tag: '' },
+      { playerId: '4579', name: 'R. Jiménez', minute: "80'", tag: ' (p)' },
+    ]);
     expect(finished.awayScorers).toEqual([]);
     expect(finished.venue).toBe("Levi's Stadium · Santa Clara, California");
     expect(finished.kickoff?.toISOString()).toBe('2026-06-13T19:00:00.000Z');

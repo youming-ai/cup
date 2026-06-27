@@ -3,6 +3,7 @@ import Footer from './components/Footer';
 import Header, { type View } from './components/Header';
 import LiveView from './components/LiveView';
 import MatchDetailPage from './components/MatchDetailPage';
+import PlayerPage from './components/PlayerPage';
 import TeamPage from './components/TeamPage';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
@@ -166,7 +167,19 @@ export default function App() {
       />
     );
   } else if (route.kind === 'player') {
-    content = <NotFound onBack={() => navigate('/', { replace: true })} />;
+    content = wc.loading ? (
+      <Loading />
+    ) : wc.error ? (
+      <ErrorState message={wc.error} onRetry={wc.refetch} />
+    ) : (
+      <PlayerPage
+        athleteId={route.athleteId}
+        groups={wc.groups}
+        matches={wc.matches}
+        scorers={wc.scorers}
+        onBack={() => navigate('/', { replace: true })}
+      />
+    );
   } else {
     // Home: render whichever tab is selected.
     if (view === 'live') {
