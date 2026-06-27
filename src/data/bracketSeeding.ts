@@ -5,7 +5,10 @@
 // (src/hooks/useBracket.ts) attaches live WCMatch results onto each
 // SEEDING row at render time.
 
-export type BracketSlot = { kind: 'place'; place: string } | { kind: 'winner'; matchIndex: number };
+export type BracketSlot =
+  | { kind: 'place'; place: string }
+  | { kind: 'winner'; matchIndex: number }
+  | { kind: 'loser'; matchIndex: number };
 
 export interface BracketMatch {
   // Index in the SEEDING array. Stable across renders.
@@ -240,13 +243,13 @@ export const SEEDING: BracketMatch[] = [
     away: { kind: 'winner', matchIndex: 27 },
   },
 
-  // Third-place playoff (M103)
+  // Third-place playoff (M103): the two SEMIFINAL LOSERS, not the winners.
   {
     index: 30,
     label: 'M103',
     round: '3rd',
-    home: { kind: 'winner', matchIndex: 28 },
-    away: { kind: 'winner', matchIndex: 29 },
+    home: { kind: 'loser', matchIndex: 28 },
+    away: { kind: 'loser', matchIndex: 29 },
   },
 
   // Final (M104)

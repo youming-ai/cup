@@ -170,6 +170,18 @@ export function useWorldCup() {
         const date = str(ev.date);
         const kickoff = date ? new Date(date) : null;
 
+        // Winner side (ESPN flags it on the competitor). Only meaningful for
+        // finished matches; resolves penalty-shootout winners where the
+        // regulation/ET score is level. Undefined for draws / unfinished.
+        const winner =
+          status === 'finished'
+            ? home.winner === true
+              ? 'home'
+              : away.winner === true
+                ? 'away'
+                : undefined
+            : undefined;
+
         // Richer status: clock, displayClock, period (only set for live/finished).
         const progress =
           status === 'upcoming'
@@ -204,6 +216,7 @@ export function useWorldCup() {
           venue: venueName && city ? `${venueName} · ${city}` : venueName,
           slug: matchSlug(str(homeTeam.displayName), str(awayTeam.displayName), str(ev.id)),
           ...(progress ? { progress } : {}),
+          ...(winner ? { winner } : {}),
         };
       });
 

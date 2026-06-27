@@ -66,9 +66,9 @@ function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string)
       >
         {match.away?.label ?? <TBD t={t} />}
       </div>
-      {match.match && (
+      {match.match && match.match.homeScore != null && match.match.awayScore != null && (
         <div className="font-mono text-[10px] tabular-nums text-chalkdim mt-1">
-          {match.match.homeScore ?? 0} : {match.match.awayScore ?? 0}
+          {match.match.homeScore} : {match.match.awayScore}
         </div>
       )}
     </button>

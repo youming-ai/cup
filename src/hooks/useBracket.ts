@@ -27,10 +27,59 @@ function bestThirdIds(groups: WCGroup[]): Set<string> {
   return new Set(thirds.slice(0, 8).map((tm) => tm.teamId));
 }
 
+// FIFA sends the 8 best third-placed teams into 8 fixed R32 slots. Each slot
+// code (e.g. '3A/B/C/D/F') lists the groups eligible for that slot, and every
+// qualifying group must fill exactly ONE slot. Resolving each slot
+// independently (first eligible group) can put the same team in two matches,
+// so we compute a global, unique assignment up front — greedy over the slots
+// in FIFA's match order.
+// ponytail: greedy uniqueness, not FIFA's full 495-row allocation table — it
+// guarantees no third-place team appears twice; swap in the official table if
+// exact slotting ever matters.
+export function assignThirds(
+  groups: WCGroup[],
+  bestThirds: Set<string>,
+): Map<string, ResolvedTeam> {
+  const used = new Set<string>();
+  const out = new Map<string, ResolvedTeam>();
+  for (const bm of SEEDING) {
+    if (bm.round !== 'R32' || bm.away.kind !== 'place') continue;
+    const place = bm.away.place;
+    const m3 = /^3([A-L](?:\/[A-L])*)$/.exec(place);
+    if (!m3) continue;
+    for (const letter of m3[1]!.split('/')) {
+      if (used.has(letter)) continue;
+      const row = groups.find((g) => g.name === letter)?.standings[2];
+      if (row && bestThirds.has(row.teamId)) {
+        out.set(place, { teamId: row.teamId, label: row.name });
+        used.add(letter);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+// Winner of a finished match. Prefers ESPN's winner flag (which resolves
+// penalty shootouts where the regulation/ET score is level); falls back to
+// the score. A level score with no recorded winner stays undetermined (null)
+// rather than defaulting to the away side.
+export function winnerOf(m: WCMatch): 'home' | 'away' | null {
+  if (m.status !== 'finished' || m.homeScore == null || m.awayScore == null) return null;
+  if (m.winner) return m.winner;
+  if (m.homeScore > m.awayScore) return 'home';
+  if (m.homeScore < m.awayScore) return 'away';
+  return null;
+}
+
 // Resolve a fixed group-position place like '1A' or '2B' to a team.
 // Returns null if the group isn't loaded yet (standings haven't
 // arrived) or the position is empty.
-function placeTeam(groups: WCGroup[], place: string, bestThirds: Set<string>): ResolvedTeam | null {
+function placeTeam(
+  groups: WCGroup[],
+  place: string,
+  thirdAssign: Map<string, ResolvedTeam>,
+): ResolvedTeam | null {
   const m = /^([12])([A-L])$/.exec(place);
   if (m) {
     const group = m[2]!;
@@ -42,22 +91,8 @@ function placeTeam(groups: WCGroup[], place: string, bestThirds: Set<string>): R
     }
     return null;
   }
-  // 3rd-place codes like '3A/B/C/D/F' — pick the first qualifying team
-  // among the listed groups.
-  const m3 = /^3([A-L](\/[A-L])*)$/.exec(place);
-  if (m3) {
-    const candidates = m3[1]!.split('/');
-    for (const letter of candidates) {
-      for (const g of groups) {
-        if (g.name !== letter) continue;
-        const row = g.standings[2];
-        if (row && bestThirds.has(row.teamId)) {
-          return { teamId: row.teamId, label: row.name };
-        }
-      }
-    }
-    return null;
-  }
+  // 3rd-place codes resolve through the global unique assignment.
+  if (/^3[A-L]/.test(place)) return thirdAssign.get(place) ?? null;
   return null;
 }
 
@@ -118,12 +153,13 @@ function bracketMatchForStage(
 export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
   return useMemo(() => {
     const bestThirds = bestThirdIds(groups);
+    const thirdAssign = assignThirds(groups, bestThirds);
     // Pre-resolve: build a Map<matchIndex, ResolvedTeam> for the R32
     // round first, so that R16+ can look up winners by index.
     const resolved: ResolvedBracketMatch[] = SEEDING.map((bm) => {
       const resolveOne = (slot: BracketSlot): ResolvedTeam | null => {
-        if (slot.kind === 'place') return placeTeam(groups, slot.place, bestThirds);
-        return null; // 'winner' resolved below after we have R32 results
+        if (slot.kind === 'place') return placeTeam(groups, slot.place, thirdAssign);
+        return null; // 'winner'/'loser' resolved below after results are known
       };
       return {
         index: bm.index,
@@ -150,14 +186,7 @@ export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
         r.match = bracketMatchForStage(matches, bm, r.home, r.away);
       }
       // Determine the winner if the WCMatch has been played.
-      if (
-        r.match &&
-        r.match.status === 'finished' &&
-        r.match.homeScore != null &&
-        r.match.awayScore != null
-      ) {
-        r.winner = r.match.homeScore > r.match.awayScore ? 'home' : 'away';
-      }
+      if (r.match) r.winner = winnerOf(r.match);
     }
 
     // Now resolve R16+ winner slots. For each non-R32 row, walk the
@@ -167,9 +196,15 @@ export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
       const bm = SEEDING[i]!;
       const r = resolved[i]!;
       const resolveWinner = (slot: BracketSlot): ResolvedTeam | null => {
-        if (slot.kind === 'place') return placeTeam(groups, slot.place, bestThirds);
+        if (slot.kind === 'place') return placeTeam(groups, slot.place, thirdAssign);
         const target = resolved[slot.matchIndex];
         if (!target) return null;
+        if (slot.kind === 'loser') {
+          // The third-place match takes the two semifinal LOSERS.
+          if (target.winner === 'home') return target.away;
+          if (target.winner === 'away') return target.home;
+          return null;
+        }
         if (target.winner === 'home') return target.home;
         if (target.winner === 'away') return target.away;
         return null;
@@ -184,14 +219,7 @@ export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
       } else {
         r.match = bracketMatchForStage(matches, bm, r.home, r.away);
       }
-      if (
-        r.match &&
-        r.match.status === 'finished' &&
-        r.match.homeScore != null &&
-        r.match.awayScore != null
-      ) {
-        r.winner = r.match.homeScore > r.match.awayScore ? 'home' : 'away';
-      }
+      if (r.match) r.winner = winnerOf(r.match);
     }
 
     return {

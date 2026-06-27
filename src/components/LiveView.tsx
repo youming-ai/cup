@@ -200,7 +200,9 @@ export default function LiveView({
   // LiveView re-seeds it, looping forever and freezing the tab.
 
   const backToList = useCallback(() => {
-    navigate('/');
+    // Replace, not push: this closes the player, so the browser Back button
+    // should go to wherever the user was before — not back into the player.
+    navigate('/', { replace: true });
   }, []);
 
   // Escape 键退出播放页

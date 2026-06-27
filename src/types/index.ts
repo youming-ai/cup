@@ -75,6 +75,10 @@ export interface WCMatch {
   // Optional richer status (only set when not 'upcoming'). For 'finished' this
   // carries the FT clock; for 'live' it carries the current minute or HT.
   progress?: MatchProgress;
+  // Which side won (from ESPN's competitor.winner). Set for finished knockout
+  // matches; lets the bracket resolve penalty-shootout winners where the
+  // regulation/ET score is level. Undefined for draws and group games.
+  winner?: 'home' | 'away';
 }
 
 export interface WCStanding {

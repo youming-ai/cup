@@ -35,13 +35,13 @@ describe('SEEDING', () => {
     expect(m89?.away).toEqual({ kind: 'winner', matchIndex: 6 });
   });
 
-  it('Final and 3rd place both reference the SF winners (28, 29)', () => {
+  it('Final takes the SF winners; 3rd place takes the SF losers (28, 29)', () => {
     const final = SEEDING.find((m) => m.round === 'Final')!;
     const third = SEEDING.find((m) => m.round === '3rd')!;
     expect(final.home).toEqual({ kind: 'winner', matchIndex: 28 });
     expect(final.away).toEqual({ kind: 'winner', matchIndex: 29 });
-    expect(third.home).toEqual({ kind: 'winner', matchIndex: 28 });
-    expect(third.away).toEqual({ kind: 'winner', matchIndex: 29 });
+    expect(third.home).toEqual({ kind: 'loser', matchIndex: 28 });
+    expect(third.away).toEqual({ kind: 'loser', matchIndex: 29 });
   });
 
   it('exposes the ROUNDS array in display order', () => {
