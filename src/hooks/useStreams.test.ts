@@ -5,91 +5,119 @@ import { useStreams } from './useStreams';
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
-// Route the two parallel fetches (/matches/football and /matches/live) to the
-// given payloads based on the URL.
-function mockApi(football: unknown[], live: unknown[] = []) {
-  fetchMock.mockImplementation((url: string) => {
-    const body = url.includes('/matches/live') ? live : football;
-    return Promise.resolve({ ok: true, json: async () => body });
-  });
-}
-
-const future = Date.now() + 7200000;
-const past = Date.now() - 7200000;
-
-function apiMatch(over: Record<string, unknown>) {
-  return {
-    id: 'x',
-    title: 'X vs Y',
-    category: 'football',
-    date: future,
-    sources: [{ source: 'echo', id: '1' }],
-    ...over,
-  };
-}
-
-describe('useStreams (streamed.pk football)', () => {
+describe('useStreams (football only)', () => {
   beforeEach(() => {
     fetchMock.mockReset();
   });
 
-  it('maps football matches and marks the live ones from /matches/live', async () => {
-    const a = apiMatch({ id: 'a', title: 'A vs B' });
-    const b = apiMatch({ id: 'b', title: 'C vs D' });
-    mockApi([a, b], [a]);
+  it('keeps only the Football category and ignores American Football', async () => {
+    const payload = {
+      streams: [
+        {
+          category: 'American Football',
+          streams: [{ id: 1, name: 'CFL Game', iframe: 'x', viewers: '0' }],
+        },
+        {
+          category: 'Football',
+          streams: [
+            {
+              id: 23637,
+              name: 'Bosnia-Herzegovina vs. Qatar',
+              category_name: 'Football',
+              iframe: 'https://embedindia.st/embed/wc/bih-qat',
+              viewers: '4',
+              poster: 'p.jpg',
+              colors: ['#112855', '#691a40'],
+              substreams: [
+                {
+                  id: 23638,
+                  name: 'B vs Q',
+                  tag: 'WC',
+                  source_tag: 'FS1',
+                  locale: 'en',
+                  iframe: 'https://embedindia.st/embed/wc/bih-qat-fs1',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
 
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBeNull();
-    expect(result.current.matches).toHaveLength(2);
-    const byName = Object.fromEntries(result.current.matches.map((m) => [m.name, m]));
-    expect(byName['A vs B'].status).toBe('live');
-    expect(byName['A vs B'].slug).toBe('a-vs-b');
-    expect(byName['C vs D'].status).toBe('upcoming');
-    expect(byName['C vs D'].streamSources).toEqual([{ source: 'echo', id: '1' }]);
+    expect(result.current.matches).toHaveLength(1);
+    expect(result.current.matches[0].name).toBe('Bosnia-Herzegovina vs. Qatar');
+    expect(result.current.matches[0].colors).toEqual(['#112855', '#691a40']);
+    expect(result.current.matches[0].substreams).toHaveLength(1);
+    expect(result.current.matches[0].slug).toBe('bosnia-herzegovina-vs-qatar');
   });
 
-  it('builds an absolute poster URL from the relative path', async () => {
-    mockApi([apiMatch({ poster: '/api/images/proxy/abc.webp' })]);
-    const { result } = renderHook(() => useStreams());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.matches[0].poster).toBe('https://streamed.pk/api/images/proxy/abc.webp');
-  });
+  it('drops Football streams that do not expose a trusted iframe URL', async () => {
+    const payload = {
+      streams: [
+        {
+          category: 'Football',
+          streams: [
+            {
+              id: 1,
+              name: 'Unsafe Game',
+              iframe: 'javascript:alert(1)',
+              substreams: [
+                { name: 'bad', source_tag: 'bad', iframe: 'https://evil.example/embed' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
 
-  it('drops matches without any sources', async () => {
-    mockApi([apiMatch({ sources: [] })]);
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.matches).toHaveLength(0);
-  });
 
-  it('drops ended matches (past kickoff, not currently live)', async () => {
-    mockApi([apiMatch({ date: past })]);
-    const { result } = renderHook(() => useStreams());
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBeNull();
     expect(result.current.matches).toHaveLength(0);
   });
 
   it('sets error on non-ok response', async () => {
-    fetchMock.mockResolvedValue({ ok: false });
+    fetchMock.mockResolvedValueOnce({ ok: false });
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe('Failed to fetch streams');
   });
 
   it('sets error when fetch throws (network failure)', async () => {
-    fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+    fetchMock.mockRejectedValueOnce(new TypeError('Network request failed'));
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(result.current.loading).toBe(false));
+    // AbortError is swallowed; real network errors surface as the error string
     expect(result.current.error).toBeTruthy();
   });
 
-  it('returns empty matches when the football list is empty', async () => {
-    mockApi([]);
+  it('returns empty matches when Football category has no streams', async () => {
+    const payload = {
+      streams: [{ category: 'Football', streams: [] }],
+    };
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
     const { result } = renderHook(() => useStreams());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBeNull();
+    expect(result.current.matches).toHaveLength(0);
+  });
+
+  it('returns empty matches when no Football category exists', async () => {
+    const payload = {
+      streams: [
+        { category: 'Basketball', streams: [{ id: 1, name: 'Game', iframe: 'x', viewers: '0' }] },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
+    const { result } = renderHook(() => useStreams());
+    await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.matches).toHaveLength(0);
   });
 
@@ -101,7 +129,9 @@ describe('useStreams (streamed.pk football)', () => {
         options.signal?.addEventListener(
           'abort',
           () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true },
+          {
+            once: true,
+          },
         );
       });
     });
@@ -124,7 +154,9 @@ describe('useStreams (streamed.pk football)', () => {
         options.signal?.addEventListener(
           'abort',
           () => reject(new DOMException('Aborted', 'AbortError')),
-          { once: true },
+          {
+            once: true,
+          },
         );
       });
     });

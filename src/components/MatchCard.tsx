@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useT } from '../i18n';
-import type { MatchStatus } from '../types';
+import type { MatchProgress, MatchStatus } from '../types';
 
 interface MatchCardProps {
   homeName: string;
@@ -16,10 +16,58 @@ interface MatchCardProps {
   homeScorers?: string[];
   awayScorers?: string[];
   venue?: string;
+  // Optional richer progress (clock + displayClock + period). When omitted
+  // the card renders the legacy 3-state pill (live / ft / upcoming).
+  progress?: MatchProgress;
   onOpen?: () => void;
 }
 
-function StatusPill({ status, t }: { status: MatchStatus; t: (k: string) => string }) {
+// What to render under the score on a live/HT card. Returns null for FT /
+// upcoming (the FT pill is enough; upcoming shows kickoff time instead).
+// During extra time (period >= 3) or penalties (period >= 5) we render
+// short period tags ('ET', 'PEN') instead of a minute, since ET runs
+// 91-120+ and penalties don't have a clock.
+function ClockLabel({ progress }: { progress: MatchProgress | undefined }) {
+  if (!progress) return null;
+  if (progress.status === 'post') return null;
+  if (progress.status === 'halftime') {
+    return <span className="font-mono text-[10px] tracking-widest uppercase text-pitch">HT</span>;
+  }
+  if (progress.status === 'in') {
+    if (progress.period >= 5) {
+      return <span className="font-mono text-[10px] tracking-widest uppercase text-live">PEN</span>;
+    }
+    if (progress.period >= 3) {
+      return <span className="font-mono text-[10px] tracking-widest uppercase text-live">ET</span>;
+    }
+    // Prefer ESPN's displayClock (e.g. "45'+2'"); fall back to a derived
+    // value from the numeric clock field.
+    const text =
+      progress.displayClock || (progress.clock > 0 ? `${Math.floor(progress.clock)}'` : '');
+    if (!text) return null;
+    return (
+      <span className="font-mono text-[10px] tracking-widest tabular-nums text-live">{text}</span>
+    );
+  }
+  return null;
+}
+
+function StatusPill({
+  status,
+  progress,
+  t,
+}: {
+  status: MatchStatus;
+  progress: MatchProgress | undefined;
+  t: (k: string) => string;
+}) {
+  // Halftime: distinct amber pill so it's visible at a glance and never
+  // confused with a regular in-progress minute.
+  if (progress?.status === 'halftime') {
+    return (
+      <span className="font-mono text-[10px] tracking-widest text-pitch">{t('status.ht')}</span>
+    );
+  }
   if (status === 'live') {
     return (
       <span className="flex items-center gap-1 font-mono text-[10px] tracking-widest text-live">
@@ -61,6 +109,7 @@ export default memo(function MatchCard({
   homeScorers = [],
   awayScorers = [],
   venue,
+  progress,
   onOpen,
 }: MatchCardProps) {
   const t = useT();
@@ -84,21 +133,43 @@ export default memo(function MatchCard({
         clickable ? 'hover:border-pitch cursor-pointer' : 'hover:border-chalkdim'
       }`}
     >
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-line">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
-          {stageLabel}
-        </span>
+      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-line">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
+            {stageLabel}
+          </span>
+          {venue && (
+            <span
+              className="font-mono text-[10px] text-chalkdim/60 truncate hidden sm:inline"
+              title={venue}
+            >
+              · {venue}
+            </span>
+          )}
+        </div>
         {kickoff && (
-          <span className="font-mono text-[10px] tabular-nums text-chalkdim/70 shrink-0 ml-2">
+          <span className="font-mono text-[10px] tabular-nums text-chalkdim/70 shrink-0">
             {kickoff.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
         )}
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 px-2 sm:px-4 py-3 sm:py-4">
-        <div className="flex flex-col items-center gap-2 min-w-0">
+        <div className="flex flex-col items-center gap-1 min-w-0">
           <Flag src={homeFlag} alt={homeName || tbd} dim={awayWon} />
           <span className={teamCls(homeWon, awayWon)}>{homeName || tbd}</span>
+          {homeScorers.length > 0 && (
+            <ul className="space-y-0.5 text-[10px] text-chalkdim leading-tight text-center min-w-0 max-w-full">
+              {homeScorers.slice(0, 3).map((s) => (
+                <li key={s} className="truncate px-1">
+                  ⚽ {s}
+                </li>
+              ))}
+              {homeScorers.length > 3 && (
+                <li className="text-chalkdim/60">+{homeScorers.length - 3} more</li>
+              )}
+            </ul>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1 px-1 sm:px-2">
@@ -117,36 +188,30 @@ export default memo(function MatchCard({
               <span aria-hidden>{`${homeScore ?? 0} : ${awayScore ?? 0}`}</span>
             </span>
           )}
-          <StatusPill status={status} t={t} />
+          <StatusPill status={status} progress={progress} t={t} />
+          <ClockLabel progress={progress} />
         </div>
 
-        <div className="flex flex-col items-center gap-2 min-w-0">
+        <div className="flex flex-col items-center gap-1 min-w-0">
           <Flag src={awayFlag} alt={awayName || tbd} dim={homeWon} />
           <span className={teamCls(awayWon, homeWon)}>{awayName || tbd}</span>
+          {awayScorers.length > 0 && (
+            <ul className="space-y-0.5 text-[10px] text-chalkdim leading-tight text-center min-w-0 max-w-full">
+              {awayScorers.slice(0, 3).map((s) => (
+                <li key={s} className="truncate px-1">
+                  {s} ⚽
+                </li>
+              ))}
+              {awayScorers.length > 3 && (
+                <li className="text-chalkdim/60">+{awayScorers.length - 3} more</li>
+              )}
+            </ul>
+          )}
         </div>
       </div>
 
-      {(homeScorers.length > 0 || awayScorers.length > 0) && (
-        <div className="grid grid-cols-2 gap-2 px-4 pb-3 -mt-1">
-          <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight min-w-0">
-            {homeScorers.map((s) => (
-              <li key={s} className="truncate">
-                ⚽ {s}
-              </li>
-            ))}
-          </ul>
-          <ul className="space-y-0.5 text-[11px] text-chalkdim leading-tight text-right min-w-0">
-            {awayScorers.map((s) => (
-              <li key={s} className="truncate">
-                {s} ⚽
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {venue && (
-        <div className="px-4 py-2 border-t border-line">
+        <div className="px-4 py-2 border-t border-line sm:hidden">
           <span className="font-mono text-[10px] text-chalkdim/70 truncate block">{venue}</span>
         </div>
       )}

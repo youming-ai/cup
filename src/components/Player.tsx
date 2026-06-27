@@ -1,23 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Match } from '../types';
 import { isTrustedStreamUrl } from '../utils/streamSources';
 
 interface PlayerProps {
   match: Match | null;
-}
-
-// One stream object from streamed.pk's /api/stream/{source}/{id}.
-interface APIStreamObj {
-  language?: string;
-  hd?: boolean;
-  embedUrl: string;
-}
-
-interface Source {
-  iframe: string;
-  label: string;
-  hd: boolean;
+  selectedIframeUrl: string;
+  setSelectedIframeUrl: (url: string) => void;
 }
 
 function CornerTicks() {
@@ -32,55 +21,102 @@ function CornerTicks() {
   );
 }
 
-export default function Player({ match }: PlayerProps) {
-  const t = useT();
-  const [sources, setSources] = useState<Source[]>([]);
-  const [resolving, setResolving] = useState(true);
-  const [selectedIframeUrl, setSelectedIframeUrl] = useState('');
+// ppv.to feeds carry only a language code (not a country), so a flag would be a
+// guess — show the broadcaster tag + a quality badge for 4K/UHD feeds instead.
+function qualityBadge(label: string): string | null {
+  return /\b4k\b/i.test(label) || /\buhd\b/i.test(label) ? '4K' : null;
+}
 
-  // Resolve the match's {source, id} refs into embed URLs. streamed.pk needs a
-  // second fetch per source, so this happens on open (not in the match list).
+// Derive a coarse live-state for the player overlay from the match's
+// `alwaysLive` flag + kickoff window. The feed only carries a 2-state status,
+// so HT/FT detection here is best-effort:
+//   - alwaysLive matches are treated as `live`
+//   - now past endsAt = `finished`; before startsAt = `upcoming`
+//   - 35-60min into a non-alwaysLive window = likely HT (heuristic)
+// The detailed HT/FT state for ESPN-backed matches lives on `WCMatch.progress`
+// (MatchCard); this overlay is intentionally simpler.
+function playerStatus(match: Match): 'live' | 'ht' | 'finished' | 'upcoming' {
+  if (match.alwaysLive) return 'live';
+  const now = Math.floor(Date.now() / 1000);
+  if (match.endsAt && now > match.endsAt) return 'finished';
+  if (match.startsAt && now < match.startsAt) return 'upcoming';
+  // ponytail: HT heuristic — 35-60min after kickoff is the likely break window
+  if (match.startsAt) {
+    const minutesIn = (now - match.startsAt) / 60;
+    if (minutesIn >= 35 && minutesIn <= 60) return 'ht';
+  }
+  return 'live';
+}
+
+// Top-left status badge over the iframe. Mirrors MatchCard's status pill but
+// tuned for the dark video background: live → red pulse, ht → amber, finished
+// / upcoming → muted.
+function PlayerStatusBadge({
+  status,
+  t,
+}: {
+  status: 'live' | 'ht' | 'finished' | 'upcoming';
+  t: (k: string) => string;
+}) {
+  if (status === 'ht') {
+    return (
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-pitch/60 shadow-[0_0_10px_rgb(var(--c-pitch)_/_0.35)]">
+        <span className="font-mono text-xs tracking-widest text-pitch">{t('status.ht')}</span>
+      </div>
+    );
+  }
+  if (status === 'live') {
+    return (
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgb(var(--c-live)_/_0.35)]">
+        <span className="live-dot" />
+        <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
+      </div>
+    );
+  }
+  if (status === 'finished') {
+    return (
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-chalkdim/40">
+        <span className="font-mono text-xs tracking-widest text-chalkdim">{t('status.ft')}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-chalkdim/40">
+      <span className="font-mono text-xs tracking-widest text-chalkdim/70">
+        {t('status.upcoming')}
+      </span>
+    </div>
+  );
+}
+
+export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl }: PlayerProps) {
+  const t = useT();
+  const sources = useMemo(() => {
+    if (!match) return [];
+    const raw = [
+      { iframe: match.iframe, label: match.sourceTag || t('live.source') },
+      ...(match.substreams ?? []).map((s) => ({ iframe: s.iframe, label: s.source_tag || s.name })),
+    ];
+    return raw
+      .filter((src) => isTrustedStreamUrl(src.iframe))
+      .filter((src, index, all) => all.findIndex((item) => item.iframe === src.iframe) === index);
+  }, [match, t]);
+  const activeIframeUrl = sources.some((src) => src.iframe === selectedIframeUrl)
+    ? selectedIframeUrl
+    : '';
+
+  // 切换线路 / 进入直播时，iframe 重新加载 —— 在其 onLoad 前盖一层信号接入动画
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setLoading(true);
+  }, []);
   useEffect(() => {
     if (!match) return;
-    const controller = new AbortController();
-    setResolving(true);
-    setSources([]);
-    setSelectedIframeUrl('');
-    (async () => {
-      try {
-        const lists = await Promise.all(
-          match.streamSources.map((s) =>
-            fetch(`https://streamed.pk/api/stream/${s.source}/${s.id}`, {
-              signal: controller.signal,
-            })
-              .then((r) => (r.ok ? (r.json() as Promise<APIStreamObj[]>) : []))
-              .catch(() => [] as APIStreamObj[]),
-          ),
-        );
-        if (controller.signal.aborted) return;
-        const flat = lists
-          .flat()
-          .filter((s) => isTrustedStreamUrl(s.embedUrl))
-          .map(
-            (s): Source => ({
-              iframe: s.embedUrl,
-              label: s.language || t('live.source'),
-              hd: Boolean(s.hd),
-            }),
-          )
-          .filter((s, i, all) => all.findIndex((x) => x.iframe === s.iframe) === i);
-        setSources(flat);
-        setSelectedIframeUrl(flat[0]?.iframe ?? '');
-      } finally {
-        if (!controller.signal.aborted) setResolving(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [match, t]);
-
-  // iframe 加载完成前盖一层信号接入动画；切换线路时 iframe 因 key 改变而重挂，
-  // onLoad 再次触发 setLoading(false)
-  const [loading, setLoading] = useState(true);
+    const fallback = sources[0]?.iframe ?? '';
+    if (selectedIframeUrl !== fallback && !activeIframeUrl) {
+      setSelectedIframeUrl(fallback);
+    }
+  }, [activeIframeUrl, match, selectedIframeUrl, setSelectedIframeUrl, sources]);
 
   if (!match) {
     return (
@@ -105,15 +141,12 @@ export default function Player({ match }: PlayerProps) {
     <div className="space-y-4">
       <div className="relative aspect-video w-full border border-line bg-black overflow-hidden">
         <CornerTicks />
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgb(var(--c-live)_/_0.35)]">
-          <span className="live-dot" />
-          <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
-        </div>
+        <PlayerStatusBadge status={playerStatus(match)} t={t} />
 
-        {selectedIframeUrl && (
+        {activeIframeUrl && (
           <iframe
-            key={selectedIframeUrl}
-            src={selectedIframeUrl}
+            key={activeIframeUrl}
+            src={activeIframeUrl}
             title={match.name}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowFullScreen
@@ -122,14 +155,14 @@ export default function Player({ match }: PlayerProps) {
           />
         )}
 
-        {(resolving || (selectedIframeUrl && loading) || !selectedIframeUrl) && (
+        {activeIframeUrl && loading && (
           <div
             className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black"
             aria-live="polite"
           >
             <span className="live-dot" />
             <span className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse motion-reduce:animate-none">
-              {resolving || selectedIframeUrl ? t('common.loading') : t('live.noSource')}
+              {t('common.loading')}
             </span>
           </div>
         )}
@@ -141,48 +174,55 @@ export default function Player({ match }: PlayerProps) {
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
               {match.category_name}
             </span>
+            <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
+              <span className="w-1 h-1 bg-pitch" />
+              {t('common.watching', { n: match.viewers })}
+            </span>
           </div>
           <h1 className="font-display font-bold text-2xl md:text-3xl text-chalk tracking-wide">
             {match.name}
           </h1>
         </div>
 
-        {sources.length > 0 && (
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-chalkdim mb-2.5">
-              {t('live.sources')}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {sources.map((src) => {
-                const active = selectedIframeUrl === src.iframe;
-                return (
-                  <button
-                    key={src.iframe}
-                    type="button"
-                    onClick={() => setSelectedIframeUrl(src.iframe)}
-                    aria-pressed={active}
-                    className={`inline-flex items-center gap-2 px-3 py-2 border text-sm font-medium transition-colors ${
-                      active
-                        ? 'bg-pitch text-night border-pitch'
-                        : 'border-line bg-panel2 text-chalkdim hover:text-chalk hover:border-chalkdim'
-                    }`}
-                  >
-                    <span className="truncate max-w-[14rem]">{src.label}</span>
-                    {src.hd && (
-                      <span
-                        className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${
-                          active ? 'bg-night/20 text-night' : 'bg-pitch/15 text-pitch'
-                        }`}
-                      >
-                        HD
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-chalkdim mb-2.5">
+            {t('live.sources')}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {sources.map((src) => {
+              const active = activeIframeUrl === src.iframe;
+              const q = qualityBadge(src.label);
+              return (
+                <button
+                  // iframe URL is unique per source, so it's a stable key on
+                  // its own — array index would only matter if the same URL
+                  // could appear twice in `sources`, which the dedupe above
+                  // already prevents.
+                  key={src.iframe}
+                  type="button"
+                  onClick={() => setSelectedIframeUrl(src.iframe)}
+                  aria-pressed={active}
+                  className={`inline-flex items-center gap-2 px-3 py-2 border text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-pitch text-night border-pitch'
+                      : 'border-line bg-panel2 text-chalkdim hover:text-chalk hover:border-chalkdim'
+                  }`}
+                >
+                  <span className="truncate max-w-[14rem]">{src.label}</span>
+                  {q && (
+                    <span
+                      className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${
+                        active ? 'bg-night/20 text-night' : 'bg-pitch/15 text-pitch'
+                      }`}
+                    >
+                      {q}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

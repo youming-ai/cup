@@ -138,7 +138,7 @@ export default function App() {
         <ErrorState message={wc.error} onRetry={wc.refetch} />
       ) : (
         <Suspense fallback={<Loading />}>
-          <FixturesView matches={wc.matches} groups={wc.groups} />
+          <FixturesView matches={wc.matches} groups={wc.groups} scorers={wc.scorers} />
         </Suspense>
       );
     }

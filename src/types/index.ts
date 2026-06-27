@@ -1,22 +1,41 @@
-// One {source, id} pair from streamed.pk's match.sources — resolved to embed
-// URLs on demand (in Player) via /api/stream/{source}/{id}.
-export interface StreamRef {
-  source: string;
-  id: string;
+export interface Substream {
+  name: string;
+  source_tag: string;
+  iframe: string;
 }
 
 export interface Match {
-  id: string;
+  id: number;
   name: string;
   category_name: string;
+  iframe: string;
+  viewers: string;
+  sourceTag?: string;
+  substreams: Substream[];
   slug: string;
-  status: 'live' | 'upcoming';
-  streamSources: StreamRef[];
   poster?: string;
+  colors?: string[];
+  tag?: string;
   startsAt?: number; // unix seconds
+  endsAt?: number; // unix seconds
+  alwaysLive?: boolean;
 }
 
 export type MatchStatus = 'finished' | 'live' | 'upcoming';
+
+// ESPN's finer-grained status for an in-progress or recently-completed match.
+// `status` mirrors the upstream status.type.state; `clock` is the current
+// minute (0 when not playing); `displayClock` is what the UI should render
+// (e.g. "23'", "45'+2'", "HT", "FT", "90'+5'"); `period` is the half number
+// (1, 2 — or 3/4 for ET, 5 for penalties during knockouts).
+export type ProgressStatus = 'pre' | 'in' | 'halftime' | 'post';
+
+export interface MatchProgress {
+  status: ProgressStatus;
+  clock: number;
+  displayClock: string;
+  period: number;
+}
 
 export type Stage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'third' | 'final';
 
@@ -39,6 +58,9 @@ export interface WCMatch {
   // by the /match/[slug] route to deep-link directly to a match detail
   // page. Derived in useWorldCup from the team names via slugify().
   slug: string;
+  // Optional richer status (only set when not 'upcoming'). For 'finished' this
+  // carries the FT clock; for 'live' it carries the current minute or HT.
+  progress?: MatchProgress;
 }
 
 export interface WCStanding {
@@ -95,4 +117,14 @@ export interface MatchDetail {
   lineups: TeamLineup[]; // [home, away]
   venue: string;
   attendance: number | null;
+}
+
+// Tournament top scorers, aggregated from the per-team `leaders` array
+// in ESPN's scoreboard response. One row per distinct player.
+export interface TopScorer {
+  athleteId: string;
+  name: string;
+  teamId: string;
+  teamName: string; // resolved via the team name cache inside useWorldCup
+  goals: number;
 }
