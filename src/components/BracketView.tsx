@@ -1,4 +1,4 @@
-import { type ResolvedBracketMatch, useBracket } from '../hooks/useBracket';
+import { type ResolvedBracketMatch, type ResolvedTeam, useBracket } from '../hooks/useBracket';
 import { useT } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
 import { navigate } from '../utils/router';
@@ -53,18 +53,18 @@ function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string)
         {match.match && match.match.status === 'live' && <span className="text-live">LIVE</span>}
       </div>
       <div
-        className={`font-display text-xs my-0.5 truncate ${
+        className={`flex items-center gap-1.5 font-display text-xs my-0.5 ${
           match.winner === 'home' ? 'text-chalk font-bold' : 'text-chalk'
         }`}
       >
-        {match.home?.label ?? <TBD t={t} />}
+        {match.home ? <TeamLabel team={match.home} /> : <TBD t={t} />}
       </div>
       <div
-        className={`font-display text-xs truncate ${
+        className={`flex items-center gap-1.5 font-display text-xs ${
           match.winner === 'away' ? 'text-chalk font-bold' : 'text-chalk'
         }`}
       >
-        {match.away?.label ?? <TBD t={t} />}
+        {match.away ? <TeamLabel team={match.away} /> : <TBD t={t} />}
       </div>
       {match.match && match.match.homeScore != null && match.match.awayScore != null && (
         <div className="font-mono text-[10px] tabular-nums text-chalkdim mt-1">
@@ -72,6 +72,15 @@ function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string)
         </div>
       )}
     </button>
+  );
+}
+
+function TeamLabel({ team }: { team: ResolvedTeam }) {
+  return (
+    <>
+      {team.flag && <img src={team.flag} alt="" className="w-4 h-4 object-contain shrink-0" />}
+      <span className="truncate">{team.label}</span>
+    </>
   );
 }
 

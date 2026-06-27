@@ -8,6 +8,7 @@ import type { WCGroup, WCMatch } from '../types';
 export interface ResolvedTeam {
   teamId: string;
   label: string; // display name (or place label if we know the seed only)
+  flag: string; // team crest URL (from the standings feed); '' if unknown
 }
 
 export interface ResolvedBracketMatch {
@@ -51,7 +52,7 @@ export function assignThirds(
       if (used.has(letter)) continue;
       const row = groups.find((g) => g.name === letter)?.standings[2];
       if (row && bestThirds.has(row.teamId)) {
-        out.set(place, { teamId: row.teamId, label: row.name });
+        out.set(place, { teamId: row.teamId, label: row.name, flag: row.flag });
         used.add(letter);
         break;
       }
@@ -87,7 +88,7 @@ function placeTeam(
     for (const g of groups) {
       if (g.name !== group) continue;
       const row = g.standings[pos];
-      if (row) return { teamId: row.teamId, label: row.name };
+      if (row) return { teamId: row.teamId, label: row.name, flag: row.flag };
     }
     return null;
   }

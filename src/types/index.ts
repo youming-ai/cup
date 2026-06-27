@@ -150,5 +150,6 @@ export interface TopScorer {
   name: string;
   teamId: string;
   teamName: string; // resolved via the team name cache inside useWorldCup
+  teamFlag: string; // team crest URL, resolved from the standings feed
   goals: number;
 }

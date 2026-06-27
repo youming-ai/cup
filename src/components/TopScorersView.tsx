@@ -50,12 +50,24 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
                 <td className="px-3 py-2 font-mono tabular-nums text-chalkdim">{rank}</td>
                 <td className="px-3 py-2 font-display text-chalk truncate max-w-0">
                   {s.name}
-                  <span className="block sm:hidden font-mono text-[10px] text-chalkdim/70">
-                    {s.teamName}
+                  <span className="flex items-center gap-1 sm:hidden font-mono text-[10px] text-chalkdim/70">
+                    {s.teamFlag && (
+                      <img
+                        src={s.teamFlag}
+                        alt=""
+                        className="w-3.5 h-3.5 object-contain shrink-0"
+                      />
+                    )}
+                    <span className="truncate">{s.teamName}</span>
                   </span>
                 </td>
                 <td className="px-3 py-2 font-mono text-[11px] text-chalkdim truncate max-w-0 hidden sm:table-cell">
-                  {s.teamName}
+                  <span className="flex items-center gap-1.5">
+                    {s.teamFlag && (
+                      <img src={s.teamFlag} alt="" className="w-4 h-4 object-contain shrink-0" />
+                    )}
+                    <span className="truncate">{s.teamName}</span>
+                  </span>
                 </td>
                 <td className="px-3 py-2 font-mono text-base sm:text-lg font-bold text-chalk tabular-nums text-right">
                   {s.goals}

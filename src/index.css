@@ -5,10 +5,10 @@
 /* 配色 token：通道值 "R G B"，配合 tailwind 的 rgb(var() / <alpha>)，
    集中维护暗色（转播机房）调色板。 */
 :root {
-  --c-bg: 10 15 13;
-  --c-surface: 18 24 21;
-  --c-surface2: 26 33 29;
-  --c-line: 42 51 46;
+  --c-bg: 24 32 28;
+  --c-surface: 33 43 38;
+  --c-surface2: 44 56 50;
+  --c-line: 60 73 65;
   --c-text: 234 242 236;
   --c-muted: 138 150 143;
   --c-pitch: 43 217 107;

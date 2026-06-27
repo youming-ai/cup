@@ -238,8 +238,12 @@ export function useWorldCup() {
       // may appear under multiple matches). Resolve team display name from
       // the team map built from the standings feed.
       const teamMap = new Map<string, string>();
+      const teamFlagMap = new Map<string, string>();
       for (const g of gr) {
-        for (const s of g.standings) teamMap.set(s.teamId, s.name);
+        for (const s of g.standings) {
+          teamMap.set(s.teamId, s.name);
+          teamFlagMap.set(s.teamId, s.flag);
+        }
       }
       const scorerMap = new Map<string, TopScorer>();
       for (const rawEvent of arr(obj(sbJson).events)) {
@@ -263,6 +267,7 @@ export function useWorldCup() {
                   name: str(a.displayName) || str(a.shortName),
                   teamId,
                   teamName: teamMap.get(teamId) || '',
+                  teamFlag: teamFlagMap.get(teamId) || str(obj(a.team).logo),
                   goals,
                 });
               }

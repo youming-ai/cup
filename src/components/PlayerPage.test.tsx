@@ -59,7 +59,7 @@ function renderPage(props: Partial<React.ComponentProps<typeof PlayerPage>> = {}
     athleteId: 'p1',
     groups: [group([{ teamId: '203', name: 'Mexico' }])],
     matches: [],
-    scorers: [{ athleteId: 'p1', name: 'Alvarado', teamId: '203', teamName: 'Mexico', goals: 2 }],
+    scorers: [{ athleteId: 'p1', name: 'Alvarado', teamId: '203', teamName: 'Mexico', teamFlag: '', goals: 2 }],
     onBack: vi.fn(),
   };
   return render(

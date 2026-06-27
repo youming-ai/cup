@@ -20,9 +20,9 @@ describe('TopScorersView', () => {
 
   it('renders each scorer with rank, name, team, and goals', () => {
     renderView([
-      { athleteId: '1', name: 'Erling Haaland', teamId: '464', teamName: 'Norway', goals: 4 },
-      { athleteId: '2', name: 'Kylian Mbappé', teamId: '475', teamName: 'France', goals: 3 },
-      { athleteId: '3', name: 'Mohamed Salah', teamId: '498', teamName: 'Egypt', goals: 2 },
+      { athleteId: '1', name: 'Erling Haaland', teamId: '464', teamName: 'Norway', teamFlag: '', goals: 4 },
+      { athleteId: '2', name: 'Kylian Mbappé', teamId: '475', teamName: 'France', teamFlag: '', goals: 3 },
+      { athleteId: '3', name: 'Mohamed Salah', teamId: '498', teamName: 'Egypt', teamFlag: '', goals: 2 },
     ]);
     // Player names: unique per row.
     expect(screen.getByText('Erling Haaland')).toBeInTheDocument();
@@ -43,8 +43,8 @@ describe('TopScorersView', () => {
 
   it('numbers rows starting from 1', () => {
     renderView([
-      { athleteId: '1', name: 'A', teamId: '1', teamName: 'TA', goals: 5 },
-      { athleteId: '2', name: 'B', teamId: '2', teamName: 'TB', goals: 3 },
+      { athleteId: '1', name: 'A', teamId: '1', teamName: 'TA', teamFlag: '', goals: 5 },
+      { athleteId: '2', name: 'B', teamId: '2', teamName: 'TB', teamFlag: '', goals: 3 },
     ]);
     // First cell of each row should be 1, then 2. jsdom's HTMLElement doesn't
     // expose the table-specific `cells` collection, so read text via
@@ -56,7 +56,7 @@ describe('TopScorersView', () => {
   });
 
   it('renders a header row with the expected column labels', () => {
-    renderView([{ athleteId: '1', name: 'A', teamId: '1', teamName: 'TA', goals: 1 }]);
+    renderView([{ athleteId: '1', name: 'A', teamId: '1', teamName: 'TA', teamFlag: '', goals: 1 }]);
     expect(screen.getByRole('columnheader', { name: '#' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Player' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Team' })).toBeInTheDocument();
