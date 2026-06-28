@@ -76,7 +76,7 @@ export default function PlayerPage({
 
   if (!topScorerEntry && goals.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 space-y-4">
         <button
           type="button"
           onClick={onBack}
@@ -90,87 +90,92 @@ export default function PlayerPage({
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="font-mono text-xs tracking-widest text-chalkdim hover:text-chalk transition-colors inline-flex items-center gap-1"
-      >
-        ← <span>{t('detail.back')}</span>
-      </button>
+    // px OUTSIDE, max-w-6xl INSIDE — matches the schedule/header frame exactly.
+    <div className="px-4 md:px-6 py-4 md:py-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="font-mono text-xs tracking-widest text-chalkdim hover:text-chalk transition-colors inline-flex items-center gap-1"
+        >
+          ← <span>{t('detail.back')}</span>
+        </button>
 
-      {/* Header */}
-      <div>
-        <h1 className="font-display font-bold text-3xl text-chalk tracking-wide">
-          {topScorerEntry?.name ?? goals[0]?.entry.name ?? ''}
-        </h1>
-        <div className="flex items-center gap-3 mt-1">
-          {teamId && (
-            <button
-              type="button"
-              onClick={() => navigate(`/team/${encodeURIComponent(teamId)}`)}
-              className="font-mono text-[11px] uppercase tracking-[0.18em] text-chalkdim hover:text-pitch transition-colors"
-            >
-              {teamName}
-            </button>
-          )}
-          {topScorerEntry && (
-            <span className="font-mono text-[11px] text-chalkdim/60">
-              {topScorerEntry.goals} {t('player.goals')}
-            </span>
-          )}
+        {/* Header */}
+        <div>
+          <h1 className="font-display font-bold text-3xl text-chalk tracking-wide">
+            {topScorerEntry?.name ?? goals[0]?.entry.name ?? ''}
+          </h1>
+          <div className="flex items-center gap-3 mt-1">
+            {teamId && (
+              <button
+                type="button"
+                onClick={() => navigate(`/team/${encodeURIComponent(teamId)}`)}
+                className="font-mono text-[11px] uppercase tracking-[0.18em] text-chalkdim hover:text-pitch transition-colors"
+              >
+                {teamName}
+              </button>
+            )}
+            {topScorerEntry && (
+              <span className="font-mono text-[11px] text-chalkdim/60">
+                {topScorerEntry.goals} {t('player.goals')}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Stats strip */}
-      {topScorerEntry && (
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 border border-line bg-panel p-3 sm:p-4 max-w-xs">
-          <Stat label={t('scorers.goals')} value={topScorerEntry.goals} bold />
-        </div>
-      )}
-
-      {/* Goals timeline */}
-      <section className="space-y-3">
-        <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
-          {t('player.goals')}
-        </h2>
-        {goals.length === 0 ? (
-          <p className="font-mono text-xs text-chalkdim">{t('player.noGoals')}</p>
-        ) : (
-          <ul className="space-y-1 border border-line bg-panel p-4">
-            {goals.map((g) => {
-              const opp = g.side === 'home' ? g.match.awayName : g.match.homeName;
-              const score = `${g.match.homeScore ?? 0} : ${g.match.awayScore ?? 0}`;
-              return (
-                <li
-                  key={`${g.match.id}-${g.entry.minute}`}
-                  className="flex items-center justify-between font-mono text-xs"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-chalk tabular-nums w-12 shrink-0">{g.entry.minute}</span>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/match/${encodeURIComponent(g.match.slug)}`)}
-                      className="font-display text-sm text-chalk hover:text-pitch transition-colors truncate text-left"
-                    >
-                      {g.match.homeName} vs {g.match.awayName}
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-chalk tabular-nums">{score}</span>
-                    <span className="text-chalkdim/60 truncate hidden sm:inline">{opp}</span>
-                    {g.entry.tag && (
-                      <span className="text-chalkdim/60 text-[10px] uppercase">
-                        {g.entry.tag.trim()}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+        {/* Stats strip */}
+        {topScorerEntry && (
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 border border-line bg-panel p-3 sm:p-4 max-w-xs">
+            <Stat label={t('scorers.goals')} value={topScorerEntry.goals} bold />
+          </div>
         )}
-      </section>
+
+        {/* Goals timeline */}
+        <section className="space-y-3">
+          <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
+            {t('player.goals')}
+          </h2>
+          {goals.length === 0 ? (
+            <p className="font-mono text-xs text-chalkdim">{t('player.noGoals')}</p>
+          ) : (
+            <ul className="space-y-1 border border-line bg-panel p-4">
+              {goals.map((g) => {
+                const opp = g.side === 'home' ? g.match.awayName : g.match.homeName;
+                const score = `${g.match.homeScore ?? 0} : ${g.match.awayScore ?? 0}`;
+                return (
+                  <li
+                    key={`${g.match.id}-${g.entry.minute}`}
+                    className="flex items-center justify-between font-mono text-xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-chalk tabular-nums w-12 shrink-0">
+                        {g.entry.minute}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/match/${encodeURIComponent(g.match.slug)}`)}
+                        className="font-display text-sm text-chalk hover:text-pitch transition-colors truncate text-left"
+                      >
+                        {g.match.homeName} vs {g.match.awayName}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-chalk tabular-nums">{score}</span>
+                      <span className="text-chalkdim/60 truncate hidden sm:inline">{opp}</span>
+                      {g.entry.tag && (
+                        <span className="text-chalkdim/60 text-[10px] uppercase">
+                          {g.entry.tag.trim()}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

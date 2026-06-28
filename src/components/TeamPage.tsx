@@ -46,7 +46,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
 
   if (!standing) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 space-y-4">
         <button
           type="button"
           onClick={onBack}
@@ -65,119 +65,125 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
   const finished = ownMatches.filter((m) => m.status === 'finished').reverse(); // newest first
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="font-mono text-xs tracking-widest text-chalkdim hover:text-chalk transition-colors inline-flex items-center gap-1"
-      >
-        ← <span>{t('detail.back')}</span>
-      </button>
+    // px OUTSIDE, max-w-6xl INSIDE — matches the schedule/header frame exactly.
+    <div className="px-4 md:px-6 py-4 md:py-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="font-mono text-xs tracking-widest text-chalkdim hover:text-chalk transition-colors inline-flex items-center gap-1"
+        >
+          ← <span>{t('detail.back')}</span>
+        </button>
 
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        {teamFlag ? (
-          <img src={teamFlag} alt={teamName} className="w-12 h-8 object-cover" />
-        ) : (
-          <span className="w-12 h-8 bg-panel2" aria-hidden />
-        )}
-        <div>
-          <h1 className="font-display font-bold text-2xl text-chalk tracking-wide">{teamName}</h1>
-          {groupLetter && (
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim">
-              {t('common.group')} {groupLetter}
-            </span>
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          {teamFlag ? (
+            <img src={teamFlag} alt={teamName} className="w-12 h-8 object-cover" />
+          ) : (
+            <span className="w-12 h-8 bg-panel2" aria-hidden />
+          )}
+          <div>
+            <h1 className="font-display font-bold text-2xl text-chalk tracking-wide">{teamName}</h1>
+            {groupLetter && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim">
+                {t('common.group')} {groupLetter}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Stats strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 border border-line bg-panel p-3 sm:p-4">
+          <Stat label={t('st.mp')} value={standing.mp} />
+          <Stat label={t('st.w')} value={standing.w} tone="pitch" />
+          <Stat label={t('st.d')} value={standing.d} />
+          <Stat label={t('st.l')} value={standing.l} tone="live" />
+          <Stat
+            label={t('st.gd')}
+            value={standing.gd > 0 ? `+${standing.gd}` : standing.gd}
+            tone={standing.gd > 0 ? 'pitch' : standing.gd < 0 ? 'live' : undefined}
+          />
+          <Stat label={t('st.pts')} value={standing.pts} bold />
+          {standing.form && (
+            <div className="col-span-2 sm:col-span-5 flex items-center gap-2 pt-1">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-chalkdim/60">
+                {t('st.form')}:
+              </span>
+              <TeamFormPill form={standing.form} />
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Stats strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 border border-line bg-panel p-3 sm:p-4">
-        <Stat label={t('st.mp')} value={standing.mp} />
-        <Stat label={t('st.w')} value={standing.w} tone="pitch" />
-        <Stat label={t('st.d')} value={standing.d} />
-        <Stat label={t('st.l')} value={standing.l} tone="live" />
-        <Stat
-          label={t('st.gd')}
-          value={standing.gd > 0 ? `+${standing.gd}` : standing.gd}
-          tone={standing.gd > 0 ? 'pitch' : standing.gd < 0 ? 'live' : undefined}
-        />
-        <Stat label={t('st.pts')} value={standing.pts} bold />
-        {standing.form && (
-          <div className="col-span-2 sm:col-span-5 flex items-center gap-2 pt-1">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-chalkdim/60">
-              {t('st.form')}:
-            </span>
-            <TeamFormPill form={standing.form} />
-          </div>
-        )}
-      </div>
-
-      {/* Matches */}
-      <section className="space-y-3">
-        <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
-          {t('team.matches')}
-        </h2>
-        {ownMatches.length === 0 ? (
-          <p className="font-mono text-xs text-chalkdim">{t('team.matchesEmpty')}</p>
-        ) : (
-          <div className="space-y-3">
-            {upcoming.length > 0 && <SubHeader>{t('team.upcoming')}</SubHeader>}
-            {upcoming.map((m) => (
-              <MatchCard
-                key={m.id}
-                homeName={m.homeName}
-                awayName={m.awayName}
-                homeFlag={m.homeFlag}
-                awayFlag={m.awayFlag}
-                homeScore={m.homeScore}
-                awayScore={m.awayScore}
-                status={m.status}
-                kickoff={m.kickoff}
-                stage={m.stage}
-                group={m.group}
-                progress={m.progress}
-                onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
-              />
-            ))}
-            {finished.length > 0 && <SubHeader>{t('team.results')}</SubHeader>}
-            {finished.map((m) => (
-              <MatchCard
-                key={m.id}
-                homeName={m.homeName}
-                awayName={m.awayName}
-                homeFlag={m.homeFlag}
-                awayFlag={m.awayFlag}
-                homeScore={m.homeScore}
-                awayScore={m.awayScore}
-                status={m.status}
-                kickoff={m.kickoff}
-                stage={m.stage}
-                group={m.group}
-                progress={m.progress}
-                onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Scorers from this team */}
-      {ownScorers.length > 0 && (
+        {/* Matches */}
         <section className="space-y-3">
           <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
-            {t('team.scorers')}
+            {t('team.matches')}
           </h2>
-          <ul className="space-y-1 border border-line bg-panel p-4">
-            {ownScorers.map((s) => (
-              <li key={s.athleteId} className="flex items-center justify-between font-mono text-xs">
-                <span className="font-display text-sm text-chalk">{s.name}</span>
-                <span className="tabular-nums text-chalk">{s.goals}</span>
-              </li>
-            ))}
-          </ul>
+          {ownMatches.length === 0 ? (
+            <p className="font-mono text-xs text-chalkdim">{t('team.matchesEmpty')}</p>
+          ) : (
+            <div className="space-y-3">
+              {upcoming.length > 0 && <SubHeader>{t('team.upcoming')}</SubHeader>}
+              {upcoming.map((m) => (
+                <MatchCard
+                  key={m.id}
+                  homeName={m.homeName}
+                  awayName={m.awayName}
+                  homeFlag={m.homeFlag}
+                  awayFlag={m.awayFlag}
+                  homeScore={m.homeScore}
+                  awayScore={m.awayScore}
+                  status={m.status}
+                  kickoff={m.kickoff}
+                  stage={m.stage}
+                  group={m.group}
+                  progress={m.progress}
+                  onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
+                />
+              ))}
+              {finished.length > 0 && <SubHeader>{t('team.results')}</SubHeader>}
+              {finished.map((m) => (
+                <MatchCard
+                  key={m.id}
+                  homeName={m.homeName}
+                  awayName={m.awayName}
+                  homeFlag={m.homeFlag}
+                  awayFlag={m.awayFlag}
+                  homeScore={m.homeScore}
+                  awayScore={m.awayScore}
+                  status={m.status}
+                  kickoff={m.kickoff}
+                  stage={m.stage}
+                  group={m.group}
+                  progress={m.progress}
+                  onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
+                />
+              ))}
+            </div>
+          )}
         </section>
-      )}
+
+        {/* Scorers from this team */}
+        {ownScorers.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
+              {t('team.scorers')}
+            </h2>
+            <ul className="space-y-1 border border-line bg-panel p-4">
+              {ownScorers.map((s) => (
+                <li
+                  key={s.athleteId}
+                  className="flex items-center justify-between font-mono text-xs"
+                >
+                  <span className="font-display text-sm text-chalk">{s.name}</span>
+                  <span className="tabular-nums text-chalk">{s.goals}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
