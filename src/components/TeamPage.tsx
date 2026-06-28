@@ -46,7 +46,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
 
   if (!standing) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 space-y-4">
         <button
           type="button"
           onClick={onBack}
@@ -65,7 +65,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
   const finished = ownMatches.filter((m) => m.status === 'finished').reverse(); // newest first
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+    <div className="w-full max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       <button
         type="button"
         onClick={onBack}
