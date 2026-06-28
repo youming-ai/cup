@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useT } from '../i18n';
-import type { MatchProgress, MatchStatus } from '../types';
+import type { MatchProgress, MatchStatus, ScorerEntry } from '../types';
+import { scorerDisplay } from '../utils/wc';
 
 interface MatchCardProps {
   homeName: string;
@@ -13,8 +14,8 @@ interface MatchCardProps {
   kickoff: Date | null;
   stage: string;
   group: string;
-  homeScorers?: string[];
-  awayScorers?: string[];
+  homeScorers?: ScorerEntry[];
+  awayScorers?: ScorerEntry[];
   venue?: string;
   // Optional richer progress (clock + displayClock + period). When omitted
   // the card renders the legacy 3-state pill (live / ft / upcoming).
@@ -161,8 +162,8 @@ export default memo(function MatchCard({
           {homeScorers.length > 0 && (
             <ul className="space-y-0.5 text-[10px] text-chalkdim leading-tight text-center min-w-0 max-w-full">
               {homeScorers.slice(0, 3).map((s) => (
-                <li key={s} className="truncate px-1">
-                  ⚽ {s}
+                <li key={s.playerId + s.minute} className="truncate px-1">
+                  ⚽ {scorerDisplay(s)}
                 </li>
               ))}
               {homeScorers.length > 3 && (
@@ -198,8 +199,8 @@ export default memo(function MatchCard({
           {awayScorers.length > 0 && (
             <ul className="space-y-0.5 text-[10px] text-chalkdim leading-tight text-center min-w-0 max-w-full">
               {awayScorers.slice(0, 3).map((s) => (
-                <li key={s} className="truncate px-1">
-                  {s} ⚽
+                <li key={s.playerId + s.minute} className="truncate px-1">
+                  {scorerDisplay(s)} ⚽
                 </li>
               ))}
               {awayScorers.length > 3 && (

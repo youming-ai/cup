@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
+import type { ScorerEntry, TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
 import {
+  matchSlug,
   parseScore,
   progressFromStatus,
-  scorerLabel,
   sortStandings,
   stageFromSlug,
   statusFromState,
@@ -112,6 +112,12 @@ export function useWorldCup() {
         .sort((a, b) => a.name.localeCompare(b.name));
 
       // --- scoreboard → matches ---
+      // Per-team form (last-5 W/D/L string). Aggregated across every event
+      // the team appears in: a team plays 3 group matches, each event's
+      // `competitor.form` covers a different sliding window. We pick the
+      // first 5 chars of any form we see; the most-recent one is the one
+      // attached to the team's latest event in the data.
+      const teamForm = new Map<string, string>();
       const ms: WCMatch[] = arr(obj(sbJson).events).map((rawEvent): WCMatch => {
         const ev = obj(rawEvent);
         const comp = obj(arr(ev.competitions)[0]);
@@ -123,17 +129,39 @@ export function useWorldCup() {
         const statusObj = obj(comp.status);
         const status = statusFromState(str(obj(statusObj.type).state));
 
-        // goals: scoring plays from competition.details, split by team id
+        // Form: per-team most-recent 5 results as a 5-char W/D/L string,
+        // oldest first. ESPN's scoreboard puts this directly on each
+        // competitor object (not inside records[]). We capture it in the
+        // outer teamForm map so the standings view can attach it later.
+        for (const rawC of competitors) {
+          const c = obj(rawC);
+          const tid = str(obj(c.team).id);
+          const form = str(c.form);
+          if (tid && form && !teamForm.has(tid)) teamForm.set(tid, form);
+        }
+
+        // goals: scoring plays from competition.details, split by team id.
+        // Build ScorerEntry records so the /player/[id] page can find
+        // goals by athlete id (not by name matching).
         const homeId = str(homeTeam.id);
-        const homeScorers: string[] = [];
-        const awayScorers: string[] = [];
+        const homeScorers: ScorerEntry[] = [];
+        const awayScorers: ScorerEntry[] = [];
         for (const rawDetail of arr(comp.details)) {
           const d = obj(rawDetail);
           if (!d.scoringPlay) continue;
-          const who = str(obj(arr(d.athletesInvolved)[0]).displayName);
-          if (!who) continue;
-          const label = scorerLabel(who, str(obj(d.clock).displayValue), str(obj(d.type).text));
-          (str(obj(d.team).id) === homeId ? homeScorers : awayScorers).push(label);
+          const athlete = obj(arr(d.athletesInvolved)[0]);
+          const id = str(athlete.id);
+          const name = str(athlete.displayName) || str(athlete.shortName);
+          if (!id || !name) continue;
+          const typeText = str(obj(d.type).text);
+          const minute = str(obj(d.clock).displayValue);
+          const tag = typeText.toLowerCase().includes('own')
+            ? ' (OG)'
+            : typeText.toLowerCase().includes('penalty')
+              ? ' (p)'
+              : '';
+          const entry: ScorerEntry = { playerId: id, name, minute, tag };
+          (str(obj(d.team).id) === homeId ? homeScorers : awayScorers).push(entry);
         }
 
         const venue = obj(comp.venue);
@@ -141,6 +169,18 @@ export function useWorldCup() {
         const venueName = str(venue.fullName);
         const date = str(ev.date);
         const kickoff = date ? new Date(date) : null;
+
+        // Winner side (ESPN flags it on the competitor). Only meaningful for
+        // finished matches; resolves penalty-shootout winners where the
+        // regulation/ET score is level. Undefined for draws / unfinished.
+        const winner =
+          status === 'finished'
+            ? home.winner === true
+              ? 'home'
+              : away.winner === true
+                ? 'away'
+                : undefined
+            : undefined;
 
         // Richer status: clock, displayClock, period (only set for live/finished).
         const progress =
@@ -163,6 +203,8 @@ export function useWorldCup() {
           awayName: str(awayTeam.displayName),
           homeFlag: teamLogo(homeTeam),
           awayFlag: teamLogo(awayTeam),
+          homeId: homeId,
+          awayId: str(awayTeam.id),
           homeScore: status === 'upcoming' ? null : parseScore(str(home.score)),
           awayScore: status === 'upcoming' ? null : parseScore(str(away.score)),
           group: teamGroup.get(homeId) || teamGroup.get(str(awayTeam.id)) || '',
@@ -172,9 +214,21 @@ export function useWorldCup() {
           homeScorers: status === 'upcoming' ? [] : homeScorers,
           awayScorers: status === 'upcoming' ? [] : awayScorers,
           venue: venueName && city ? `${venueName} · ${city}` : venueName,
+          slug: matchSlug(str(homeTeam.displayName), str(awayTeam.displayName), str(ev.id)),
           ...(progress ? { progress } : {}),
+          ...(winner ? { winner } : {}),
         };
       });
+
+      // Form is collected from the scoreboard (it isn't on the standings
+      // feed). Attach it to each standing row after the scoreboard has
+      // populated teamForm.
+      for (const g of gr) {
+        for (const s of g.standings) {
+          const form = teamForm.get(s.teamId);
+          if (form) s.form = form;
+        }
+      }
 
       // --- top scorers (tournament-level) ---
       // Each competitor in each event has a `leaders` array; we want the
@@ -184,8 +238,12 @@ export function useWorldCup() {
       // may appear under multiple matches). Resolve team display name from
       // the team map built from the standings feed.
       const teamMap = new Map<string, string>();
+      const teamFlagMap = new Map<string, string>();
       for (const g of gr) {
-        for (const s of g.standings) teamMap.set(s.teamId, s.name);
+        for (const s of g.standings) {
+          teamMap.set(s.teamId, s.name);
+          teamFlagMap.set(s.teamId, s.flag);
+        }
       }
       const scorerMap = new Map<string, TopScorer>();
       for (const rawEvent of arr(obj(sbJson).events)) {
@@ -209,6 +267,7 @@ export function useWorldCup() {
                   name: str(a.displayName) || str(a.shortName),
                   teamId,
                   teamName: teamMap.get(teamId) || '',
+                  teamFlag: teamFlagMap.get(teamId) || str(obj(a.team).logo),
                   goals,
                 });
               }

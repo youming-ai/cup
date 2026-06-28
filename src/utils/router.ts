@@ -1,0 +1,148 @@
+import { useCallback, useEffect, useState } from 'react';
+
+// One-route-fits-all router built on the History API. No react-router /
+// wouter dep — the surface area is small enough that a single module is
+// enough. The Worker serves index.html for unknown paths
+// (assets.not_found_handling = single-page-application), so deep links
+// resolve to the SPA at page refresh.
+//
+// Route scheme (every view is addressable — shareable, back/forward, refresh):
+//   /            matches (schedule)        ┐ "schedule" top-nav sections
+//   /standings   group standings           │
+//   /scorers     top scorers               │
+//   /bracket     knockout bracket          ┘
+//   /live        live-stream list          ┐ "live" top-nav
+//   /live/<slug> live-stream player        ┘
+//   /match/<slug>  ESPN fixture detail     (WC matches only — no more wc: prefix)
+//   /team/<id>     team page
+//   /player/<id>   player page
+
+// The four sections under the "schedule" top-nav.
+export type Section = 'matches' | 'standings' | 'scorers' | 'bracket';
+
+export type Route =
+  | { kind: 'section'; section: Section }
+  | { kind: 'live' }
+  | { kind: 'stream'; slug: string }
+  | { kind: 'match'; slug: string }
+  | { kind: 'team'; teamId: string }
+  | { kind: 'player'; athleteId: string };
+
+const SECTION_PATH: Record<Section, string> = {
+  matches: '/',
+  standings: '/standings',
+  scorers: '/scorers',
+  bracket: '/bracket',
+};
+
+// decodeURIComponent throws URIError on malformed input (e.g. "/match/%").
+// Path segments are untrusted (anyone can craft a deep link), so decode
+// defensively and treat a bad segment as no match → home fallback, never a
+// thrown error that crashes the React tree.
+function safeDecode(segment: string): string | null {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return null;
+  }
+}
+
+export function parseRoute(pathname: string): Route {
+  // Normalise: strip query and trailing slash.
+  const path = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
+  if (path === '/' || path === '') return { kind: 'section', section: 'matches' };
+  if (path === '/standings') return { kind: 'section', section: 'standings' };
+  if (path === '/scorers') return { kind: 'section', section: 'scorers' };
+  if (path === '/bracket') return { kind: 'section', section: 'bracket' };
+  if (path === '/live') return { kind: 'live' };
+
+  const stream = path.match(/^\/live\/([^/]+)$/);
+  if (stream) {
+    const slug = safeDecode(stream[1]!);
+    if (slug !== null) return { kind: 'stream', slug };
+  }
+
+  const m = path.match(/^\/match\/([^/]+)$/);
+  if (m) {
+    const slug = safeDecode(m[1]!);
+    if (slug !== null) return { kind: 'match', slug };
+  }
+
+  const t = path.match(/^\/team\/([^/]+)$/);
+  if (t) {
+    const teamId = safeDecode(t[1]!);
+    if (teamId !== null) return { kind: 'team', teamId };
+  }
+
+  const p = path.match(/^\/player\/([^/]+)$/);
+  if (p) {
+    const athleteId = safeDecode(p[1]!);
+    if (athleteId !== null) return { kind: 'player', athleteId };
+  }
+
+  return { kind: 'section', section: 'matches' };
+}
+
+export function pathFor(route: Route): string {
+  switch (route.kind) {
+    case 'section':
+      return SECTION_PATH[route.section];
+    case 'live':
+      return '/live';
+    case 'stream':
+      return `/live/${encodeURIComponent(route.slug)}`;
+    case 'match':
+      return `/match/${encodeURIComponent(route.slug)}`;
+    case 'team':
+      return `/team/${encodeURIComponent(route.teamId)}`;
+    case 'player':
+      return `/player/${encodeURIComponent(route.athleteId)}`;
+  }
+}
+
+// pushState/replaceState do NOT emit `popstate`, so `useRouter` can't see a
+// programmatic navigation on its own. Every `navigate()` dispatches this event
+// and the hook re-parses on it — that's what keeps any caller (FixturesView,
+// LiveView, App) in sync without threading a setter through props.
+const ROUTE_CHANGE = 'app:routechange';
+
+// Programmatic navigation. Default behaviour: pushState (back/forward works).
+// Pass `{ replace: true }` for state-only updates that shouldn't grow the
+// history stack (e.g. tab switches).
+export function navigate(path: string, opts: { replace?: boolean; scroll?: boolean } = {}): void {
+  const { replace = false, scroll = false } = opts;
+  if (window.location.pathname + window.location.search === path) return;
+  if (replace) {
+    window.history.replaceState(null, '', path);
+  } else {
+    window.history.pushState(null, '', path);
+  }
+  if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
+  window.dispatchEvent(new Event(ROUTE_CHANGE));
+}
+
+// React hook: subscribes to popstate (back/forward) + our route-change event
+// (programmatic navigate), returns the current Route and a `go` alias.
+export function useRouter(): {
+  route: Route;
+  go: (path: string, opts?: { replace?: boolean; scroll?: boolean }) => void;
+} {
+  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
+
+  useEffect(() => {
+    const sync = () => setRoute(parseRoute(window.location.pathname));
+    window.addEventListener('popstate', sync);
+    window.addEventListener(ROUTE_CHANGE, sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener(ROUTE_CHANGE, sync);
+    };
+  }, []);
+
+  const go = useCallback((path: string, opts?: { replace?: boolean; scroll?: boolean }) => {
+    navigate(path, opts);
+    setRoute(parseRoute(path));
+  }, []);
+
+  return { route, go };
+}

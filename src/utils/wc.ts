@@ -1,4 +1,12 @@
-import type { MatchProgress, MatchStatus, ProgressStatus, Stage, WCStanding } from '../types';
+import type {
+  MatchProgress,
+  MatchStatus,
+  ProgressStatus,
+  ScorerEntry,
+  Stage,
+  WCStanding,
+} from '../types';
+import { slugify } from './helpers';
 
 export function parseScore(s: string | number | null | undefined): number | null {
   if (s == null) return null;
@@ -99,12 +107,32 @@ export function stageFromSlug(slug: string | undefined): Stage {
   return (slug && SLUG_TO_STAGE[slug]) || 'group';
 }
 
+// Build a URL-friendly slug from a match's home/away team names. Used by
+// the /match/[slug] route for deep linking. Same slugify pipeline as the
+// streamed.pk Match type so URL shapes match across data sources.
+//
+// The ESPN event id is appended so the slug is unique: the same two teams can
+// meet more than once in a tournament (group stage + a knockout rematch), and
+// resolving a route by team names alone would always open the first fixture.
+export function matchSlug(homeName: string, awayName: string, eventId: string): string {
+  const base = slugify(`${homeName}-vs-${awayName}`);
+  return eventId ? `${base}-${eventId}` : base;
+}
+
 // Build a display scorer line from an ESPN scoring play, e.g.
 // "Breel Embolo 17' (p)" / "L. Messi 90'+5'" / "J. Doe 30' (OG)".
+// Used for the live-view shorthand; the structured ScorerEntry carries
+// the same data and is rendered by MatchCard via scorerDisplay().
 export function scorerLabel(name: string, clock: string, typeText: string): string {
   const t = (typeText || '').toLowerCase();
   const tag = t.includes('own') ? ' (OG)' : t.includes('penalty') ? ' (p)' : '';
   return `${name} ${clock}${tag}`.trim();
+}
+
+// Render a structured ScorerEntry as a human-readable string. Same
+// shape as scorerLabel() output but takes the already-parsed entry.
+export function scorerDisplay(entry: ScorerEntry): string {
+  return `${entry.name} ${entry.minute}${entry.tag}`.trim();
 }
 
 export function sortStandings(teams: WCStanding[]): WCStanding[] {

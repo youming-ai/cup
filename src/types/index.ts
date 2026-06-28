@@ -39,24 +39,46 @@ export interface MatchProgress {
 
 export type Stage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'third' | 'final';
 
+// One scoring play: a player scoring in a specific match minute. Carries
+// the ESPN athlete id so the /player/[id] page can find goals without
+// name-matching. `tag` is a display-only suffix (e.g. " (p)" for
+// penalties, " (OG)" for own goals) derived from the scoring play's
+// `type.text`.
+export interface ScorerEntry {
+  playerId: string;
+  name: string;
+  minute: string; // "45'", "45'+2'", "67'", etc.
+  tag: '' | ' (p)' | ' (OG)';
+}
+
 export interface WCMatch {
   id: string;
   homeName: string;
   awayName: string;
   homeFlag: string;
   awayFlag: string;
+  homeId: string; // ESPN team id for the home side
+  awayId: string; // ESPN team id for the away side
   homeScore: number | null;
   awayScore: number | null;
   group: string;
   kickoff: Date | null;
   status: MatchStatus;
   stage: Stage;
-  homeScorers: string[];
-  awayScorers: string[];
+  homeScorers: ScorerEntry[];
+  awayScorers: ScorerEntry[];
   venue: string; // "Estadio Azteca · Mexico City" or '' when unknown
+  // URL-friendly identifier (home-vs-away, lowercased, hyphenated). Used
+  // by the /match/[slug] route to deep-link directly to a match detail
+  // page. Derived in useWorldCup from the team names via slugify().
+  slug: string;
   // Optional richer status (only set when not 'upcoming'). For 'finished' this
   // carries the FT clock; for 'live' it carries the current minute or HT.
   progress?: MatchProgress;
+  // Which side won (from ESPN's competitor.winner). Set for finished knockout
+  // matches; lets the bracket resolve penalty-shootout winners where the
+  // regulation/ET score is level. Undefined for draws and group games.
+  winner?: 'home' | 'away';
 }
 
 export interface WCStanding {
@@ -71,6 +93,12 @@ export interface WCStanding {
   ga: number;
   gd: number;
   pts: number;
+  // Last-5 form as a 5-character string of W/D/L codes, oldest first
+  // (the rightmost character is the most recent result). Built from
+  // ESPN's `competitor.form` field, captured at the same time as the
+  // scoreboard parse. May be undefined for teams that haven't played
+  // 5 matches yet.
+  form?: string;
 }
 
 export interface WCGroup {
@@ -122,5 +150,6 @@ export interface TopScorer {
   name: string;
   teamId: string;
   teamName: string; // resolved via the team name cache inside useWorldCup
+  teamFlag: string; // team crest URL, resolved from the standings feed
   goals: number;
 }

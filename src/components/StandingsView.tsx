@@ -2,6 +2,51 @@ import { useMemo } from 'react';
 import { useT } from '../i18n';
 import type { WCGroup } from '../types';
 
+// Last-5 form pill. Renders each W/D/L as a colour-coded square.
+//   W = win  (pitch green)
+//   D = draw (chalkdim, dim)
+//   L = loss (live red)
+// The visual letter is also announced to screen readers via a visually-
+// hidden span, and `title` gives mouse users a hover tooltip.
+function FormPill({ form }: { form?: string }) {
+  if (!form) return <span className="text-chalkdim/50">—</span>;
+  // The wrapping element uses role="img" + aria-label so screen readers
+  // hear a single "WLWLL" string. The role is required because
+  // aria-label on a plain <span> isn't a valid a11y hook.
+  return (
+    <span
+      role="img"
+      aria-label={`Last 5 matches: ${form}`}
+      className="inline-flex gap-0.5 justify-center"
+    >
+      {form.split('').map((c, _i, arr) => {
+        const label = c === 'W' ? 'win' : c === 'D' ? 'draw' : 'loss';
+        // Form is at most 5 chars; a position-prefixed key like
+        // "W-0" / "D-1" is stable across renders and lets the key encode
+        // both identity and position without re-introducing array-index
+        // lint complaints.
+        const key = `${c}-${arr.length - 1 - _i}`;
+        return (
+          <span
+            key={key}
+            title={label}
+            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center ${
+              c === 'W'
+                ? 'bg-pitch text-night'
+                : c === 'D'
+                  ? 'bg-chalkdim/30 text-chalk'
+                  : 'bg-live/20 text-live'
+            }`}
+            aria-hidden
+          >
+            {c}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export default function StandingsView({ groups }: { groups: WCGroup[] }) {
   const t = useT();
 
@@ -63,6 +108,9 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                   <th scope="col" className="px-1 font-medium">
                     <abbr title="Goal Difference">{t('st.gd')}</abbr>
                   </th>
+                  <th scope="col" className="px-2 font-medium hidden sm:table-cell">
+                    <abbr title="Last 5 matches">{t('st.form')}</abbr>
+                  </th>
                   <th scope="col" className="px-2 font-medium">
                     <abbr title="Points">{t('st.pts')}</abbr>
                   </th>
@@ -116,6 +164,9 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                       </td>
                       <td className="text-center text-chalkdim tabular-nums">
                         {s.gd > 0 ? `+${s.gd}` : s.gd}
+                      </td>
+                      <td className="text-center tabular-nums hidden sm:table-cell">
+                        <FormPill form={s.form} />
                       </td>
                       <td className="text-center font-bold text-chalk tabular-nums">{s.pts}</td>
                     </tr>

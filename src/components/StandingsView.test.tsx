@@ -218,4 +218,51 @@ describe('StandingsView', () => {
     // Should still render without crashing
     expect(screen.getByText('Only')).toBeInTheDocument();
   });
+
+  // ---- Form column ----
+
+  it('renders a Form column header in the standings table', () => {
+    const groups: WCGroup[] = [
+      {
+        name: 'A',
+        standings: [team({ teamId: '1', name: 'Mexico', mp: 3, pts: 7, form: 'WWDWL' })],
+      },
+    ];
+    renderView(groups);
+    // The form column has a header labelled "Form" via the i18n key.
+    expect(screen.getByText('Form')).toBeInTheDocument();
+  });
+
+  it('renders each W/D/L character as a colour-coded square in form order', () => {
+    const groups: WCGroup[] = [
+      {
+        name: 'A',
+        standings: [team({ teamId: '1', name: 'Mexico', mp: 5, pts: 10, form: 'WDWLW' })],
+      },
+    ];
+    renderView(groups);
+    // Find the pill by its role="img" + aria-label; the heading <abbr>
+    // also has title="Last 5 matches" so we use the role instead to
+    // disambiguate.
+    const pill = screen.getByRole('img', { name: /Last 5 matches/ });
+    // The pill contains 5 colour-coded squares; each shows the W/D/L
+    // character. We don't assert specific Tailwind classes (those are
+    // formatting concerns); we just verify the letters are rendered in
+    // the right order, oldest-first.
+    expect(pill.textContent).toBe('WDWLW');
+  });
+
+  it('shows an em-dash placeholder when standings rows lack a form field', () => {
+    const groups: WCGroup[] = [
+      {
+        name: 'A',
+        standings: [team({ teamId: '1', name: 'Mexico', mp: 0, pts: 0 })],
+      },
+    ];
+    renderView(groups);
+    // No form data → no pill, just the em-dash placeholder; the header
+    // is still present (column always exists).
+    expect(screen.queryByRole('img', { name: /Last 5 matches/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Form')).toBeInTheDocument();
+  });
 });

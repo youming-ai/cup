@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
+import { navigate, pathFor, type Section } from '../utils/router';
+import BracketView from './BracketView';
 import MatchCard from './MatchCard';
-import MatchDetailModal from './MatchDetailModal';
 import StandingsView from './StandingsView';
 import TopScorersView from './TopScorersView';
 
@@ -10,38 +11,35 @@ const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'fina
 
 // Quick filter: which match statuses to show. Tournament-stage chips below
 // further narrow by stage; this is a coarser "is the match still to play or
-// already played?" toggle.
-type StatusFilter = 'all' | 'upcoming' | 'finished';
-type Tab = 'schedule' | 'standings' | 'scorers';
+// already played?" toggle. Defaults to Upcoming so users land on what's next.
+type StatusFilter = 'upcoming' | 'finished';
+
+// The sub-tabs map 1:1 to section routes; the matches section uses the
+// 'fixtures.schedule' label. Clicking a tab navigates (each section is a URL).
+const SECTION_TABS: { section: Section; labelKey: string }[] = [
+  { section: 'matches', labelKey: 'fixtures.schedule' },
+  { section: 'standings', labelKey: 'fixtures.standings' },
+  { section: 'scorers', labelKey: 'fixtures.scorers' },
+  { section: 'bracket', labelKey: 'fixtures.bracket' },
+];
 
 export default function FixturesView({
+  section,
   matches,
   groups,
   scorers,
 }: {
+  section: Section;
   matches: WCMatch[];
   groups: WCGroup[];
   scorers: TopScorer[];
 }) {
   const t = useT();
-  const [tab, setTab] = useState<Tab>('schedule');
   const [stage, setStage] = useState<Stage | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [openMatch, setOpenMatch] = useState<WCMatch | null>(null);
-  const closeDetail = useCallback(() => setOpenMatch(null), []);
-
-  // Auto-scroll: on first render (and whenever the upcoming day groups
-  // change), scroll the viewport to the first upcoming day whose date is
-  // >= today. If no such day exists (e.g. all upcoming matches are TBD),
-  // scroll to the very first upcoming day so the user lands at the start
-  // of the live/scheduled content rather than at finished results.
-  const dayRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const attachDayRef = useCallback((key: string, el: HTMLElement | null) => {
-    if (el) dayRefs.current.set(key, el);
-    else dayRefs.current.delete(key);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
+  const openMatch = useCallback((m: WCMatch) => {
+    navigate(pathFor({ kind: 'match', slug: m.slug }));
   }, []);
-
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));
@@ -60,7 +58,7 @@ export default function FixturesView({
       if (m.status === 'finished') finished++;
       else upcoming++;
     }
-    return { all: matches.length, upcoming, finished };
+    return { upcoming, finished };
   }, [matches]);
 
   // 按开球当天分组；组内按开球时间正序。未完赛(upcoming/live)在前(日期正序)，
@@ -91,27 +89,8 @@ export default function FixturesView({
     };
   }, [matches, stage]);
 
-  // Auto-scroll: on first render (and whenever the upcoming day groups
-  // change), scroll the viewport to today's day section. If today has no
-  // matches, fall back to the first upcoming day so the user lands on
-  // scheduled content rather than at finished results.
-  useEffect(() => {
-    if (tab !== 'schedule') return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const target =
-      dayRefs.current.get(todayKey) ??
-      (upcoming[0] ? dayRefs.current.get(upcoming[0][0]) : undefined);
-    if (!target) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [tab, upcoming]);
-
-  const renderDay = (
-    [key, list]: [string, WCMatch[]],
-    attachRef: (key: string, el: HTMLElement | null) => void,
-  ) => (
-    <section key={key} ref={(el) => attachRef(key, el)} className="space-y-3">
+  const renderDay = ([key, list]: [string, WCMatch[]]) => (
+    <section key={key} className="space-y-3">
       <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
         {list[0].kickoff
           ? list[0].kickoff.toLocaleDateString(undefined, {
@@ -140,7 +119,7 @@ export default function FixturesView({
             homeScorers={m.homeScorers}
             awayScorers={m.awayScorers}
             venue={m.venue}
-            onOpen={m.status === 'upcoming' ? undefined : () => setOpenMatch(m)}
+            onOpen={m.status === 'upcoming' ? undefined : () => openMatch(m)}
           />
         ))}
       </div>
@@ -148,128 +127,113 @@ export default function FixturesView({
   );
 
   return (
-    <div ref={containerRef} className="max-w-6xl mx-auto space-y-6">
-      {/* 赛程 | 积分 子切换 */}
-      <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
-        {(['schedule', 'standings', 'scorers'] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setTab(k)}
-            aria-pressed={tab === k}
-            className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
-              tab === k ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
-            }`}
-          >
-            {t(`fixtures.${k}`)}
-          </button>
-        ))}
+    // Match the Header's layout exactly — px on the OUTER wrapper, max-w-6xl
+    // INSIDE — so the content column lines up with the header box at every
+    // viewport width (otherwise the two max-w boxes diverge in the
+    // 1152–1200px band where only the header's max-w is squeezed by its px).
+    <div className="px-4 md:px-6 py-4 md:py-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* 对阵 | 积分 | 射手 | 淘汰赛 — each is a section route */}
+        <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
+          {SECTION_TABS.map(({ section: s, labelKey }) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
+              aria-pressed={section === s}
+              className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
+                section === s ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
+              }`}
+            >
+              {t(labelKey)}
+            </button>
+          ))}
+        </div>
+
+        {section === 'standings' ? (
+          <StandingsView groups={groups} />
+        ) : section === 'scorers' ? (
+          <TopScorersView scorers={scorers} />
+        ) : section === 'bracket' ? (
+          <BracketView groups={groups} matches={matches} />
+        ) : (
+          <>
+            {/* Quick filter: Upcoming / Finished. Counts are taken from the
+              unfiltered match list so users always see how many matches exist
+              in each bucket regardless of the stage selection below. */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {(
+                [
+                  {
+                    key: 'upcoming',
+                    label: t('fixtures.filterUpcoming'),
+                    count: counts.upcoming,
+                  },
+                  {
+                    key: 'finished',
+                    label: t('fixtures.filterFinished'),
+                    count: counts.finished,
+                  },
+                ] as { key: StatusFilter; label: string; count: number }[]
+              ).map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setStatusFilter(key)}
+                  aria-pressed={statusFilter === key}
+                  className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                    statusFilter === key
+                      ? 'border-pitch text-chalk'
+                      : 'border-transparent text-chalkdim hover:text-chalk'
+                  }`}
+                >
+                  {label}
+                  <span className="ml-1.5 tabular-nums text-chalkdim/70">{count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {stages.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStage(s)}
+                  aria-pressed={stage === s}
+                  className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                    stage === s
+                      ? 'border-pitch text-chalk'
+                      : 'border-transparent text-chalkdim hover:text-chalk'
+                  }`}
+                >
+                  {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
+                </button>
+              ))}
+            </div>
+
+            {(() => {
+              const days = statusFilter === 'finished' ? finished : upcoming;
+              if (days.length === 0) {
+                // The status-filter counts above are unfiltered by stage, so a
+                // status-specific message ("No finished matches yet") would
+                // contradict a non-zero chip count when an empty stage is also
+                // selected. Only assert that global truth when no stage narrows
+                // the view; otherwise fall back to the neutral "no results".
+                const emptyKey =
+                  stage !== 'all'
+                    ? 'common.empty'
+                    : statusFilter === 'finished'
+                      ? 'fixtures.finishedEmpty'
+                      : 'fixtures.upcomingEmpty';
+                return (
+                  <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
+                );
+              }
+              return <>{days.map(renderDay)}</>;
+            })()}
+          </>
+        )}
       </div>
-
-      {tab === 'standings' ? (
-        <StandingsView groups={groups} />
-      ) : tab === 'scorers' ? (
-        <TopScorersView scorers={scorers} />
-      ) : (
-        <>
-          {/* Quick filter: All / Upcoming / Finished. Counts are taken from
-              the unfiltered match list so users always see how many matches
-              exist in each bucket regardless of the stage selection below. */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {(
-              [
-                { key: 'all', label: t('filter.all'), count: counts.all },
-                {
-                  key: 'upcoming',
-                  label: t('fixtures.filterUpcoming'),
-                  count: counts.upcoming,
-                },
-                {
-                  key: 'finished',
-                  label: t('fixtures.filterFinished'),
-                  count: counts.finished,
-                },
-              ] as { key: StatusFilter; label: string; count: number }[]
-            ).map(({ key, label, count }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setStatusFilter(key)}
-                aria-pressed={statusFilter === key}
-                className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
-                  statusFilter === key
-                    ? 'border-pitch text-chalk'
-                    : 'border-transparent text-chalkdim hover:text-chalk'
-                }`}
-              >
-                {label}
-                <span className="ml-1.5 tabular-nums text-chalkdim/70">{count}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {stages.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStage(s)}
-                aria-pressed={stage === s}
-                className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
-                  stage === s
-                    ? 'border-pitch text-chalk'
-                    : 'border-transparent text-chalkdim hover:text-chalk'
-                }`}
-              >
-                {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
-              </button>
-            ))}
-          </div>
-
-          {(() => {
-            // Pick which sections to render based on the status filter.
-            const showUpcoming = statusFilter !== 'finished' && upcoming.length > 0;
-            const showFinished = statusFilter !== 'upcoming' && finished.length > 0;
-            if (!showUpcoming && !showFinished) {
-              // The status-filter counts above are unfiltered by stage, so a
-              // status-specific message ("No finished matches yet") would
-              // contradict a non-zero chip count when an empty stage is also
-              // selected. Only assert that global truth when no stage narrows
-              // the view; otherwise fall back to the neutral "no results".
-              const emptyKey =
-                stage !== 'all'
-                  ? 'common.empty'
-                  : statusFilter === 'finished'
-                    ? 'fixtures.finishedEmpty'
-                    : statusFilter === 'upcoming'
-                      ? 'fixtures.upcomingEmpty'
-                      : 'common.empty';
-              return (
-                <p className="font-mono text-xs tracking-wider text-chalkdim">{t(emptyKey)}</p>
-              );
-            }
-            return (
-              <>
-                {showUpcoming && upcoming.map((d) => renderDay(d, attachDayRef))}
-                {showFinished && (
-                  <>
-                    {statusFilter === 'all' && finished.length > 0 && (
-                      <div className="flex items-center gap-3 pt-2">
-                        <span className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase shrink-0">
-                          {t('fixtures.results')}
-                        </span>
-                        <span className="h-px flex-1 bg-line" />
-                      </div>
-                    )}
-                    {finished.map((d) => renderDay(d, attachDayRef))}
-                  </>
-                )}
-              </>
-            );
-          })()}
-        </>
-      )}
-      {openMatch && <MatchDetailModal match={openMatch} onClose={closeDetail} />}
     </div>
   );
 }
