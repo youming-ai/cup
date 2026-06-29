@@ -19,10 +19,10 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
         </span>
       </div>
 
-      <table className="w-full text-sm border border-line bg-panel">
+      <table className="w-full text-sm border border-line/30 bg-panel/85 rounded-2xl overflow-hidden shadow-md backdrop-blur-sm">
         <caption className="sr-only">{t('scorers.title')}</caption>
         <thead className="text-chalkdim font-mono text-[10px] uppercase tracking-[0.18em]">
-          <tr className="border-b border-line">
+          <tr className="border-b border-white/5 bg-white/[0.02]">
             <th scope="col" className="text-left font-medium px-3 py-2 w-10">
               {t('scorers.rank')}
             </th>
@@ -45,7 +45,7 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
               <tr
                 // eslint-disable-next-line react/no-array-index-key
                 key={s.athleteId}
-                className={`border-b border-line/60 last:border-b-0 ${isLeader ? 'bg-pitch/5' : ''}`}
+                className={`border-b border-white/5 last:border-b-0 ${isLeader ? 'bg-pitch/5' : ''}`}
               >
                 <td className="px-3 py-2 font-mono tabular-nums text-chalkdim">{rank}</td>
                 <td className="px-3 py-2 font-display text-chalk truncate max-w-0">
@@ -55,7 +55,7 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
                       <img
                         src={s.teamFlag}
                         alt=""
-                        className="w-3.5 h-3.5 object-contain shrink-0"
+                        className="w-3.5 h-2.5 object-cover rounded-[3px] border border-white/10 shrink-0"
                       />
                     )}
                     <span className="truncate">{s.teamName}</span>
@@ -64,7 +64,11 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
                 <td className="px-3 py-2 font-mono text-[11px] text-chalkdim truncate max-w-0 hidden sm:table-cell">
                   <span className="flex items-center gap-1.5">
                     {s.teamFlag && (
-                      <img src={s.teamFlag} alt="" className="w-4 h-4 object-contain shrink-0" />
+                      <img
+                        src={s.teamFlag}
+                        alt=""
+                        className="w-4 h-3 object-cover rounded-[3px] border border-white/10 shrink-0"
+                      />
                     )}
                     <span className="truncate">{s.teamName}</span>
                   </span>

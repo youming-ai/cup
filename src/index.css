@@ -5,14 +5,15 @@
 /* 配色 token：通道值 "R G B"，配合 tailwind 的 rgb(var() / <alpha>)，
    集中维护暗色（转播机房）调色板。 */
 :root {
-  --c-bg: 24 32 28;
-  --c-surface: 33 43 38;
-  --c-surface2: 44 56 50;
-  --c-line: 60 73 65;
-  --c-text: 234 242 236;
-  --c-muted: 138 150 143;
-  --c-pitch: 43 217 107;
-  --c-live: 255 68 56;
+  --c-bg: 10 14 12;
+  --c-surface: 26 34 30;
+  --c-surface2: 40 52 46;
+  --c-line: 48 64 56;
+  --c-text: 242 247 244;
+  --c-muted: 138 150 144;
+  --c-pitch: 46 213 115;
+  --c-live: 255 69 58;
+  --c-amber: 251 191 36; /* halftime / paused semantic */
   /* scrollbar width — single source. Scrolling content reserves this gutter
      (scrollbar-gutter: both-edges); the non-scrolling header adds the same
      amount to its padding so the two line up. Change here only. */

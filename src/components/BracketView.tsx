@@ -45,7 +45,7 @@ function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string)
       type="button"
       onClick={onClick}
       disabled={!match.match}
-      className="w-full border border-line bg-panel p-2 text-left transition-colors hover:border-pitch focus:outline-none focus:border-pitch disabled:cursor-default disabled:hover:border-line"
+      className="w-full rounded-xl border border-line/50 bg-panel p-3 text-left transition-all duration-200 hover:border-pitch focus:outline-none disabled:cursor-default disabled:hover:border-line/50 shadow-sm"
     >
       <div className="flex items-center justify-between font-mono text-[10px] text-chalkdim/60">
         <span>{match.label}</span>
@@ -78,7 +78,13 @@ function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string)
 function TeamLabel({ team }: { team: ResolvedTeam }) {
   return (
     <>
-      {team.flag && <img src={team.flag} alt="" className="w-4 h-4 object-contain shrink-0" />}
+      {team.flag && (
+        <img
+          src={team.flag}
+          alt=""
+          className="w-4 h-3 object-cover rounded-[3px] border border-white/10 shrink-0"
+        />
+      )}
       <span className="truncate">{team.label}</span>
     </>
   );

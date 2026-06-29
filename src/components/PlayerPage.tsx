@@ -126,7 +126,7 @@ export default function PlayerPage({
 
         {/* Stats strip */}
         {topScorerEntry && (
-          <div className="grid grid-cols-2 gap-2 sm:gap-4 border border-line bg-panel p-3 sm:p-4 max-w-xs">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 rounded-2xl border border-line/30 bg-panel/85 p-4 shadow-md max-w-xs backdrop-blur-md">
             <Stat label={t('scorers.goals')} value={topScorerEntry.goals} bold />
           </div>
         )}
@@ -139,7 +139,7 @@ export default function PlayerPage({
           {goals.length === 0 ? (
             <p className="font-mono text-xs text-chalkdim">{t('player.noGoals')}</p>
           ) : (
-            <ul className="space-y-1 border border-line bg-panel p-4">
+            <ul className="space-y-2 rounded-2xl border border-line/30 bg-panel/85 p-4 shadow-md backdrop-blur-md">
               {goals.map((g) => {
                 const opp = g.side === 'home' ? g.match.awayName : g.match.homeName;
                 const score = `${g.match.homeScore ?? 0} : ${g.match.awayScore ?? 0}`;

@@ -134,15 +134,17 @@ export default function FixturesView({
     <div className="px-4 md:px-6 py-4 md:py-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* 对阵 | 积分 | 射手 | 淘汰赛 — each is a section route */}
-        <div className="flex items-center gap-1 p-1 border border-line bg-panel w-fit">
+        <div className="flex items-center gap-1 p-1 bg-panel/60 border border-line/20 rounded-full select-none w-full sm:w-fit overflow-x-auto no-scrollbar backdrop-blur-md">
           {SECTION_TABS.map(({ section: s, labelKey }) => (
             <button
               key={s}
               type="button"
               onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
               aria-pressed={section === s}
-              className={`px-4 py-2 font-display font-semibold text-sm transition-colors ${
-                section === s ? 'bg-pitch text-night' : 'text-chalkdim hover:text-chalk'
+              className={`flex-1 sm:flex-none px-4 py-1.5 rounded-full font-display text-sm transition-all duration-200 ${
+                section === s
+                  ? 'bg-white/10 text-chalk shadow-sm font-bold'
+                  : 'text-chalkdim hover:text-chalk'
               }`}
             >
               {t(labelKey)}
@@ -181,10 +183,10 @@ export default function FixturesView({
                   type="button"
                   onClick={() => setStatusFilter(key)}
                   aria-pressed={statusFilter === key}
-                  className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                  className={`shrink-0 px-3.5 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all duration-200 border ${
                     statusFilter === key
-                      ? 'border-pitch text-chalk'
-                      : 'border-transparent text-chalkdim hover:text-chalk'
+                      ? 'bg-white/10 text-chalk border-white/10 font-bold shadow-sm'
+                      : 'bg-transparent border-white/5 text-chalkdim hover:text-chalk hover:bg-white/5'
                   }`}
                 >
                   {label}
@@ -200,10 +202,10 @@ export default function FixturesView({
                   type="button"
                   onClick={() => setStage(s)}
                   aria-pressed={stage === s}
-                  className={`shrink-0 px-3 py-2 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
+                  className={`shrink-0 px-3.5 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all duration-200 border ${
                     stage === s
-                      ? 'border-pitch text-chalk'
-                      : 'border-transparent text-chalkdim hover:text-chalk'
+                      ? 'bg-white/10 text-chalk border-white/10 font-bold shadow-sm'
+                      : 'bg-transparent border-white/5 text-chalkdim hover:text-chalk hover:bg-white/5'
                   }`}
                 >
                   {s === 'all' ? t('filter.all') : t(`stage.${s}`)}

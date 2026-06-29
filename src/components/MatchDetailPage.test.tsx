@@ -53,7 +53,10 @@ it('renders the match header (home : away) and the back button', async () => {
   );
   await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
   // Header is rendered with the score and team names.
-  expect(screen.getByText('Mexico 2 : 0 South Africa')).toBeInTheDocument();
+  expect(screen.getByText('Mexico')).toBeInTheDocument();
+  expect(screen.getByText('South Africa')).toBeInTheDocument();
+  expect(screen.getByText('2')).toBeInTheDocument();
+  expect(screen.getByText('0')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /Back/ }));
   expect(onBack).toHaveBeenCalled();
 });
