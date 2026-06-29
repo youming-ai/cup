@@ -103,13 +103,6 @@ const LiveCard = memo(function LiveCard({
           </p>
         )}
       </div>
-
-      {/* thin accent line in the stream's own brand colour */}
-      <div
-        className="h-0.5 w-full"
-        style={{ background: m.colors?.[0] || 'rgb(var(--c-pitch))' }}
-        aria-hidden
-      />
     </>
   );
 
@@ -132,12 +125,12 @@ const LiveCard = memo(function LiveCard({
           type="button"
           onClick={() => onSelect(m)}
           aria-label={m.name}
-          className="group text-left w-full rounded-2xl border border-line bg-panel2 overflow-hidden hover:border-pitch transition-all duration-200 shadow-md"
+          className="group text-left w-full rounded-2xl border border-line/30 bg-panel overflow-hidden hover:border-pitch transition-all duration-200 shadow-md backdrop-blur-md"
         >
           {media}
         </button>
       ) : (
-        <div className="rounded-2xl border border-line bg-panel2 overflow-hidden opacity-80 shadow-md">
+        <div className="rounded-2xl border border-line/30 bg-panel overflow-hidden opacity-80 shadow-md backdrop-blur-md">
           {media}
         </div>
       )}
@@ -181,7 +174,7 @@ export default function LiveView({
   initialSlug?: string;
 }) {
   const t = useT();
-  const { toggle, isFavorite } = useFavorites();
+  const { favorites, toggle, isFavorite } = useFavorites();
   const favKey = (m: Match) => `live:${m.slug}`;
   const [iframeUrl, setIframeUrl] = useState('');
 
@@ -241,8 +234,11 @@ export default function LiveView({
       fu: Match[] = [];
     const lr: Match[] = [],
       ur: Match[] = [];
-    for (const m of live) (isFavorite(`live:${m.slug}`) ? fl : lr).push(m);
-    for (const m of upcoming) (isFavorite(`live:${m.slug}`) ? fu : ur).push(m);
+    // Depend on the `favorites` Set (changes identity on every toggle) — NOT
+    // `isFavorite`, whose callback identity is stable, so a toggle wouldn't
+    // re-run this memo and the Favorites section wouldn't appear immediately.
+    for (const m of live) (favorites.has(`live:${m.slug}`) ? fl : lr).push(m);
+    for (const m of upcoming) (favorites.has(`live:${m.slug}`) ? fu : ur).push(m);
     return {
       favLive: fl,
       favUpcoming: fu,
@@ -250,7 +246,7 @@ export default function LiveView({
       liveRest: lr,
       upcomingRest: ur,
     };
-  }, [live, upcoming, isFavorite]);
+  }, [live, upcoming, favorites]);
 
   const renderCard = (m: Match, kind: LiveKind) => (
     <LiveCard
