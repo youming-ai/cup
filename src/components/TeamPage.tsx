@@ -79,9 +79,16 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
         {/* Header */}
         <div className="flex items-center gap-3">
           {teamFlag ? (
-            <img src={teamFlag} alt={teamName} className="w-12 h-8 object-cover" />
+            <img
+              src={teamFlag}
+              alt={teamName}
+              className="w-12 h-8 object-cover rounded-[3px] border border-white/10"
+            />
           ) : (
-            <span className="w-12 h-8 bg-panel2" aria-hidden />
+            <span
+              className="w-12 h-8 bg-white/5 rounded-[3px] border border-white/10"
+              aria-hidden
+            />
           )}
           <div>
             <h1 className="font-display font-bold text-2xl text-chalk tracking-wide">{teamName}</h1>
@@ -94,7 +101,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 border border-line bg-panel p-3 sm:p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 rounded-2xl border border-line/30 bg-panel/85 p-4 shadow-md backdrop-blur-md">
           <Stat label={t('st.mp')} value={standing.mp} />
           <Stat label={t('st.w')} value={standing.w} tone="pitch" />
           <Stat label={t('st.d')} value={standing.d} />
@@ -170,7 +177,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
             <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
               {t('team.scorers')}
             </h2>
-            <ul className="space-y-1 border border-line bg-panel p-4">
+            <ul className="space-y-2 rounded-2xl border border-line/30 bg-panel/85 p-4 shadow-md backdrop-blur-md">
               {ownScorers.map((s) => (
                 <li
                   key={s.athleteId}
@@ -233,7 +240,7 @@ function TeamFormPill({ form }: { form: string }) {
           <span
             key={key}
             title={label}
-            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center ${
+            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center rounded-[3px] ${
               c === 'W'
                 ? 'bg-pitch text-night'
                 : c === 'D'

@@ -60,29 +60,35 @@ function PlayerStatusBadge({
 }) {
   if (status === 'ht') {
     return (
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-pitch/60 shadow-[0_0_10px_rgb(var(--c-pitch)_/_0.35)]">
-        <span className="font-mono text-xs tracking-widest text-pitch">{t('status.ht')}</span>
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-pitch/30 shadow-[0_0_10px_rgb(var(--c-pitch)_/_0.15)] select-none">
+        <span className="font-mono text-xs tracking-widest text-pitch font-bold">
+          {t('status.ht')}
+        </span>
       </div>
     );
   }
   if (status === 'live') {
     return (
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-live/40 shadow-[0_0_10px_rgb(var(--c-live)_/_0.35)]">
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-live/30 shadow-[0_0_10px_rgb(var(--c-live)_/_0.15)] select-none">
         <span className="live-dot" />
-        <span className="font-mono text-xs tracking-widest text-live">{t('status.live')}</span>
+        <span className="font-mono text-xs tracking-widest text-live font-bold">
+          {t('status.live')}
+        </span>
       </div>
     );
   }
   if (status === 'finished') {
     return (
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-chalkdim/40">
-        <span className="font-mono text-xs tracking-widest text-chalkdim">{t('status.ft')}</span>
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 select-none">
+        <span className="font-mono text-xs tracking-widest text-chalkdim font-bold">
+          {t('status.ft')}
+        </span>
       </div>
     );
   }
   return (
-    <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/70 backdrop-blur-sm border border-chalkdim/40">
-      <span className="font-mono text-xs tracking-widest text-chalkdim/70">
+    <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 select-none">
+      <span className="font-mono text-xs tracking-widest text-chalkdim/70 font-bold">
         {t('status.upcoming')}
       </span>
     </div>
@@ -120,7 +126,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
 
   if (!match) {
     return (
-      <div className="relative h-full min-h-[60vh] border border-line bg-panel overflow-hidden flex items-center justify-center">
+      <div className="relative h-full min-h-[60vh] rounded-[24px] border border-line/30 bg-panel/75 overflow-hidden flex items-center justify-center shadow-lg backdrop-blur-md">
         <CornerTicks />
         <div className="text-center px-8">
           <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">
@@ -139,7 +145,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video w-full border border-line bg-black overflow-hidden">
+      <div className="relative aspect-video w-full rounded-[24px] border border-line/30 bg-black overflow-hidden shadow-lg">
         <CornerTicks />
         <PlayerStatusBadge status={playerStatus(match)} t={t} />
 
@@ -168,7 +174,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
         )}
       </div>
 
-      <div className="border border-line bg-panel p-4 sm:p-5 space-y-4">
+      <div className="rounded-[24px] border border-line/30 bg-panel/85 p-5 sm:p-6 space-y-4 shadow-xl backdrop-blur-md">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
@@ -202,16 +208,16 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
                   type="button"
                   onClick={() => setSelectedIframeUrl(src.iframe)}
                   aria-pressed={active}
-                  className={`inline-flex items-center gap-2 px-3 py-2 border text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm transition-all duration-200 ${
                     active
-                      ? 'bg-pitch text-night border-pitch'
-                      : 'border-line bg-panel2 text-chalkdim hover:text-chalk hover:border-chalkdim'
+                      ? 'bg-pitch text-night border-pitch font-bold shadow-sm'
+                      : 'border-line bg-panel2 text-chalkdim hover:text-chalk hover:bg-panel'
                   }`}
                 >
                   <span className="truncate max-w-[14rem]">{src.label}</span>
                   {q && (
                     <span
-                      className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${
+                      className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wide rounded-[3px] ${
                         active ? 'bg-night/20 text-night' : 'bg-pitch/15 text-pitch'
                       }`}
                     >

@@ -68,19 +68,19 @@ const LiveCard = memo(function LiveCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="absolute top-3 left-3">
           {kind === 'live' ? (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-black/65 backdrop-blur-sm border border-live/40 font-mono text-[10px] tracking-widest text-live">
+            <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-live/30 font-mono text-[10px] tracking-widest text-live">
               <span className="live-dot" />
               {t('status.live')}
             </span>
           ) : (
-            <span className="px-2.5 py-1 bg-black/65 backdrop-blur-sm font-mono text-[10px] tracking-wider text-white/90 whitespace-nowrap">
+            <span className="px-2.5 py-0.5 rounded-full bg-black/65 backdrop-blur-sm font-mono text-[10px] tracking-wider text-white/90 whitespace-nowrap">
               {formatKickoff(m.startsAt) || t('status.upcoming')}
             </span>
           )}
         </div>
         {kind === 'live' && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="flex items-center justify-center w-12 h-12 bg-black/60 backdrop-blur-sm border border-white/30">
+            <span className="flex items-center justify-center w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm border border-white/30">
               <Play fill="currentColor" className="w-5 h-5 text-white ml-0.5" />
             </span>
           </div>
@@ -115,7 +115,7 @@ const LiveCard = memo(function LiveCard({
 
   // 收藏 / 提醒浮层，置于右上角；脱离可点击的卡片本体（避免 button 套 button）
   const overlay = (
-    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/65 backdrop-blur-sm border border-white/15">
+    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 p-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/15">
       {kind === 'upcoming' && m.startsAt && (
         <ReminderMenu title={m.name} start={new Date(m.startsAt * 1000)} t={t} />
       )}
@@ -132,12 +132,14 @@ const LiveCard = memo(function LiveCard({
           type="button"
           onClick={() => onSelect(m)}
           aria-label={m.name}
-          className="group text-left w-full border border-line bg-panel2 overflow-hidden hover:border-pitch transition-colors"
+          className="group text-left w-full rounded-2xl border border-line bg-panel2 overflow-hidden hover:border-pitch transition-all duration-200 shadow-md"
         >
           {media}
         </button>
       ) : (
-        <div className="border border-line bg-panel2 overflow-hidden opacity-80">{media}</div>
+        <div className="rounded-2xl border border-line bg-panel2 overflow-hidden opacity-80 shadow-md">
+          {media}
+        </div>
       )}
     </div>
   );

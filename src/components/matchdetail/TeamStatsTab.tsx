@@ -36,9 +36,23 @@ export default function TeamStatsTab({ stats }: { stats: TeamStatRow[] }) {
               <span className="font-bold">{fmt(s.label, s.away)}</span>
             </div>
             {pct !== null && (
-              <div className="flex h-1.5 gap-0.5">
-                <span className="bg-pitch" style={{ width: `${pct}%` }} />
-                <span className="bg-chalkdim/50 flex-1" />
+              <div className="flex items-center h-2 gap-1.5 w-full mt-1.5 select-none">
+                {/* Home side bar: right-aligned, grows to the left */}
+                <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden flex justify-end">
+                  <div
+                    className={`${pct >= 50 ? 'bg-white' : 'bg-white/45'} h-full rounded-full transition-all duration-300`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {/* Center marker */}
+                <div className="w-[1px] h-2.5 bg-white/10 shrink-0" />
+                {/* Away side bar: left-aligned, grows to the right */}
+                <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden flex justify-start">
+                  <div
+                    className={`${pct < 50 ? 'bg-white' : 'bg-white/45'} h-full rounded-full transition-all duration-300`}
+                    style={{ width: `${100 - pct}%` }}
+                  />
+                </div>
               </div>
             )}
           </div>

@@ -92,8 +92,20 @@ function StatusPill({
 function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
   const cls = dim ? 'opacity-50' : '';
   const size = 'w-8 h-6 sm:w-10 sm:h-7';
-  if (!src) return <div className={`${size} bg-panel2 ${cls}`} aria-hidden />;
-  return <img src={src} alt={alt} className={`${size} object-cover ${cls}`} />;
+  if (!src)
+    return (
+      <div
+        className={`${size} bg-white/5 rounded-[3px] ${cls} border border-white/10`}
+        aria-hidden
+      />
+    );
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`${size} object-cover rounded-[3px] border border-white/10 ${cls}`}
+    />
+  );
 }
 
 export default memo(function MatchCard({
@@ -130,11 +142,11 @@ export default memo(function MatchCard({
   return (
     <Root
       {...(clickable ? { onClick: onOpen, type: 'button' as const } : {})}
-      className={`block w-full text-left border border-line bg-panel overflow-hidden transition-colors ${
+      className={`block w-full text-left rounded-2xl border border-line bg-panel overflow-hidden transition-all duration-200 shadow-md ${
         clickable ? 'hover:border-pitch cursor-pointer' : 'hover:border-chalkdim'
       }`}
     >
-      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-line">
+      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-line bg-panel2/10">
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim truncate">
             {stageLabel}
@@ -212,7 +224,7 @@ export default memo(function MatchCard({
       </div>
 
       {venue && (
-        <div className="px-4 py-2 border-t border-line sm:hidden">
+        <div className="px-4 py-2 border-t border-white/5 sm:hidden">
           <span className="font-mono text-[10px] text-chalkdim/70 truncate block">{venue}</span>
         </div>
       )}

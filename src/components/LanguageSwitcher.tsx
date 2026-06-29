@@ -95,7 +95,7 @@ export default function LanguageSwitcher() {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={t('common.changeLanguage')}
-        className="p-2 hover:bg-panel2 text-chalkdim hover:text-chalk transition-colors"
+        className="p-2 rounded-full hover:bg-white/10 text-chalkdim hover:text-chalk transition-all duration-200"
       >
         <Languages className="w-5 h-5" aria-hidden />
       </button>
@@ -106,7 +106,7 @@ export default function LanguageSwitcher() {
           role="listbox"
           aria-label={t('common.changeLanguage')}
           aria-activedescendant={`lang-opt-${lang}`}
-          className="absolute right-0 mt-1 w-20 border border-line bg-panel/100 shadow-lg py-1 z-50 focus:outline-none"
+          className="absolute right-0 mt-2 w-20 border border-line bg-panel shadow-2xl rounded-xl overflow-hidden py-1 z-50 focus:outline-none"
           tabIndex={0}
           onKeyDown={handleKeyDown}
         >
@@ -126,8 +126,8 @@ export default function LanguageSwitcher() {
               }}
               className={`w-full text-center py-2 text-xs font-semibold transition-colors cursor-pointer bg-panel ${
                 lang === o.code
-                  ? 'bg-pitch text-night'
-                  : 'text-chalkdim hover:text-chalk hover:bg-panel2'
+                  ? 'bg-white/10 text-chalk font-bold'
+                  : 'text-chalkdim hover:text-chalk hover:bg-white/5'
               }`}
             >
               {o.label}

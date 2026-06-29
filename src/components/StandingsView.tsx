@@ -30,7 +30,7 @@ function FormPill({ form }: { form?: string }) {
           <span
             key={key}
             title={label}
-            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center ${
+            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center rounded-[3px] ${
               c === 'W'
                 ? 'bg-pitch text-night'
                 : c === 'D'
@@ -78,8 +78,11 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
         {groups.map((g) => (
-          <div key={g.name} className="border border-line bg-panel overflow-hidden">
-            <div className="px-4 py-3 border-b border-line">
+          <div
+            key={g.name}
+            className="rounded-2xl border border-line/30 bg-panel/85 overflow-hidden shadow-md backdrop-blur-sm"
+          >
+            <div className="px-4 py-3 border-b border-white/5 bg-white/[0.02]">
               <span className="font-display font-bold text-lg text-chalk">
                 {t('common.group')} {g.name}
               </span>
@@ -123,7 +126,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                   return (
                     <tr
                       key={s.teamId}
-                      className={`border-t border-line ${
+                      className={`border-t border-white/5 ${
                         qual === 'direct'
                           ? 'bg-pitch/[0.06]'
                           : qual === 'third'
@@ -143,7 +146,11 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                             }`}
                           />
                           {s.flag ? (
-                            <img src={s.flag} alt={s.name} className="w-5 h-3.5 object-cover" />
+                            <img
+                              src={s.flag}
+                              alt={s.name}
+                              className="w-5 h-3.5 object-cover rounded-[3px] border border-white/10"
+                            />
                           ) : (
                             <span className="w-5" />
                           )}
