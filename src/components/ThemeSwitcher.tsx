@@ -1,11 +1,10 @@
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { useT } from '../i18n';
 import { type Theme, useTheme } from '../theme';
 
-const CYCLE: Theme[] = ['system', 'dark', 'light'];
+const CYCLE: Theme[] = ['dark', 'light'];
 
 const ICONS = {
-  system: Monitor,
   dark: Moon,
   light: Sun,
 } as const;

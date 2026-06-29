@@ -60,10 +60,7 @@
       (() => {
         try {
           const t = localStorage.getItem('theme');
-          const dark =
-            t === 'dark' ||
-            (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark';
         } catch (_e) {
           document.documentElement.dataset.theme = 'dark';
         }

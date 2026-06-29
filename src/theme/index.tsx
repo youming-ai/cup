@@ -8,59 +8,37 @@ import {
   useState,
 } from 'react';
 
-export type Theme = 'dark' | 'light' | 'system';
-export type ResolvedTheme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
 
 const STORAGE_KEY = 'theme';
-
-function systemTheme(): ResolvedTheme {
-  if (typeof window.matchMedia !== 'function') return 'dark';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
 
 function detectTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'dark' || stored === 'light' || stored === 'system') return stored;
+    if (stored === 'dark' || stored === 'light') return stored;
   } catch {
     /* private/full */
   }
-  return 'system';
-}
-
-function resolveTheme(theme: Theme): ResolvedTheme {
-  return theme === 'system' ? systemTheme() : theme;
-}
-
-function applyTheme(theme: Theme) {
-  document.documentElement.dataset.theme = resolveTheme(theme);
+  return 'dark'; // 默认 dark
 }
 
 interface ThemeCtx {
   theme: Theme;
-  resolved: ResolvedTheme;
+  resolved: Theme;
   setTheme: (t: Theme) => void;
 }
 
 const Ctx = createContext<ThemeCtx>({
-  theme: 'system',
+  theme: 'dark',
   resolved: 'dark',
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(detectTheme);
-  const resolved = useMemo(() => resolveTheme(theme), [theme]);
 
   useEffect(() => {
-    applyTheme(theme);
-    if (typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => {
-      if (theme === 'system') applyTheme('system');
-    };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
+    document.documentElement.dataset.theme = theme;
   }, [theme]);
 
   const setTheme = useCallback((t: Theme) => {
@@ -72,7 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(t);
   }, []);
 
-  const value = useMemo(() => ({ theme, resolved, setTheme }), [theme, resolved, setTheme]);
+  const value = useMemo(() => ({ theme, resolved: theme, setTheme }), [theme, setTheme]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

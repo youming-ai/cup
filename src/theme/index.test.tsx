@@ -17,17 +17,11 @@ describe('ThemeProvider', () => {
     vi.restoreAllMocks();
   });
 
-  it('defaults to system and resolves from prefers-color-scheme', () => {
-    vi.spyOn(window, 'matchMedia').mockReturnValue({
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    } as unknown as MediaQueryList);
-
+  it('defaults to dark theme', () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
-    expect(result.current.theme).toBe('system');
-    expect(result.current.resolved).toBe('light');
-    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(result.current.theme).toBe('dark');
+    expect(result.current.resolved).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
   });
 
   it('persists explicit dark theme choice', () => {
@@ -46,7 +40,9 @@ describe('ThemeProvider', () => {
 
     act(() => result.current.setTheme('light'));
 
+    expect(result.current.theme).toBe('light');
     expect(result.current.resolved).toBe('light');
+    expect(localStorage.getItem('theme')).toBe('light');
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 });
