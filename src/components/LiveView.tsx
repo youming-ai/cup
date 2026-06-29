@@ -103,13 +103,6 @@ const LiveCard = memo(function LiveCard({
           </p>
         )}
       </div>
-
-      {/* thin accent line in the stream's own brand colour */}
-      <div
-        className="h-0.5 w-full"
-        style={{ background: m.colors?.[0] || 'rgb(var(--c-pitch))' }}
-        aria-hidden
-      />
     </>
   );
 
@@ -132,12 +125,12 @@ const LiveCard = memo(function LiveCard({
           type="button"
           onClick={() => onSelect(m)}
           aria-label={m.name}
-          className="group text-left w-full rounded-2xl border border-line bg-panel2 overflow-hidden hover:border-pitch transition-all duration-200 shadow-md"
+          className="group text-left w-full rounded-2xl border border-line/30 bg-panel overflow-hidden hover:border-pitch transition-all duration-200 shadow-md backdrop-blur-md"
         >
           {media}
         </button>
       ) : (
-        <div className="rounded-2xl border border-line bg-panel2 overflow-hidden opacity-80 shadow-md">
+        <div className="rounded-2xl border border-line/30 bg-panel overflow-hidden opacity-80 shadow-md backdrop-blur-md">
           {media}
         </div>
       )}
