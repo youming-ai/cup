@@ -46,15 +46,17 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
 
   if (!standing) {
     return (
-      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 space-y-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="font-mono text-xs tracking-widest text-chalkdim hover:text-chalk transition-colors inline-flex items-center gap-1"
-        >
-          ← <span>{t('detail.back')}</span>
-        </button>
-        <p className="font-mono text-xs text-chalkdim p-6 text-center">{t('team.notFound')}</p>
+      <div className="ds-page">
+        <div className="ds-page-inner w-full">
+          <button
+            type="button"
+            onClick={onBack}
+            className="font-mono text-xs tracking-widest text-chalkdim hover:text-chalk transition-colors inline-flex items-center gap-1"
+          >
+            ← <span>{t('detail.back')}</span>
+          </button>
+          <p className="font-mono text-xs text-chalkdim p-card text-center">{t('team.notFound')}</p>
+        </div>
       </div>
     );
   }
@@ -66,8 +68,8 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
 
   return (
     // px OUTSIDE, max-w-6xl INSIDE — matches the schedule/header frame exactly.
-    <div className="px-4 md:px-6 py-4 md:py-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="ds-page">
+      <div className="ds-page-inner">
         <button
           type="button"
           onClick={onBack}
@@ -79,21 +81,14 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
         {/* Header */}
         <div className="flex items-center gap-3">
           {teamFlag ? (
-            <img
-              src={teamFlag}
-              alt={teamName}
-              className="w-12 h-8 object-cover rounded-[3px] border border-white/10"
-            />
+            <img src={teamFlag} alt={teamName} className="w-12 h-8 object-cover rounded-micro" />
           ) : (
-            <span
-              className="w-12 h-8 bg-white/5 rounded-[3px] border border-white/10"
-              aria-hidden
-            />
+            <span className="w-12 h-8 bg-overlay/5 rounded-micro" aria-hidden />
           )}
           <div>
             <h1 className="font-display font-bold text-2xl text-chalk tracking-wide">{teamName}</h1>
             {groupLetter && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalkdim">
+              <span className="ds-caption uppercase tracking-[0.18em] text-chalkdim">
                 {t('common.group')} {groupLetter}
               </span>
             )}
@@ -101,7 +96,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 rounded-2xl border border-line/30 bg-panel/85 p-4 shadow-md backdrop-blur-md">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-card ds-glass p-card">
           <Stat label={t('st.mp')} value={standing.mp} />
           <Stat label={t('st.w')} value={standing.w} tone="pitch" />
           <Stat label={t('st.d')} value={standing.d} />
@@ -114,7 +109,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
           <Stat label={t('st.pts')} value={standing.pts} bold />
           {standing.form && (
             <div className="col-span-2 sm:col-span-5 flex items-center gap-2 pt-1">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-chalkdim/60">
+              <span className="ds-caption uppercase tracking-wider text-chalkdim/60">
                 {t('st.form')}:
               </span>
               <TeamFormPill form={standing.form} />
@@ -177,7 +172,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
             <h2 className="font-display font-bold text-lg text-chalk tracking-wide">
               {t('team.scorers')}
             </h2>
-            <ul className="space-y-2 rounded-2xl border border-line/30 bg-panel/85 p-4 shadow-md backdrop-blur-md">
+            <ul className="space-y-2 ds-glass p-card">
               {ownScorers.map((s) => (
                 <li
                   key={s.athleteId}
@@ -211,20 +206,14 @@ function Stat({
   }`;
   return (
     <div className="flex flex-col items-center">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-chalkdim/60">
-        {label}
-      </span>
+      <span className="ds-caption uppercase tracking-wider text-chalkdim/60">{label}</span>
       <span className={valueClass}>{value}</span>
     </div>
   );
 }
 
 function SubHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim pt-2">
-      {children}
-    </h3>
-  );
+  return <h3 className="ds-caption uppercase tracking-[0.2em] text-chalkdim pt-2">{children}</h3>;
 }
 
 // Same colour-coded pill as the standings Form column. Inlined here
@@ -240,9 +229,9 @@ function TeamFormPill({ form }: { form: string }) {
           <span
             key={key}
             title={label}
-            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center rounded-[3px] ${
+            className={`inline-block w-3.5 h-3.5 ds-micro font-bold leading-[14px] text-center rounded-micro ${
               c === 'W'
-                ? 'bg-pitch text-night'
+                ? 'bg-pitch text-onaccent'
                 : c === 'D'
                   ? 'bg-chalkdim/30 text-chalk'
                   : 'bg-live/20 text-live'

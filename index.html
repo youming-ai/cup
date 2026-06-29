@@ -56,6 +56,16 @@
     />
   </head>
   <body class="min-h-screen">
+    <script>
+      (() => {
+        try {
+          const t = localStorage.getItem('theme');
+          document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark';
+        } catch (_e) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

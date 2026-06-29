@@ -20,7 +20,7 @@ function classify(m: Match, now: number): LiveKind | 'ended' {
   return 'live'; // 已开始（或无开始时间）且未结束
 }
 
-function formatKickoff(startsAt?: number): string {
+export function formatKickoff(startsAt?: number): string {
   if (!startsAt) return '';
   return new Date(startsAt * 1000).toLocaleString(undefined, {
     weekday: 'short',
@@ -66,41 +66,45 @@ const LiveCard = memo(function LiveCard({
           <div className="absolute inset-0" style={{ background: grad }} aria-hidden />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-1.5 left-1.5">
           {kind === 'live' ? (
-            <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-live/30 font-mono text-[10px] tracking-widest text-live">
+            <span className="flex items-center gap-1 px-1.5 py-0.5 ds-scrim-badge border border-live/30 ds-caption tracking-widest text-live">
               <span className="live-dot" />
               {t('status.live')}
             </span>
           ) : (
-            <span className="px-2.5 py-0.5 rounded-full bg-black/65 backdrop-blur-sm font-mono text-[10px] tracking-wider text-white/90 whitespace-nowrap">
-              {formatKickoff(m.startsAt) || t('status.upcoming')}
+            <span className="px-1.5 py-0.5 ds-scrim-badge ds-caption tracking-wider text-onscrim/90 whitespace-nowrap max-w-[calc(100%-2rem)] truncate">
+              {t('status.upcoming')}
             </span>
           )}
         </div>
         {kind === 'live' && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="flex items-center justify-center w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm border border-white/30">
-              <Play fill="currentColor" className="w-5 h-5 text-white ml-0.5" />
+            <span className="flex items-center justify-center w-9 h-9 rounded-pill bg-scrim/60 backdrop-blur-sm border border-overlay/30">
+              <Play fill="currentColor" className="w-4 h-4 text-onscrim ml-0.5" />
             </span>
           </div>
         )}
       </div>
 
-      <div className="p-3">
+      <div className="p-2">
         {m.tag && (
-          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-pitch/80 mb-1">
+          <p className="ds-micro uppercase tracking-[0.2em] text-pitch/80 mb-0.5 truncate">
             {m.tag}
           </p>
         )}
-        <h3 className="font-display font-bold text-base text-chalk leading-tight truncate">
+        <h3 className="font-display font-bold text-sm text-chalk leading-snug truncate">
           {m.name}
         </h3>
-        {kind === 'live' && (
-          <p className="mt-1 font-mono text-[10px] text-chalkdim flex items-center gap-1">
+        {kind === 'live' ? (
+          <p className="mt-0.5 ds-caption text-chalkdim flex items-center gap-1">
             <span className="w-1 h-1 bg-pitch" />
             {t('common.watching', { n: m.viewers })}
           </p>
+        ) : (
+          m.startsAt && (
+            <p className="mt-0.5 ds-caption text-chalkdim">{formatKickoff(m.startsAt)}</p>
+          )
         )}
       </div>
     </>
@@ -108,7 +112,7 @@ const LiveCard = memo(function LiveCard({
 
   // 收藏 / 提醒浮层，置于右上角；脱离可点击的卡片本体（避免 button 套 button）
   const overlay = (
-    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 p-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/15">
+    <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5 p-0.5 rounded-pill ds-scrim-badge border border-overlay/15">
       {kind === 'upcoming' && m.startsAt && (
         <ReminderMenu title={m.name} start={new Date(m.startsAt * 1000)} t={t} />
       )}
@@ -125,14 +129,12 @@ const LiveCard = memo(function LiveCard({
           type="button"
           onClick={() => onSelect(m)}
           aria-label={m.name}
-          className="group text-left w-full rounded-2xl border border-line/30 bg-panel overflow-hidden hover:border-pitch transition-all duration-200 shadow-md backdrop-blur-md"
+          className="group text-left w-full ds-glass overflow-hidden hover:border-pitch transition-all duration-200"
         >
           {media}
         </button>
       ) : (
-        <div className="rounded-2xl border border-line/30 bg-panel overflow-hidden opacity-80 shadow-md backdrop-blur-md">
-          {media}
-        </div>
+        <div className="ds-glass overflow-hidden opacity-80">{media}</div>
       )}
     </div>
   );
@@ -150,18 +152,18 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
+    <section className="space-y-stack">
+      <div className="flex items-center gap-1.5">
         {accent === 'live' && <span className="live-dot" />}
         {accent === 'fav' && (
-          <Star className="w-3.5 h-3.5 text-pitch" fill="currentColor" aria-hidden />
+          <Star className="w-3 h-3 text-pitch" fill="currentColor" aria-hidden />
         )}
-        <h2 className="font-mono text-xs tracking-[0.25em] uppercase text-chalkdim">{label}</h2>
-        <span className="font-mono text-xs tabular-nums text-pitch">
+        <h2 className="font-mono text-label tracking-[0.25em] uppercase text-chalkdim">{label}</h2>
+        <span className="font-mono text-label tabular-nums text-pitch">
           {String(count).padStart(2, '0')}
         </span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">{children}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-stack sm:gap-card">{children}</div>
     </section>
   );
 }
@@ -263,8 +265,8 @@ export default function LiveView({
   // 播放页
   if (selected) {
     return (
-      <div className="flex-1 p-4 md:p-6 bg-night flex flex-col justify-between">
-        <div className="flex-1 max-w-6xl mx-auto w-full">
+      <div className="flex-1 ds-page bg-night flex flex-col justify-between">
+        <div className="flex-1 ds-page-inner w-full">
           <button
             type="button"
             onClick={backToList}
@@ -286,10 +288,10 @@ export default function LiveView({
 
   // 列表页
   return (
-    <div className="flex-1 p-4 md:p-6 bg-night flex flex-col justify-between">
-      <div className="flex-1 max-w-6xl mx-auto w-full space-y-8">
+    <div className="flex-1 ds-page bg-night flex flex-col justify-between">
+      <div className="flex-1 ds-page-inner w-full space-y-section">
         {live.length === 0 && upcoming.length === 0 ? (
-          <div className="py-20 text-center">
+          <div className="py-12 text-center">
             <p className="font-mono text-xs tracking-wider text-chalkdim">{t('live.empty')}</p>
           </div>
         ) : (

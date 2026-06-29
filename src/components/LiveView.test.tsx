@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LanguageProvider } from '../i18n';
 import type { Match } from '../types';
-import LiveView from './LiveView';
+import LiveView, { formatKickoff } from './LiveView';
 
 function renderLiveView(matches: Match[], initialSlug?: string) {
   return render(
@@ -107,8 +107,10 @@ describe('LiveView', () => {
     ];
     renderLiveView(matches);
     expect(screen.getByText('Future Match')).toBeInTheDocument();
-    // Upcoming cards with a startsAt show the formatted kickoff, not "Upcoming"
+    // Upcoming cards with a startsAt show the formatted kickoff and "Upcoming" badge
     expect(screen.getByText('Upcoming matches')).toBeInTheDocument(); // section heading
+    expect(screen.getByText(formatKickoff(future))).toBeInTheDocument(); // kickoff time under the name
+    expect(screen.getByText('Upcoming')).toBeInTheDocument(); // top-left badge
     expect(screen.queryByText('LIVE')).not.toBeInTheDocument();
   });
 

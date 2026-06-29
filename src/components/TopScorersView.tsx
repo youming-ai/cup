@@ -9,20 +9,20 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-card">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-display font-bold text-lg text-chalk tracking-wide">
           {t('scorers.title')}
         </h3>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim/60">
+        <span className="ds-caption uppercase tracking-[0.2em] text-chalkdim/60">
           {t('scorers.subtitle')}
         </span>
       </div>
 
-      <table className="w-full text-sm border border-line/30 bg-panel/85 rounded-2xl overflow-hidden shadow-md backdrop-blur-sm">
+      <table className="w-full text-sm border border-line/30 bg-panel/85 rounded-card overflow-hidden shadow-panel backdrop-blur-sm">
         <caption className="sr-only">{t('scorers.title')}</caption>
-        <thead className="text-chalkdim font-mono text-[10px] uppercase tracking-[0.18em]">
-          <tr className="border-b border-white/5 bg-white/[0.02]">
+        <thead className="text-chalkdim ds-caption uppercase tracking-[0.18em]">
+          <tr className="border-b border-overlay/5 bg-overlay/[0.02]">
             <th scope="col" className="text-left font-medium px-3 py-2 w-10">
               {t('scorers.rank')}
             </th>
@@ -45,17 +45,17 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
               <tr
                 // eslint-disable-next-line react/no-array-index-key
                 key={s.athleteId}
-                className={`border-b border-white/5 last:border-b-0 ${isLeader ? 'bg-pitch/5' : ''}`}
+                className={`border-b border-overlay/5 last:border-b-0 ${isLeader ? 'bg-pitch/5' : ''}`}
               >
                 <td className="px-3 py-2 font-mono tabular-nums text-chalkdim">{rank}</td>
                 <td className="px-3 py-2 font-display text-chalk truncate max-w-0">
                   {s.name}
-                  <span className="flex items-center gap-1 sm:hidden font-mono text-[10px] text-chalkdim/70">
+                  <span className="flex items-center gap-1 sm:hidden ds-caption text-chalkdim/70">
                     {s.teamFlag && (
                       <img
                         src={s.teamFlag}
                         alt=""
-                        className="w-3.5 h-2.5 object-cover rounded-[3px] border border-white/10 shrink-0"
+                        className="w-3.5 h-2.5 object-cover rounded-micro shrink-0"
                       />
                     )}
                     <span className="truncate">{s.teamName}</span>
@@ -67,7 +67,7 @@ export default function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
                       <img
                         src={s.teamFlag}
                         alt=""
-                        className="w-4 h-3 object-cover rounded-[3px] border border-white/10 shrink-0"
+                        className="w-4 h-3 object-cover rounded-micro shrink-0"
                       />
                     )}
                     <span className="truncate">{s.teamName}</span>

@@ -30,9 +30,9 @@ function FormPill({ form }: { form?: string }) {
           <span
             key={key}
             title={label}
-            className={`inline-block w-3.5 h-3.5 text-[9px] font-mono font-bold leading-[14px] text-center rounded-[3px] ${
+            className={`inline-block w-3.5 h-3.5 ds-micro font-bold leading-[14px] text-center rounded-micro ${
               c === 'W'
-                ? 'bg-pitch text-night'
+                ? 'bg-pitch text-onaccent'
                 : c === 'D'
                   ? 'bg-chalkdim/30 text-chalk'
                   : 'bg-live/20 text-live'
@@ -63,9 +63,9 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-section">
       {/* 出线图例 */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] uppercase tracking-wider text-chalkdim">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 ds-caption uppercase tracking-wider text-chalkdim">
         <span className="flex items-center gap-1.5">
           <span className="w-1 h-3 bg-pitch" />
           {t('standings.advanceTop2')}
@@ -76,13 +76,10 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-card">
         {groups.map((g) => (
-          <div
-            key={g.name}
-            className="rounded-2xl border border-line/30 bg-panel/85 overflow-hidden shadow-md backdrop-blur-sm"
-          >
-            <div className="px-4 py-3 border-b border-white/5 bg-white/[0.02]">
+          <div key={g.name} className="ds-glass overflow-hidden">
+            <div className="px-4 py-3 border-b border-overlay/5 bg-overlay/[0.02]">
               <span className="font-display font-bold text-lg text-chalk">
                 {t('common.group')} {g.name}
               </span>
@@ -92,7 +89,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                 {t('common.group')} {g.name}
               </caption>
               <thead>
-                <tr className="text-chalkdim font-mono text-[10px] uppercase">
+                <tr className="text-chalkdim ds-caption uppercase">
                   <th scope="col" className="text-left font-medium px-4 py-2">
                     {t('st.team')}
                   </th>
@@ -126,7 +123,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                   return (
                     <tr
                       key={s.teamId}
-                      className={`border-t border-white/5 ${
+                      className={`border-t border-overlay/5 ${
                         qual === 'direct'
                           ? 'bg-pitch/[0.06]'
                           : qual === 'third'
@@ -149,7 +146,7 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
                             <img
                               src={s.flag}
                               alt={s.name}
-                              className="w-5 h-3.5 object-cover rounded-[3px] border border-white/10"
+                              className="w-5 h-3.5 object-cover rounded-micro"
                             />
                           ) : (
                             <span className="w-5" />
