@@ -1,7 +1,6 @@
 import { CalendarDays, type LucideIcon, Radio } from 'lucide-react';
 import { useT } from '../i18n';
 import LanguageSwitcher from './LanguageSwitcher';
-import ThemeSwitcher from './ThemeSwitcher';
 
 export type View = 'live' | 'schedule';
 
@@ -47,7 +46,6 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
           </nav>
 
           <div className="flex items-center gap-0.5 shrink-0">
-            <ThemeSwitcher />
             <LanguageSwitcher />
           </div>
         </div>
