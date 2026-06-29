@@ -174,7 +174,7 @@ export default function LiveView({
   initialSlug?: string;
 }) {
   const t = useT();
-  const { toggle, isFavorite } = useFavorites();
+  const { favorites, toggle, isFavorite } = useFavorites();
   const favKey = (m: Match) => `live:${m.slug}`;
   const [iframeUrl, setIframeUrl] = useState('');
 
@@ -234,8 +234,11 @@ export default function LiveView({
       fu: Match[] = [];
     const lr: Match[] = [],
       ur: Match[] = [];
-    for (const m of live) (isFavorite(`live:${m.slug}`) ? fl : lr).push(m);
-    for (const m of upcoming) (isFavorite(`live:${m.slug}`) ? fu : ur).push(m);
+    // Depend on the `favorites` Set (changes identity on every toggle) — NOT
+    // `isFavorite`, whose callback identity is stable, so a toggle wouldn't
+    // re-run this memo and the Favorites section wouldn't appear immediately.
+    for (const m of live) (favorites.has(`live:${m.slug}`) ? fl : lr).push(m);
+    for (const m of upcoming) (favorites.has(`live:${m.slug}`) ? fu : ur).push(m);
     return {
       favLive: fl,
       favUpcoming: fu,
@@ -243,7 +246,7 @@ export default function LiveView({
       liveRest: lr,
       upcomingRest: ur,
     };
-  }, [live, upcoming, isFavorite]);
+  }, [live, upcoming, favorites]);
 
   const renderCard = (m: Match, kind: LiveKind) => (
     <LiveCard

@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { LanguageProvider } from '../i18n';
 import type { Match } from '../types';
 import LiveView from './LiveView';
@@ -24,6 +24,25 @@ function mk(m: Partial<Match> & { id: number; name: string; iframe: string }): M
 }
 
 describe('LiveView', () => {
+  beforeEach(() => localStorage.clear());
+
+  // ---- favorites ----
+
+  it('shows the Favorites section immediately after favoriting a match', () => {
+    const matches: Match[] = [
+      mk({ id: 1, name: 'Mexico vs Brazil', iframe: 'https://a', alwaysLive: true }),
+    ];
+    renderLiveView(matches);
+    // No favorites yet → no Favorites section heading.
+    expect(screen.queryByText('Favorites')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Favorite' }));
+
+    // The Favorites section must appear without a reload (regression: the
+    // grouping memo was keyed on a stable `isFavorite`, so it never re-ran).
+    expect(screen.getByText('Favorites')).toBeInTheDocument();
+  });
+
   // ---- classify logic (via rendering) ----
 
   it('shows live matches in the Live section when they are currently live', () => {
