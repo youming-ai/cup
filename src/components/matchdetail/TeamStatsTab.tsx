@@ -21,11 +21,11 @@ export default function TeamStatsTab({ stats }: { stats: TeamStatRow[] }) {
   const t = useT();
   if (stats.length === 0) {
     return (
-      <p className="font-mono text-xs tracking-wider text-chalkdim p-4">{t('detail.noData')}</p>
+      <p className="font-mono text-xs tracking-wider text-chalkdim p-card">{t('detail.noData')}</p>
     );
   }
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-card p-card">
       {stats.map((s) => {
         const pct = homePct(s.home, s.away);
         return (
@@ -38,18 +38,18 @@ export default function TeamStatsTab({ stats }: { stats: TeamStatRow[] }) {
             {pct !== null && (
               <div className="flex items-center h-2 gap-1.5 w-full mt-1.5 select-none">
                 {/* Home side bar: right-aligned, grows to the left */}
-                <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden flex justify-end">
+                <div className="flex-1 bg-overlay/5 h-1.5 rounded-pill overflow-hidden flex justify-end">
                   <div
-                    className={`${pct >= 50 ? 'bg-white' : 'bg-white/45'} h-full rounded-full transition-all duration-300`}
+                    className={`${pct >= 50 ? 'bg-overlay' : 'bg-overlay/45'} h-full rounded-pill transition-all duration-300`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
                 {/* Center marker */}
-                <div className="w-[1px] h-2.5 bg-white/10 shrink-0" />
+                <div className="w-[1px] h-2.5 bg-overlay/10 shrink-0" />
                 {/* Away side bar: left-aligned, grows to the right */}
-                <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden flex justify-start">
+                <div className="flex-1 bg-overlay/5 h-1.5 rounded-pill overflow-hidden flex justify-start">
                   <div
-                    className={`${pct < 50 ? 'bg-white' : 'bg-white/45'} h-full rounded-full transition-all duration-300`}
+                    className={`${pct < 50 ? 'bg-overlay' : 'bg-overlay/45'} h-full rounded-pill transition-all duration-300`}
                     style={{ width: `${100 - pct}%` }}
                   />
                 </div>

@@ -60,8 +60,8 @@ function PlayerStatusBadge({
 }) {
   if (status === 'ht') {
     return (
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-pitch/30 shadow-[0_0_10px_rgb(var(--c-pitch)_/_0.15)] select-none">
-        <span className="font-mono text-xs tracking-widest text-pitch font-bold">
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 ds-scrim-badge border border-amber/30 shadow-[0_0_10px_rgb(var(--c-amber)_/_0.15)] select-none">
+        <span className="font-mono text-xs tracking-widest text-amber font-bold">
           {t('status.ht')}
         </span>
       </div>
@@ -69,7 +69,7 @@ function PlayerStatusBadge({
   }
   if (status === 'live') {
     return (
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-live/30 shadow-[0_0_10px_rgb(var(--c-live)_/_0.15)] select-none">
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 ds-scrim-badge border border-live/30 shadow-[0_0_10px_rgb(var(--c-live)_/_0.15)] select-none">
         <span className="live-dot" />
         <span className="font-mono text-xs tracking-widest text-live font-bold">
           {t('status.live')}
@@ -79,16 +79,16 @@ function PlayerStatusBadge({
   }
   if (status === 'finished') {
     return (
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 select-none">
-        <span className="font-mono text-xs tracking-widest text-chalkdim font-bold">
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 ds-scrim-badge border border-overlay/10 select-none">
+        <span className="font-mono text-xs tracking-widest text-onscrim/70 font-bold">
           {t('status.ft')}
         </span>
       </div>
     );
   }
   return (
-    <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/65 backdrop-blur-sm border border-white/10 select-none">
-      <span className="font-mono text-xs tracking-widest text-chalkdim/70 font-bold">
+    <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-0.5 ds-scrim-badge border border-overlay/10 select-none">
+      <span className="font-mono text-xs tracking-widest text-onscrim/60 font-bold">
         {t('status.upcoming')}
       </span>
     </div>
@@ -126,7 +126,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
 
   if (!match) {
     return (
-      <div className="relative h-full min-h-[60vh] rounded-[24px] border border-line/30 bg-panel/75 overflow-hidden flex items-center justify-center shadow-lg backdrop-blur-md">
+      <div className="relative h-full min-h-[60vh] ds-glass-hero overflow-hidden flex items-center justify-center">
         <CornerTicks />
         <div className="text-center px-8">
           <div className="font-mono text-xs tracking-[0.3em] text-pitch mb-4">
@@ -144,8 +144,8 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
   }
 
   return (
-    <div className="space-y-4">
-      <div className="relative aspect-video w-full rounded-[24px] border border-line/30 bg-black overflow-hidden shadow-lg">
+    <div className="space-y-card">
+      <div className="relative aspect-video w-full rounded-panel border border-line/30 bg-black overflow-hidden shadow-hero">
         <CornerTicks />
         <PlayerStatusBadge status={playerStatus(match)} t={t} />
 
@@ -174,13 +174,13 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
         )}
       </div>
 
-      <div className="rounded-[24px] border border-line/30 bg-panel/85 p-5 sm:p-6 space-y-4 shadow-xl backdrop-blur-md">
+      <div className="ds-glass-hero p-card space-y-card">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
+            <span className="ds-caption uppercase tracking-[0.2em] text-chalkdim">
               {match.category_name}
             </span>
-            <span className="font-mono text-[10px] text-pitch flex items-center gap-1">
+            <span className="ds-caption text-pitch flex items-center gap-1">
               <span className="w-1 h-1 bg-pitch" />
               {t('common.watching', { n: match.viewers })}
             </span>
@@ -191,7 +191,7 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
         </div>
 
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-chalkdim mb-2.5">
+          <p className="ds-caption uppercase tracking-[0.25em] text-chalkdim mb-2">
             {t('live.sources')}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -208,17 +208,17 @@ export default function Player({ match, selectedIframeUrl, setSelectedIframeUrl 
                   type="button"
                   onClick={() => setSelectedIframeUrl(src.iframe)}
                   aria-pressed={active}
-                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm transition-all duration-200 ${
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-pill border text-sm transition-all duration-200 ${
                     active
-                      ? 'bg-pitch text-night border-pitch font-bold shadow-sm'
+                      ? 'bg-pitch text-onaccent border-pitch font-bold shadow-sm'
                       : 'border-line bg-panel2 text-chalkdim hover:text-chalk hover:bg-panel'
                   }`}
                 >
                   <span className="truncate max-w-[14rem]">{src.label}</span>
                   {q && (
                     <span
-                      className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wide rounded-[3px] ${
-                        active ? 'bg-night/20 text-night' : 'bg-pitch/15 text-pitch'
+                      className={`px-1.5 py-0.5 ds-micro font-bold tracking-wide rounded-micro ${
+                        active ? 'bg-scrim/20 text-onaccent' : 'bg-pitch/15 text-pitch'
                       }`}
                     >
                       {q}

@@ -21,20 +21,20 @@ function StatusBadge({
     const isHT = progress?.status === 'halftime';
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono text-[10px] font-bold tracking-wider uppercase select-none ${
+        className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-pill ds-caption font-bold tracking-wider uppercase select-none ${
           isHT
             ? 'bg-amber/25 text-amber border border-amber/30'
             : 'bg-live/25 text-live border border-live/30'
         }`}
       >
-        {!isHT && <span className="w-1.5 h-1.5 rounded-full bg-live animate-pulse" />}
+        {!isHT && <span className="w-1.5 h-1.5 rounded-pill bg-live animate-pulse" />}
         {isHT ? t('status.ht') : progress?.displayClock || t('status.live')}
       </span>
     );
   }
   if (status === 'finished') {
     return (
-      <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-chalkdim/10 text-chalkdim border border-white/10 font-mono text-[10px] font-bold tracking-wider uppercase select-none">
+      <span className="inline-flex items-center px-3 py-0.5 rounded-pill bg-chalkdim/10 text-chalkdim border border-overlay/10 ds-caption font-bold tracking-wider uppercase select-none">
         {t('status.ft')}
       </span>
     );
@@ -66,8 +66,8 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
     // Identical frame to the schedule/header (px OUTSIDE, max-w-6xl INSIDE) so
     // the content column lines up exactly — padding inside max-w would shift it
     // in by one p-6 and break alignment.
-    <div className="px-4 md:px-6 py-4 md:py-6">
-      <div className="max-w-6xl mx-auto space-y-5">
+    <div className="ds-page">
+      <div className="ds-page-inner">
         {/* Back navigation */}
         <div>
           <button
@@ -81,23 +81,23 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
         </div>
 
         {/* Hero Scoreboard (Apple Sports style) */}
-        <div className="bg-gradient-to-b from-panel/95 to-panel/85 rounded-[24px] md:rounded-[32px] p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-xl border border-line/30 backdrop-blur-md">
+        <div className="ds-glass-hero p-card md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
           {/* Subtle radial glow background circles */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-pitch/5 rounded-full blur-3xl pointer-events-none select-none" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-live/5 rounded-full blur-3xl pointer-events-none select-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-pitch/5 rounded-pill blur-3xl pointer-events-none select-none" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-live/5 rounded-pill blur-3xl pointer-events-none select-none" />
           {/* Stage/Group Label */}
-          <div className="text-center mb-5 shrink-0">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-chalkdim">
+          <div className="text-center mb-4 shrink-0">
+            <span className="ds-caption uppercase tracking-[0.2em] text-chalkdim">
               {match.stage === 'group'
                 ? `${t('common.group')} ${match.group}`
                 : t(`stage.${match.stage}`)}
             </span>
           </div>
 
-          <div className="flex items-center justify-between w-full max-w-2xl gap-4">
+          <div className="flex items-center justify-between w-full max-w-2xl gap-card">
             {/* Home Team */}
             <div className="flex-1 flex flex-col items-center text-center min-w-0">
-              <div className="w-14 h-10 md:w-20 md:h-14 overflow-hidden rounded-xl bg-panel2 shadow-lg mb-3 border border-white/10 shrink-0">
+              <div className="w-14 h-10 md:w-20 md:h-14 overflow-hidden rounded-card bg-panel2 shadow-hero mb-3 shrink-0">
                 {match.homeFlag ? (
                   <img
                     src={match.homeFlag}
@@ -127,7 +127,7 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
                       : t('common.tbd')}
                   </span>
                   {match.kickoff && (
-                    <div className="font-mono text-[10px] text-chalkdim mt-1.5">
+                    <div className="ds-caption text-chalkdim mt-1.5">
                       {match.kickoff.toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -137,14 +137,14 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <div className="flex items-center justify-center gap-4 sm:gap-8 font-display text-4xl md:text-6xl font-black text-chalk tabular-nums select-none leading-none">
+                  <div className="flex items-center justify-center gap-card sm:gap-8 font-display text-4xl md:text-6xl font-black text-chalk tabular-nums select-none leading-none">
                     <span>{match.homeScore ?? 0}</span>
                     <span className="text-chalkdim/30 text-2xl md:text-3xl font-light font-body select-none">
                       :
                     </span>
                     <span>{match.awayScore ?? 0}</span>
                   </div>
-                  <div className="mt-3.5">
+                  <div className="mt-3">
                     <StatusBadge status={match.status} progress={match.progress} t={t} />
                   </div>
                 </div>
@@ -153,7 +153,7 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
 
             {/* Away Team */}
             <div className="flex-1 flex flex-col items-center text-center min-w-0">
-              <div className="w-14 h-10 md:w-20 md:h-14 overflow-hidden rounded-xl bg-panel2 shadow-lg mb-3 border border-white/10 shrink-0">
+              <div className="w-14 h-10 md:w-20 md:h-14 overflow-hidden rounded-card bg-panel2 shadow-hero mb-3 shrink-0">
                 {match.awayFlag ? (
                   <img
                     src={match.awayFlag}
@@ -176,7 +176,7 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
           role="tablist"
           aria-label={t('detail.tabsLabel')}
           onKeyDown={onTabKey}
-          className="flex bg-panel/60 rounded-full p-1 border border-line/20 backdrop-blur-md"
+          className="ds-segmented-blur w-full"
         >
           {(['stats', 'play', 'lineup'] as const).map((k) => (
             <button
@@ -185,10 +185,8 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
               role="tab"
               onClick={() => setTab(k)}
               aria-selected={tab === k}
-              className={`flex-1 py-2 rounded-full font-display text-sm transition-all duration-200 ${
-                tab === k
-                  ? 'bg-white/10 text-chalk shadow-sm font-bold'
-                  : 'text-chalkdim hover:text-chalk'
+              className={`flex-1 ds-seg-tab ${
+                tab === k ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'
               }`}
             >
               {t(
@@ -203,18 +201,18 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
         </div>
 
         {/* Detail Panel */}
-        <div className="bg-panel/75 rounded-[24px] md:rounded-[32px] p-6 min-h-32 shadow-xl border border-line/30 backdrop-blur-md">
+        <div className="ds-glass-hero p-card min-h-32">
           {loading ? (
-            <p className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse p-6 text-center">
+            <p className="font-mono text-xs tracking-[0.3em] text-pitch animate-pulse p-card text-center">
               {t('common.loading')}
             </p>
           ) : error ? (
-            <div className="p-6 text-center space-y-3">
+            <div className="p-card text-center space-y-3">
               <p className="font-mono text-xs text-live">{t('common.error')}</p>
               <button
                 type="button"
                 onClick={reload}
-                className="font-display text-sm text-chalk border border-white/10 rounded-full px-5 py-1.5 hover:border-pitch hover:bg-white/5 transition-colors"
+                className="font-display text-sm text-chalk border border-overlay/10 rounded-pill px-5 py-1.5 hover:border-pitch hover:bg-overlay/5 transition-colors"
               >
                 {t('common.retry')}
               </button>
@@ -231,7 +229,7 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
               )}
               {tab === 'lineup' && <LineupTab lineups={detail.lineups} homeId={homeId} />}
               {(detail.venue || detail.attendance) && (
-                <div className="pt-5 mt-5 border-t border-white/5 font-mono text-[10px] text-chalkdim space-y-1.5">
+                <div className="pt-card mt-card border-t border-overlay/5 ds-caption text-chalkdim space-y-1.5">
                   {detail.venue && <div>{detail.venue}</div>}
                   {detail.attendance && (
                     <div>

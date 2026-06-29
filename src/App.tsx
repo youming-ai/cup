@@ -26,7 +26,7 @@ function Loading() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   const t = useT();
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-night p-6 text-center gap-3">
+    <div className="flex flex-col items-center justify-center h-full bg-night p-card text-center gap-3">
       <div className="font-mono text-xs tracking-[0.3em] text-live">{t('common.signalLost')}</div>
       <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">
         {t('common.error')}
@@ -35,7 +35,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
       <button
         type="button"
         onClick={onRetry}
-        className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide hover:brightness-110 transition"
+        className="mt-2 px-4 py-2 bg-pitch text-onaccent font-display font-semibold tracking-wide hover:brightness-110 transition"
       >
         {t('common.retry')}
       </button>
@@ -46,7 +46,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 function NotFound({ onBack }: { onBack: () => void }) {
   const t = useT();
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-night gap-3 p-6 text-center">
+    <div className="flex flex-col items-center justify-center h-full bg-night gap-3 p-card text-center">
       <div className="font-mono text-xs tracking-[0.3em] text-chalkdim">404</div>
       <h2 className="font-display font-bold text-2xl text-chalk tracking-wide">
         {t('common.error')}
@@ -54,7 +54,7 @@ function NotFound({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="mt-2 px-4 py-2 bg-pitch text-night font-display font-semibold tracking-wide hover:brightness-110 transition"
+        className="mt-2 px-4 py-2 bg-pitch text-onaccent font-display font-semibold tracking-wide hover:brightness-110 transition"
       >
         {t('detail.back')}
       </button>

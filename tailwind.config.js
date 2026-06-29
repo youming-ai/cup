@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 
-// 颜色走 CSS 变量（通道值 "R G B"）。用 rgb(var() / <alpha-value>) 包装，
-// 让 bg-pitch/40、text-chalkdim/70 这类透明修饰可用（暂无亮色主题）。
+// Colors use CSS variable channels ("R G B") so alpha modifiers work:
+// bg-panel/85, border-overlay/10, etc.
 const c = (v) => `rgb(var(${v}) / <alpha-value>)`;
 
 export default {
@@ -18,6 +18,42 @@ export default {
         pitch: c('--c-pitch'),
         live: c('--c-live'),
         amber: c('--c-amber'),
+        overlay: c('--c-overlay'),
+        scrim: c('--c-scrim'),
+        onscrim: c('--c-on-scrim'),
+        onaccent: c('--c-on-accent'),
+      },
+      borderRadius: {
+        micro: 'var(--r-micro)',
+        sm: 'var(--r-sm)',
+        card: 'var(--r-card)',
+        panel: 'var(--r-panel)',
+        hero: 'var(--r-hero)',
+        pill: 'var(--r-pill)',
+      },
+      spacing: {
+        'page-x': 'var(--space-page-x)',
+        'page-x-md': 'var(--space-page-x-md)',
+        'page-y': 'var(--space-page-y)',
+        'page-y-md': 'var(--space-page-y-md)',
+        section: 'var(--space-section)',
+        stack: 'var(--space-stack)',
+        card: 'var(--space-card)',
+        'card-inner': 'var(--space-card-inner)',
+      },
+      fontSize: {
+        micro: ['var(--text-micro)', { lineHeight: 'var(--leading-caption)' }],
+        caption: ['var(--text-caption)', { lineHeight: 'var(--leading-caption)' }],
+        label: ['var(--text-label)', { lineHeight: 'var(--leading-label)' }],
+      },
+      lineHeight: {
+        caption: 'var(--leading-caption)',
+        label: 'var(--leading-label)',
+      },
+      boxShadow: {
+        panel: 'var(--shadow-panel)',
+        hero: 'var(--shadow-hero)',
+        float: 'var(--shadow-float)',
       },
       fontFamily: {
         display: ['"Saira Condensed"', 'system-ui', 'sans-serif'],

@@ -90,7 +90,7 @@ export default function FixturesView({
   }, [matches, stage]);
 
   const renderDay = ([key, list]: [string, WCMatch[]]) => (
-    <section key={key} className="space-y-3">
+    <section key={key} className="space-y-stack">
       <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
         {list[0].kickoff
           ? list[0].kickoff.toLocaleDateString(undefined, {
@@ -101,7 +101,7 @@ export default function FixturesView({
             })
           : t('common.tbd')}
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-stack sm:gap-card">
         {list.map((m) => (
           <MatchCard
             key={m.id}
@@ -131,20 +131,17 @@ export default function FixturesView({
     // INSIDE — so the content column lines up with the header box at every
     // viewport width (otherwise the two max-w boxes diverge in the
     // 1152–1200px band where only the header's max-w is squeezed by its px).
-    <div className="px-4 md:px-6 py-4 md:py-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* 对阵 | 积分 | 射手 | 淘汰赛 — each is a section route */}
-        <div className="flex items-center gap-1 p-1 bg-panel/60 border border-line/20 rounded-full select-none w-full sm:w-fit overflow-x-auto no-scrollbar backdrop-blur-md">
+    <div className="ds-page">
+      <div className="ds-page-inner">
+        <div className="ds-segmented-blur w-full sm:w-fit overflow-x-auto no-scrollbar">
           {SECTION_TABS.map(({ section: s, labelKey }) => (
             <button
               key={s}
               type="button"
               onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
               aria-pressed={section === s}
-              className={`flex-1 sm:flex-none px-4 py-1.5 rounded-full font-display text-sm transition-all duration-200 ${
-                section === s
-                  ? 'bg-white/10 text-chalk shadow-sm font-bold'
-                  : 'text-chalkdim hover:text-chalk'
+              className={`flex-1 sm:flex-none ds-seg-tab ${
+                section === s ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'
               }`}
             >
               {t(labelKey)}
@@ -183,11 +180,7 @@ export default function FixturesView({
                   type="button"
                   onClick={() => setStatusFilter(key)}
                   aria-pressed={statusFilter === key}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all duration-200 border ${
-                    statusFilter === key
-                      ? 'bg-white/10 text-chalk border-white/10 font-bold shadow-sm'
-                      : 'bg-transparent border-white/5 text-chalkdim hover:text-chalk hover:bg-white/5'
-                  }`}
+                  className={`ds-chip ${statusFilter === key ? 'ds-chip-active' : 'ds-chip-inactive'}`}
                 >
                   {label}
                   <span className="ml-1.5 tabular-nums text-chalkdim/70">{count}</span>
@@ -202,11 +195,7 @@ export default function FixturesView({
                   type="button"
                   onClick={() => setStage(s)}
                   aria-pressed={stage === s}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all duration-200 border ${
-                    stage === s
-                      ? 'bg-white/10 text-chalk border-white/10 font-bold shadow-sm'
-                      : 'bg-transparent border-white/5 text-chalkdim hover:text-chalk hover:bg-white/5'
-                  }`}
+                  className={`ds-chip ${stage === s ? 'ds-chip-active' : 'ds-chip-inactive'}`}
                 >
                   {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
                 </button>

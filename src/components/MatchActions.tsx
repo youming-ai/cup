@@ -24,7 +24,7 @@ export function FavoriteButton({
       aria-pressed={!!active}
       aria-label={t('card.favorite')}
       title={t('card.favorite')}
-      className={`p-1.5 rounded-full hover:bg-white/10 transition-colors ${active ? 'text-pitch' : 'text-chalkdim hover:text-chalk'} ${className}`}
+      className={`p-1.5 rounded-pill hover:bg-overlay/10 transition-colors ${active ? 'text-pitch' : 'text-chalkdim hover:text-chalk'} ${className}`}
     >
       <Star className="w-4 h-4" fill={active ? 'currentColor' : 'none'} aria-hidden />
     </button>
@@ -34,7 +34,7 @@ export function FavoriteButton({
 export function ReminderMenu({ title, start, t }: { title: string; start: Date; t: T }) {
   const event = { title, start };
   const itemCls =
-    'block px-3 py-2 text-xs text-chalk hover:bg-white/5 whitespace-nowrap transition-colors';
+    'block px-3 py-2 text-xs text-chalk hover:bg-overlay/5 whitespace-nowrap transition-colors';
   return (
     <details
       className="relative"
@@ -44,13 +44,13 @@ export function ReminderMenu({ title, start, t }: { title: string; start: Date; 
       }}
     >
       <summary
-        className="list-none cursor-pointer p-1.5 rounded-full hover:bg-white/10 transition-colors"
+        className="list-none cursor-pointer p-1.5 rounded-pill hover:bg-overlay/10 transition-colors"
         aria-label={t('card.reminder')}
         title={t('card.reminder')}
       >
         <Bell className="w-4 h-4" aria-hidden />
       </summary>
-      <div className="absolute right-0 top-full z-10 mt-2 border border-line bg-panel shadow-2xl rounded-xl overflow-hidden py-1">
+      <div className="absolute right-0 top-full z-10 mt-2 border border-line bg-panel shadow-float rounded-card overflow-hidden py-1">
         {/* .ics opens the OS/system calendar; download attr names the file */}
         <a href={icsDataUri(event)} download={`${title}.ics`} className={itemCls}>
           {t('cal.system')}
