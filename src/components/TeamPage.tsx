@@ -85,7 +85,10 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
               className="w-12 h-8 object-cover rounded-[3px] border border-white/10"
             />
           ) : (
-            <span className="w-12 h-8 bg-white/5 rounded-[3px] border border-white/10" aria-hidden />
+            <span
+              className="w-12 h-8 bg-white/5 rounded-[3px] border border-white/10"
+              aria-hidden
+            />
           )}
           <div>
             <h1 className="font-display font-bold text-2xl text-chalk tracking-wide">{teamName}</h1>

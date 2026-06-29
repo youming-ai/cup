@@ -94,7 +94,10 @@ function Flag({ src, alt, dim }: { src?: string; alt: string; dim?: boolean }) {
   const size = 'w-8 h-6 sm:w-10 sm:h-7';
   if (!src)
     return (
-      <div className={`${size} bg-white/5 rounded-[3px] ${cls} border border-white/10`} aria-hidden />
+      <div
+        className={`${size} bg-white/5 rounded-[3px] ${cls} border border-white/10`}
+        aria-hidden
+      />
     );
   return (
     <img
