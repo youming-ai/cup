@@ -12,9 +12,12 @@ describe('parseRoute', () => {
   });
 
   it('parses the section routes', () => {
-    expect(parseRoute('/standings')).toEqual({ kind: 'section', section: 'standings' });
     expect(parseRoute('/scorers')).toEqual({ kind: 'section', section: 'scorers' });
     expect(parseRoute('/bracket')).toEqual({ kind: 'section', section: 'bracket' });
+  });
+
+  it('treats the removed /standings route as unknown → matches section', () => {
+    expect(parseRoute('/standings')).toEqual(MATCHES);
   });
 
   it('treats removed /live routes as unknown → matches section', () => {
@@ -60,7 +63,6 @@ describe('pathFor', () => {
   it('round-trips parseRoute → pathFor → parseRoute', () => {
     const cases: Array<ReturnType<typeof parseRoute>> = [
       { kind: 'section', section: 'matches' },
-      { kind: 'section', section: 'standings' },
       { kind: 'section', section: 'scorers' },
       { kind: 'section', section: 'bracket' },
       { kind: 'match', slug: 'argentina-vs-france' },

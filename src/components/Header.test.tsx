@@ -19,12 +19,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('renders the four section tabs and marks the active one', () => {
-  renderHeader('standings');
-  for (const name of ['Matches', 'Standings', 'Scorers', 'Bracket']) {
+it('renders the section tabs and marks the active one', () => {
+  renderHeader('scorers');
+  for (const name of ['Matches', 'Scorers', 'Bracket']) {
     expect(screen.getByRole('button', { name })).toBeInTheDocument();
   }
-  expect(screen.getByRole('button', { name: 'Standings' })).toHaveAttribute('aria-pressed', 'true');
+  // Standings is no longer a tab — it lives under the group-stage filter.
+  expect(screen.queryByRole('button', { name: 'Standings' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Scorers' })).toHaveAttribute('aria-pressed', 'true');
   expect(screen.getByRole('button', { name: 'Matches' })).toHaveAttribute('aria-pressed', 'false');
 });
 

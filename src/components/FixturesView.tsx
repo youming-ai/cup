@@ -143,9 +143,7 @@ export default function FixturesView({
     // 1152–1200px band where only the header's max-w is squeezed by its px).
     <div className="ds-page">
       <div className="ds-page-inner">
-        {section === 'standings' ? (
-          <StandingsView groups={groups} />
-        ) : section === 'scorers' ? (
+        {section === 'scorers' ? (
           <TopScorersView scorers={scorers} />
         ) : section === 'bracket' ? (
           <BracketView groups={groups} matches={matches} />
@@ -195,6 +193,19 @@ export default function FixturesView({
                 </button>
               ))}
             </div>
+
+            {/* Standings belong to the group stage — surface the group tables
+                on top whenever the group filter is active (regardless of the
+                upcoming/finished toggle below). There is no standalone
+                standings page anymore. */}
+            {stage === 'group' && groups.length > 0 && (
+              <section className="space-y-stack">
+                <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
+                  {t('fixtures.standings')}
+                </h3>
+                <StandingsView groups={groups} />
+              </section>
+            )}
 
             {(() => {
               const days = statusFilter === 'finished' ? finished : upcoming;

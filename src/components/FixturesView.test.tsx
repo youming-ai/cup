@@ -90,6 +90,49 @@ describe('FixturesView status filter', () => {
     expect(screen.queryByText('Results')).not.toBeInTheDocument();
   });
 
+  it('shows the group standings table only when the Group stage filter is active', () => {
+    const group: WCGroup = {
+      name: 'A',
+      standings: [
+        {
+          teamId: '203',
+          name: 'Mexico',
+          flag: '',
+          mp: 1,
+          w: 1,
+          d: 0,
+          l: 0,
+          gf: 2,
+          ga: 0,
+          gd: 2,
+          pts: 3,
+        },
+        {
+          teamId: '224',
+          name: 'Canada',
+          flag: '',
+          mp: 1,
+          w: 0,
+          d: 0,
+          l: 1,
+          gf: 0,
+          ga: 2,
+          gd: -2,
+          pts: 0,
+        },
+      ],
+    };
+    renderView([match({ id: '1', stage: 'group' })], [group]);
+    // Default 'all' stage: standings are not shown (no table).
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+
+    const stageChip = screen.getByRole('button', { name: 'Group stage' });
+    fireEvent.click(within(stageChip.parentElement!).getByRole('button', { name: 'Group stage' }));
+
+    // Selecting the group stage surfaces the standings table on top.
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
   it('shows a friendly empty state when filter has no matches', () => {
     renderView([match({ id: '1', status: 'upcoming' })]);
 

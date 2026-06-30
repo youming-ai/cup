@@ -7,8 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 // resolve to the SPA at page refresh.
 //
 // Route scheme (every view is addressable — shareable, back/forward, refresh):
-//   /            matches (schedule)
-//   /standings   group standings
+//   /            matches (schedule; group standings live under the group filter)
 //   /scorers     top scorers
 //   /bracket     knockout bracket
 //   /match/<slug>  ESPN fixture detail (hosts the live stream player when one
@@ -16,8 +15,8 @@ import { useCallback, useEffect, useState } from 'react';
 //   /team/<id>     team page
 //   /player/<id>   player page
 
-// The four sections of the schedule.
-export type Section = 'matches' | 'standings' | 'scorers' | 'bracket';
+// The schedule sections (group standings are folded into the matches view).
+export type Section = 'matches' | 'scorers' | 'bracket';
 
 export type Route =
   | { kind: 'section'; section: Section }
@@ -27,7 +26,6 @@ export type Route =
 
 const SECTION_PATH: Record<Section, string> = {
   matches: '/',
-  standings: '/standings',
   scorers: '/scorers',
   bracket: '/bracket',
 };
@@ -48,7 +46,6 @@ export function parseRoute(pathname: string): Route {
   // Normalise: strip query and trailing slash.
   const path = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
   if (path === '/' || path === '') return { kind: 'section', section: 'matches' };
-  if (path === '/standings') return { kind: 'section', section: 'standings' };
   if (path === '/scorers') return { kind: 'section', section: 'scorers' };
   if (path === '/bracket') return { kind: 'section', section: 'bracket' };
 

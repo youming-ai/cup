@@ -4,7 +4,6 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 const SECTION_TABS: { section: Section; labelKey: string }[] = [
   { section: 'matches', labelKey: 'fixtures.schedule' },
-  { section: 'standings', labelKey: 'fixtures.standings' },
   { section: 'scorers', labelKey: 'fixtures.scorers' },
   { section: 'bracket', labelKey: 'fixtures.bracket' },
 ];
