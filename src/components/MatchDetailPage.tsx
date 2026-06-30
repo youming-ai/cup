@@ -2,7 +2,6 @@ import { type KeyboardEvent as ReactKeyboardEvent, useState } from 'react';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import { useT } from '../i18n';
 import type { Match, WCMatch } from '../types';
-import { isStreamLive } from '../utils/streamMatch';
 import LineupTab from './matchdetail/LineupTab';
 import PlayByPlayTab from './matchdetail/PlayByPlayTab';
 import Player from './Player';
@@ -59,7 +58,9 @@ export default function MatchDetailPage({
   onBack,
 }: {
   match: WCMatch;
-  // Matching ppv.to live stream (resolved in App), or null when none / no match.
+  // The matching ppv.to stream, already resolved AND liveness-filtered in App
+  // (null unless a stream for this fixture is live now). Keeping the timing in
+  // App means this component stays deterministic given its props.
   stream?: Match | null;
   onBack: () => void;
 }) {
@@ -68,9 +69,7 @@ export default function MatchDetailPage({
   const [tab, setTab] = useState<Tab>('stats');
   const [iframeUrl, setIframeUrl] = useState('');
 
-  // Show the player above the scoreboard only while the stream is actually
-  // live; an upcoming/ended stream adds nothing the detail page lacks.
-  const showPlayer = stream != null && isStreamLive(stream, Date.now());
+  const showPlayer = stream != null;
 
   const homeId = detail?.homeId ?? '';
 

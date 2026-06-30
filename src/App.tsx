@@ -8,7 +8,7 @@ import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
 import { navigate, useRouter } from './utils/router';
-import { isStreamLive, streamForMatch } from './utils/streamMatch';
+import { indexStreams, liveStreamForMatch } from './utils/streamMatch';
 
 const FixturesView = lazy(() => import('./components/FixturesView'));
 
@@ -75,17 +75,17 @@ export default function App() {
   const backHome = useCallback(() => navigate('/', { replace: true }), []);
 
   // Cross-reference ESPN fixtures with ppv.to streams (different sources, no
-  // shared id — matched by team-name slug). Slugs of matches whose stream is
-  // live right now drive the schedule's "watch" badge.
+  // shared id — matched by canonical team-name slug). Index the streams once,
+  // then the slugs of matches whose stream is live now drive the "watch" badge.
+  const streamIndex = useMemo(() => indexStreams(streams.matches), [streams.matches]);
   const watchableSlugs = useMemo(() => {
     const now = Date.now();
     const set = new Set<string>();
     for (const m of wc.matches) {
-      const s = streamForMatch(m, streams.matches);
-      if (s && isStreamLive(s, now)) set.add(m.slug);
+      if (liveStreamForMatch(m, streamIndex, now)) set.add(m.slug);
     }
     return set;
-  }, [wc.matches, streams.matches]);
+  }, [wc.matches, streamIndex]);
 
   // Build the content for the current route. WC-data pages wait for the
   // schedule fetch (and surface its error) before deciding anything is
@@ -117,7 +117,7 @@ export default function App() {
       content = match ? (
         <MatchDetailPage
           match={match}
-          stream={streamForMatch(match, streams.matches)}
+          stream={liveStreamForMatch(match, streamIndex, Date.now())}
           onBack={backHome}
         />
       ) : (

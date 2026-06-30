@@ -86,12 +86,13 @@ it('renders the live stream player at the top when a live stream is provided', a
   expect(screen.getByTitle('Netherlands vs. Morocco')).toBeInTheDocument();
 });
 
-it('does not render a player when the stream is not currently live', async () => {
+it('does not render a player when no live stream is provided', async () => {
+  // App pre-filters to a live stream and passes null otherwise, so the page
+  // simply renders the player when a stream prop is present.
   fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const ended: Match = { ...liveStream, alwaysLive: false, endsAt: 1 };
   render(
     <LanguageProvider>
-      <MatchDetailPage match={match} stream={ended} onBack={vi.fn()} />
+      <MatchDetailPage match={match} stream={null} onBack={vi.fn()} />
     </LanguageProvider>,
   );
   await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());

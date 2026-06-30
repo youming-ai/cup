@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Match, WCMatch } from '../types';
-import { isStreamLive, streamForMatch } from './streamMatch';
+import { indexStreams, isStreamLive, liveStreamForMatch, streamForMatch } from './streamMatch';
 
 function wc(partial: Partial<WCMatch> = {}): WCMatch {
   return {
@@ -40,16 +40,28 @@ function stream(partial: Partial<Match> = {}): Match {
 describe('streamForMatch', () => {
   it('matches a ppv stream to an ESPN fixture by team-name slug', () => {
     const s = stream();
-    expect(streamForMatch(wc(), [s])).toBe(s);
+    expect(streamForMatch(wc(), indexStreams([s]))).toBe(s);
   });
 
   it('matches when the stream lists the teams in reverse order', () => {
     const s = stream({ slug: 'morocco-vs-netherlands' });
-    expect(streamForMatch(wc(), [s])).toBe(s);
+    expect(streamForMatch(wc(), indexStreams([s]))).toBe(s);
   });
 
   it('returns null when no stream matches', () => {
-    expect(streamForMatch(wc(), [stream({ slug: 'france-vs-sweden' })])).toBeNull();
+    expect(streamForMatch(wc(), indexStreams([stream({ slug: 'france-vs-sweden' })]))).toBeNull();
+  });
+
+  it('never matches a finished fixture (avoids tagging the played leg of a rematch)', () => {
+    // Same two teams meet twice; the live stream is for the later leg. The
+    // already-finished earlier leg must not resolve to it.
+    expect(streamForMatch(wc({ status: 'finished' }), indexStreams([stream()]))).toBeNull();
+  });
+
+  it('bridges provider name variants (Türkiye↔Turkey, United States↔USA)', () => {
+    const s = stream({ slug: 'turkey-vs-usa' });
+    const m = wc({ homeName: 'Türkiye', awayName: 'United States' });
+    expect(streamForMatch(m, indexStreams([s]))).toBe(s);
   });
 });
 
@@ -72,5 +84,28 @@ describe('isStreamLive', () => {
     expect(
       isStreamLive(stream({ startsAt: now / 1000 - 60, endsAt: now / 1000 + 3600 }), now),
     ).toBe(true);
+  });
+
+  it('treats an endsAt of 0 as a real (1970) boundary, not "no value"', () => {
+    expect(isStreamLive(stream({ endsAt: 0 }), now)).toBe(false);
+  });
+});
+
+describe('liveStreamForMatch', () => {
+  const now = 1_700_000_000_000;
+
+  it('returns the matched stream when it is live', () => {
+    const s = stream({ alwaysLive: true });
+    expect(liveStreamForMatch(wc(), indexStreams([s]), now)).toBe(s);
+  });
+
+  it('returns null when the matched stream is not live yet', () => {
+    const s = stream({ startsAt: now / 1000 + 3600 });
+    expect(liveStreamForMatch(wc(), indexStreams([s]), now)).toBeNull();
+  });
+
+  it('returns null for a finished fixture even with a live stream', () => {
+    const s = stream({ alwaysLive: true });
+    expect(liveStreamForMatch(wc({ status: 'finished' }), indexStreams([s]), now)).toBeNull();
   });
 });

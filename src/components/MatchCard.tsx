@@ -162,9 +162,9 @@ export default memo(function MatchCard({
   return (
     // Outer frame holds the border/radius but NOT overflow-hidden, so the
     // reminder dropdown can spill past the card edge without being clipped.
-    // The clickable region (button) and the action footer are siblings — no
-    // button-nested-in-button — and the action controls stopPropagation so
-    // they never trigger card navigation.
+    // The clickable region (button) and the action footer are siblings — not
+    // nested — so a footer click can't reach the card button; that sibling
+    // layout (not the controls' stopPropagation) is what keeps the two apart.
     <div
       className={`block w-full rounded-card border border-line bg-panel shadow-panel transition-all duration-200 ${
         clickable ? 'hover:border-pitch' : 'hover:border-chalkdim'
