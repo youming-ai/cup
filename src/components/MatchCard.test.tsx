@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
 import type { ScorerEntry } from '../types';
 import MatchCard from './MatchCard';
@@ -184,6 +184,112 @@ describe('MatchCard', () => {
     expect(screen.getByText("67'")).toBeInTheDocument();
     expect(screen.queryByText('ET')).not.toBeInTheDocument();
     expect(screen.queryByText('PEN')).not.toBeInTheDocument();
+  });
+
+  it('shows the shootout score and a Pens pill, highlighting the pens winner', () => {
+    renderCard({
+      homeName: 'Germany',
+      awayName: 'Paraguay',
+      homeScore: 1,
+      awayScore: 1,
+      status: 'finished',
+      kickoff: null,
+      stage: 'r16',
+      group: 'R16',
+      finishType: 'pens',
+      homeShootoutScore: 3,
+      awayShootoutScore: 4,
+      winner: 'away',
+    });
+    expect(screen.getByText('1 (3) : (4) 1')).toBeInTheDocument();
+    expect(screen.getByText('Pens')).toBeInTheDocument();
+    expect(screen.queryByText('Final')).not.toBeInTheDocument();
+    // The pens loser (Germany) is dimmed even though the aggregate is level.
+    expect(screen.getByText('Germany').className).toContain('text-chalkdim');
+  });
+
+  it('shows an AET pill for an extra-time decider', () => {
+    renderCard({
+      homeName: 'Spain',
+      awayName: 'Italy',
+      homeScore: 2,
+      awayScore: 1,
+      status: 'finished',
+      kickoff: null,
+      stage: 'qf',
+      group: 'QF',
+      finishType: 'aet',
+    });
+    expect(screen.getByText('AET')).toBeInTheDocument();
+    expect(screen.queryByText('Final')).not.toBeInTheDocument();
+  });
+
+  it('shows a watch badge when the match is watchable, and links to the match page', () => {
+    renderCard({
+      homeName: 'Netherlands',
+      awayName: 'Morocco',
+      homeScore: 1,
+      awayScore: 0,
+      status: 'live',
+      kickoff: null,
+      stage: 'r16',
+      group: 'R16',
+      watchable: true,
+    });
+    expect(screen.getByText('Watch')).toBeInTheDocument();
+  });
+
+  it('omits the watch badge when not watchable', () => {
+    renderCard({
+      homeName: 'Netherlands',
+      awayName: 'Morocco',
+      homeScore: 1,
+      awayScore: 0,
+      status: 'live',
+      kickoff: null,
+      stage: 'r16',
+      group: 'R16',
+    });
+    expect(screen.queryByText('Watch')).not.toBeInTheDocument();
+  });
+
+  it('toggles favorite without navigating, and offers a reminder for upcoming matches', () => {
+    const onToggleFavorite = vi.fn();
+    const onOpen = vi.fn();
+    renderCard({
+      homeName: 'Brazil',
+      awayName: 'Argentina',
+      homeScore: null,
+      awayScore: null,
+      status: 'upcoming',
+      kickoff: new Date(2026, 5, 24, 18, 0),
+      stage: 'group',
+      group: 'C',
+      favorite: false,
+      onToggleFavorite,
+      onOpen,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Favorite' }));
+    expect(onToggleFavorite).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled(); // favorite control must not open the card
+    expect(screen.getByLabelText('Set a reminder')).toBeInTheDocument();
+  });
+
+  it('shows favorite but no reminder for a finished match', () => {
+    renderCard({
+      homeName: 'Mexico',
+      awayName: 'South Africa',
+      homeScore: 2,
+      awayScore: 0,
+      status: 'finished',
+      kickoff: null,
+      stage: 'group',
+      group: 'A',
+      favorite: true,
+      onToggleFavorite: vi.fn(),
+    });
+    expect(screen.getByRole('button', { name: 'Favorite' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Set a reminder')).not.toBeInTheDocument();
   });
 
   it('renders scorers inline under each team name on a finished match', () => {

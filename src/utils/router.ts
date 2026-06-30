@@ -7,23 +7,20 @@ import { useCallback, useEffect, useState } from 'react';
 // resolve to the SPA at page refresh.
 //
 // Route scheme (every view is addressable — shareable, back/forward, refresh):
-//   /            matches (schedule)        ┐ "schedule" top-nav sections
-//   /standings   group standings           │
-//   /scorers     top scorers               │
-//   /bracket     knockout bracket          ┘
-//   /live        live-stream list          ┐ "live" top-nav
-//   /live/<slug> live-stream player        ┘
-//   /match/<slug>  ESPN fixture detail     (WC matches only — no more wc: prefix)
+//   /            matches (schedule)
+//   /standings   group standings
+//   /scorers     top scorers
+//   /bracket     knockout bracket
+//   /match/<slug>  ESPN fixture detail (hosts the live stream player when one
+//                  matches — there is no separate /live page anymore)
 //   /team/<id>     team page
 //   /player/<id>   player page
 
-// The four sections under the "schedule" top-nav.
+// The four sections of the schedule.
 export type Section = 'matches' | 'standings' | 'scorers' | 'bracket';
 
 export type Route =
   | { kind: 'section'; section: Section }
-  | { kind: 'live' }
-  | { kind: 'stream'; slug: string }
   | { kind: 'match'; slug: string }
   | { kind: 'team'; teamId: string }
   | { kind: 'player'; athleteId: string };
@@ -54,13 +51,6 @@ export function parseRoute(pathname: string): Route {
   if (path === '/standings') return { kind: 'section', section: 'standings' };
   if (path === '/scorers') return { kind: 'section', section: 'scorers' };
   if (path === '/bracket') return { kind: 'section', section: 'bracket' };
-  if (path === '/live') return { kind: 'live' };
-
-  const stream = path.match(/^\/live\/([^/]+)$/);
-  if (stream) {
-    const slug = safeDecode(stream[1]!);
-    if (slug !== null) return { kind: 'stream', slug };
-  }
 
   const m = path.match(/^\/match\/([^/]+)$/);
   if (m) {
@@ -87,10 +77,6 @@ export function pathFor(route: Route): string {
   switch (route.kind) {
     case 'section':
       return SECTION_PATH[route.section];
-    case 'live':
-      return '/live';
-    case 'stream':
-      return `/live/${encodeURIComponent(route.slug)}`;
     case 'match':
       return `/match/${encodeURIComponent(route.slug)}`;
     case 'team':
@@ -103,7 +89,7 @@ export function pathFor(route: Route): string {
 // pushState/replaceState do NOT emit `popstate`, so `useRouter` can't see a
 // programmatic navigation on its own. Every `navigate()` dispatches this event
 // and the hook re-parses on it — that's what keeps any caller (FixturesView,
-// LiveView, App) in sync without threading a setter through props.
+// App) in sync without threading a setter through props.
 const ROUTE_CHANGE = 'app:routechange';
 
 // Programmatic navigation. Default behaviour: pushState (back/forward works).

@@ -1,8 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import type { WCMatch } from '../types';
+import type { Match, WCMatch } from '../types';
 import MatchDetailPage from './MatchDetailPage';
+
+const liveStream: Match = {
+  id: 1,
+  name: 'Netherlands vs. Morocco',
+  category_name: 'Football',
+  iframe: 'https://ppv.to/embed/123',
+  viewers: '7',
+  substreams: [],
+  slug: 'netherlands-vs-morocco',
+  alwaysLive: true,
+};
 
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
@@ -59,6 +70,69 @@ it('renders the match header (home : away) and the back button', async () => {
   expect(screen.getByText('0')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /Back/ }));
   expect(onBack).toHaveBeenCalled();
+});
+
+it('renders the live stream player at the top when a live stream is provided', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
+  render(
+    <LanguageProvider>
+      <MatchDetailPage match={match} stream={liveStream} onBack={vi.fn()} />
+    </LanguageProvider>,
+  );
+  // The Player renders the stream name as a heading and an iframe titled with it.
+  expect(
+    await screen.findByRole('heading', { name: 'Netherlands vs. Morocco' }),
+  ).toBeInTheDocument();
+  expect(screen.getByTitle('Netherlands vs. Morocco')).toBeInTheDocument();
+});
+
+it('does not render a player when the stream is not currently live', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
+  const ended: Match = { ...liveStream, alwaysLive: false, endsAt: 1 };
+  render(
+    <LanguageProvider>
+      <MatchDetailPage match={match} stream={ended} onBack={vi.fn()} />
+    </LanguageProvider>,
+  );
+  await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
+  expect(
+    screen.queryByRole('heading', { name: 'Netherlands vs. Morocco' }),
+  ).not.toBeInTheDocument();
+});
+
+it('shows the penalty-shootout score and a Pens badge for a pens match', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
+  const pensMatch: WCMatch = {
+    ...match,
+    homeScore: 1,
+    awayScore: 1,
+    stage: 'r16',
+    finishType: 'pens',
+    homeShootoutScore: 3,
+    awayShootoutScore: 4,
+    winner: 'away',
+  };
+  render(
+    <LanguageProvider>
+      <MatchDetailPage match={pensMatch} onBack={vi.fn()} />
+    </LanguageProvider>,
+  );
+  await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
+  expect(screen.getByText('Pens')).toBeInTheDocument();
+  expect(screen.getByText('(3)')).toBeInTheDocument();
+  expect(screen.getByText('(4)')).toBeInTheDocument();
+});
+
+it('shows an AET badge for an extra-time decider', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
+  const aetMatch: WCMatch = { ...match, stage: 'qf', finishType: 'aet' };
+  render(
+    <LanguageProvider>
+      <MatchDetailPage match={aetMatch} onBack={vi.fn()} />
+    </LanguageProvider>,
+  );
+  await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
+  expect(screen.getByText('AET')).toBeInTheDocument();
 });
 
 it('shows an i18n error with a retry button that refetches', async () => {

@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useT } from '../i18n';
 import type { MatchProgress, MatchStatus, ScorerEntry } from '../types';
 import { scorerDisplay } from '../utils/wc';
+import { FavoriteButton, ReminderMenu } from './MatchActions';
 
 interface MatchCardProps {
   homeName: string;
@@ -20,6 +21,19 @@ interface MatchCardProps {
   // Optional richer progress (clock + displayClock + period). When omitted
   // the card renders the legacy 3-state pill (live / ft / upcoming).
   progress?: MatchProgress;
+  // Knockout decider (see WCMatch): tags the pill AET/Pens and, for pens,
+  // resolves the winner the level aggregate score can't.
+  finishType?: 'aet' | 'pens';
+  homeShootoutScore?: number;
+  awayShootoutScore?: number;
+  winner?: 'home' | 'away';
+  // A matching ppv.to stream is live right now → show a watch badge. The card
+  // already deep-links to /match, which hosts the player.
+  watchable?: boolean;
+  // Favorite toggle (state owned by the parent via useFavorites). When
+  // onToggleFavorite is provided the card renders its action footer.
+  favorite?: boolean;
+  onToggleFavorite?: () => void;
   onOpen?: () => void;
 }
 
@@ -54,10 +68,12 @@ function ClockLabel({ progress }: { progress: MatchProgress | undefined }) {
 function StatusPill({
   status,
   progress,
+  finishType,
   t,
 }: {
   status: MatchStatus;
   progress: MatchProgress | undefined;
+  finishType: 'aet' | 'pens' | undefined;
   t: (k: string) => string;
 }) {
   // Halftime: distinct amber pill so it's visible at a glance and never
@@ -74,7 +90,13 @@ function StatusPill({
     );
   }
   if (status === 'finished') {
-    return <span className="ds-caption tracking-widest text-chalkdim">{t('status.ft')}</span>;
+    const label =
+      finishType === 'pens'
+        ? t('status.pens')
+        : finishType === 'aet'
+          ? t('status.aet')
+          : t('status.ft');
+    return <span className="ds-caption tracking-widest text-chalkdim">{label}</span>;
   }
   return (
     <span className="ds-caption tracking-widest text-chalkdim/70">{t('status.upcoming')}</span>
@@ -103,108 +125,162 @@ export default memo(function MatchCard({
   awayScorers = [],
   venue,
   progress,
+  finishType,
+  homeShootoutScore,
+  awayShootoutScore,
+  winner,
+  watchable,
+  favorite,
+  onToggleFavorite,
   onOpen,
 }: MatchCardProps) {
   const t = useT();
   const tbd = t('common.tbd');
   const stageLabel = stage === 'group' ? `${t('common.group')} ${group}` : t(`stage.${stage}`);
 
-  // finished: brighten the winner, dim the loser
-  const homeWon = status === 'finished' && (homeScore ?? 0) > (awayScore ?? 0);
-  const awayWon = status === 'finished' && (awayScore ?? 0) > (homeScore ?? 0);
+  // finished: brighten the winner, dim the loser. Prefer ESPN's explicit
+  // winner (set on knockout games) so a pens win resolves where the
+  // aggregate is level; fall back to the score for group games.
+  const homeWon =
+    status === 'finished' && (winner ? winner === 'home' : (homeScore ?? 0) > (awayScore ?? 0));
+  const awayWon =
+    status === 'finished' && (winner ? winner === 'away' : (awayScore ?? 0) > (homeScore ?? 0));
+  // Penalty score in parens, mirrored around the colon like the detail page:
+  // "1 (3) : (4) 1". Away needs a before-colon form for the compact score and
+  // an after-name form for the screen-reader announcement ("Paraguay 1 (4)").
+  const homeSO = homeShootoutScore != null ? ` (${homeShootoutScore})` : '';
+  const awaySObefore = awayShootoutScore != null ? `(${awayShootoutScore}) ` : '';
+  const awaySOafter = awayShootoutScore != null ? ` (${awayShootoutScore})` : '';
   const teamCls = (won: boolean, lost: boolean) =>
     `font-display text-sm text-center truncate w-full ${
       lost ? 'font-normal text-chalkdim' : won ? 'font-bold text-chalk' : 'font-semibold text-chalk'
     }`;
 
   const clickable = Boolean(onOpen);
-  const Root = clickable ? 'button' : 'div';
+  const Clickable = clickable ? 'button' : 'div';
+  const showActions = Boolean(onToggleFavorite);
   return (
-    <Root
-      {...(clickable ? { onClick: onOpen, type: 'button' as const } : {})}
-      className={`block w-full text-left rounded-card border border-line bg-panel overflow-hidden transition-all duration-200 shadow-panel ${
-        clickable ? 'hover:border-pitch cursor-pointer' : 'hover:border-chalkdim'
+    // Outer frame holds the border/radius but NOT overflow-hidden, so the
+    // reminder dropdown can spill past the card edge without being clipped.
+    // The clickable region (button) and the action footer are siblings — no
+    // button-nested-in-button — and the action controls stopPropagation so
+    // they never trigger card navigation.
+    <div
+      className={`block w-full rounded-card border border-line bg-panel shadow-panel transition-all duration-200 ${
+        clickable ? 'hover:border-pitch' : 'hover:border-chalkdim'
       }`}
     >
-      <div className="flex items-center justify-between gap-2 px-3 pt-2 pb-1.5 border-b border-line bg-panel2/10">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="ds-caption uppercase tracking-[0.18em] text-chalkdim truncate">
-            {stageLabel}
-          </span>
-          {venue && (
-            <span className="ds-caption text-chalkdim/60 truncate hidden sm:inline" title={venue}>
-              · {venue}
+      <Clickable
+        {...(clickable ? { onClick: onOpen, type: 'button' as const } : {})}
+        className={`block w-full text-left rounded-t-card overflow-hidden ${
+          clickable ? 'cursor-pointer' : ''
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2 px-3 pt-2 pb-1.5 border-b border-line bg-panel2/10">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="ds-caption uppercase tracking-[0.18em] text-chalkdim truncate">
+              {stageLabel}
             </span>
-          )}
-        </div>
-        {kickoff && (
-          <span className="ds-caption tabular-nums text-chalkdim/70 shrink-0">
-            {kickoff.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-          </span>
-        )}
-      </div>
-
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 sm:py-3">
-        <div className="flex flex-col items-center gap-1 min-w-0">
-          <Flag src={homeFlag} alt={homeName || tbd} dim={awayWon} />
-          <span className={teamCls(homeWon, awayWon)}>{homeName || tbd}</span>
-          {homeScorers.length > 0 && (
-            <ul className="space-y-0.5 ds-caption text-chalkdim leading-tight text-center min-w-0 max-w-full">
-              {homeScorers.slice(0, 3).map((s) => (
-                <li key={s.playerId + s.minute} className="truncate px-1">
-                  ⚽ {scorerDisplay(s)}
-                </li>
-              ))}
-              {homeScorers.length > 3 && (
-                <li className="text-chalkdim/60">+{homeScorers.length - 3} more</li>
-              )}
-            </ul>
-          )}
-        </div>
-
-        <div className="flex flex-col items-center gap-1 px-1 sm:px-2">
-          {status === 'upcoming' ? (
-            <span className="font-mono text-sm sm:text-lg font-bold text-chalk tabular-nums whitespace-nowrap leading-none">
-              {kickoff
-                ? kickoff.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-                : tbd}
-            </span>
-          ) : (
-            <span className="font-mono text-2xl sm:text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap">
-              {/* Screen-reader-friendly full-score announcement; visually hidden. */}
-              <span className="sr-only">
-                {`${homeName || tbd} ${homeScore ?? 0} - ${awayName || tbd} ${awayScore ?? 0}`}
+            {venue && (
+              <span className="ds-caption text-chalkdim/60 truncate hidden sm:inline" title={venue}>
+                · {venue}
               </span>
-              <span aria-hidden>{`${homeScore ?? 0} : ${awayScore ?? 0}`}</span>
-            </span>
-          )}
-          <StatusPill status={status} progress={progress} t={t} />
-          <ClockLabel progress={progress} />
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {watchable && (
+              <span className="flex items-center gap-1 ds-caption tracking-widest uppercase text-pitch">
+                <span className="live-dot" />
+                {t('card.watch')}
+              </span>
+            )}
+            {kickoff && (
+              <span className="ds-caption tabular-nums text-chalkdim/70">
+                {kickoff.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col items-center gap-1 min-w-0">
-          <Flag src={awayFlag} alt={awayName || tbd} dim={homeWon} />
-          <span className={teamCls(awayWon, homeWon)}>{awayName || tbd}</span>
-          {awayScorers.length > 0 && (
-            <ul className="space-y-0.5 ds-caption text-chalkdim leading-tight text-center min-w-0 max-w-full">
-              {awayScorers.slice(0, 3).map((s) => (
-                <li key={s.playerId + s.minute} className="truncate px-1">
-                  {scorerDisplay(s)} ⚽
-                </li>
-              ))}
-              {awayScorers.length > 3 && (
-                <li className="text-chalkdim/60">+{awayScorers.length - 3} more</li>
-              )}
-            </ul>
-          )}
-        </div>
-      </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 sm:py-3">
+          <div className="flex flex-col items-center gap-1 min-w-0">
+            <Flag src={homeFlag} alt={homeName || tbd} dim={awayWon} />
+            <span className={teamCls(homeWon, awayWon)}>{homeName || tbd}</span>
+            {homeScorers.length > 0 && (
+              <ul className="space-y-0.5 ds-caption text-chalkdim leading-tight text-center min-w-0 max-w-full">
+                {homeScorers.slice(0, 3).map((s) => (
+                  <li key={s.playerId + s.minute} className="truncate px-1">
+                    ⚽ {scorerDisplay(s)}
+                  </li>
+                ))}
+                {homeScorers.length > 3 && (
+                  <li className="text-chalkdim/60">+{homeScorers.length - 3} more</li>
+                )}
+              </ul>
+            )}
+          </div>
 
-      {venue && (
-        <div className="px-3 py-1.5 border-t border-overlay/5 sm:hidden">
-          <span className="ds-caption text-chalkdim/70 truncate block">{venue}</span>
+          <div className="flex flex-col items-center gap-1 px-1 sm:px-2">
+            {status === 'upcoming' ? (
+              <span className="font-mono text-sm sm:text-lg font-bold text-chalk tabular-nums whitespace-nowrap leading-none">
+                {kickoff
+                  ? kickoff.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+                  : tbd}
+              </span>
+            ) : (
+              <span className="font-mono text-2xl sm:text-4xl font-bold text-chalk tabular-nums leading-none whitespace-nowrap">
+                {/* Screen-reader-friendly full-score announcement; visually hidden. */}
+                <span className="sr-only">
+                  {`${homeName || tbd} ${homeScore ?? 0}${homeSO} - ${awayName || tbd} ${awayScore ?? 0}${awaySOafter}`}
+                </span>
+                <span
+                  aria-hidden
+                >{`${homeScore ?? 0}${homeSO} : ${awaySObefore}${awayScore ?? 0}`}</span>
+              </span>
+            )}
+            <StatusPill status={status} progress={progress} finishType={finishType} t={t} />
+            <ClockLabel progress={progress} />
+          </div>
+
+          <div className="flex flex-col items-center gap-1 min-w-0">
+            <Flag src={awayFlag} alt={awayName || tbd} dim={homeWon} />
+            <span className={teamCls(awayWon, homeWon)}>{awayName || tbd}</span>
+            {awayScorers.length > 0 && (
+              <ul className="space-y-0.5 ds-caption text-chalkdim leading-tight text-center min-w-0 max-w-full">
+                {awayScorers.slice(0, 3).map((s) => (
+                  <li key={s.playerId + s.minute} className="truncate px-1">
+                    {scorerDisplay(s)} ⚽
+                  </li>
+                ))}
+                {awayScorers.length > 3 && (
+                  <li className="text-chalkdim/60">+{awayScorers.length - 3} more</li>
+                )}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {venue && (
+          <div className="px-3 py-1.5 border-t border-overlay/5 sm:hidden">
+            <span className="ds-caption text-chalkdim/70 truncate block">{venue}</span>
+          </div>
+        )}
+      </Clickable>
+
+      {showActions && (
+        <div className="flex items-center justify-end gap-0.5 px-2 py-1 border-t border-line bg-panel2/10 rounded-b-card">
+          {status === 'upcoming' && kickoff && (
+            <ReminderMenu
+              title={`${homeName || tbd} vs ${awayName || tbd}`}
+              start={kickoff}
+              t={t}
+            />
+          )}
+          {onToggleFavorite && (
+            <FavoriteButton active={favorite} onToggle={onToggleFavorite} t={t} />
+          )}
         </div>
       )}
-    </Root>
+    </div>
   );
 });

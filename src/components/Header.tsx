@@ -1,15 +1,18 @@
-import { CalendarDays, type LucideIcon, Radio } from 'lucide-react';
 import { useT } from '../i18n';
+import { navigate, pathFor, type Section } from '../utils/router';
 import LanguageSwitcher from './LanguageSwitcher';
 
-export type View = 'live' | 'schedule';
-
-const VIEWS: { key: View; Icon: LucideIcon }[] = [
-  { key: 'schedule', Icon: CalendarDays },
-  { key: 'live', Icon: Radio },
+const SECTION_TABS: { section: Section; labelKey: string }[] = [
+  { section: 'matches', labelKey: 'fixtures.schedule' },
+  { section: 'standings', labelKey: 'fixtures.standings' },
+  { section: 'scorers', labelKey: 'fixtures.scorers' },
+  { section: 'bracket', labelKey: 'fixtures.bracket' },
 ];
 
-export default function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
+// `section` is the active schedule section, or undefined on match/team/player
+// pages — the tabs still navigate (jump back to a section) but none is marked
+// active there.
+export default function Header({ section }: { section?: Section }) {
   const t = useT();
   return (
     // 吸顶。Header 与内容同处一个滚动容器(见 App.tsx)，共享同一条 scrollbar
@@ -27,20 +30,21 @@ export default function Header({ view, setView }: { view: View; setView: (v: Vie
             />
           </h1>
 
-          <nav aria-label={t('nav.mainLabel')} className="ds-segmented">
-            {VIEWS.map(({ key, Icon }) => (
+          <nav
+            aria-label={t('nav.mainLabel')}
+            className="ds-segmented min-w-0 overflow-x-auto no-scrollbar"
+          >
+            {SECTION_TABS.map(({ section: s, labelKey }) => (
               <button
-                key={key}
+                key={s}
                 type="button"
-                role="tab"
-                onClick={() => setView(key)}
-                aria-selected={view === key}
-                className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-1 rounded-pill font-display font-bold tracking-wide text-sm whitespace-nowrap transition-all duration-200 ${
-                  view === key ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'
+                onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
+                aria-pressed={section === s}
+                className={`whitespace-nowrap ds-seg-tab ${
+                  section === s ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'
                 }`}
               >
-                <Icon className="w-4 h-4 shrink-0" aria-hidden />
-                {t(`nav.${key}`)}
+                {t(labelKey)}
               </button>
             ))}
           </nav>

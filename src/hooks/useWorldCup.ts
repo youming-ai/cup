@@ -182,6 +182,22 @@ export function useWorldCup() {
                 : undefined
             : undefined;
 
+        // Knockout decider: penalty score (ESPN competitor.shootoutScore) and
+        // how the match ended (status.type.name → STATUS_FINAL_PEN / _AET).
+        // The aggregate home/awayScore stays the regulation+ET score, so a
+        // pens match reads as level until we surface these.
+        const homeShootout = typeof home.shootoutScore === 'number' ? home.shootoutScore : null;
+        const awayShootout = typeof away.shootoutScore === 'number' ? away.shootoutScore : null;
+        const typeName = str(obj(statusObj.type).name).toUpperCase();
+        const finishType: 'aet' | 'pens' | undefined =
+          status !== 'finished'
+            ? undefined
+            : homeShootout != null && awayShootout != null
+              ? 'pens'
+              : typeName.includes('AET')
+                ? 'aet'
+                : undefined;
+
         // Richer status: clock, displayClock, period (only set for live/finished).
         const progress =
           status === 'upcoming'
@@ -217,6 +233,10 @@ export function useWorldCup() {
           slug: matchSlug(str(homeTeam.displayName), str(awayTeam.displayName), str(ev.id)),
           ...(progress ? { progress } : {}),
           ...(winner ? { winner } : {}),
+          ...(finishType ? { finishType } : {}),
+          ...(finishType === 'pens' && homeShootout != null && awayShootout != null
+            ? { homeShootoutScore: homeShootout, awayShootoutScore: awayShootout }
+            : {}),
         };
       });
 

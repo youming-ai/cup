@@ -1,7 +1,6 @@
-import { lazy, type ReactNode, Suspense, useCallback, useEffect } from 'react';
+import { lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo } from 'react';
 import Footer from './components/Footer';
-import Header, { type View } from './components/Header';
-import LiveView from './components/LiveView';
+import Header from './components/Header';
 import MatchDetailPage from './components/MatchDetailPage';
 import PlayerPage from './components/PlayerPage';
 import TeamPage from './components/TeamPage';
@@ -9,6 +8,7 @@ import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
 import { navigate, useRouter } from './utils/router';
+import { isStreamLive, streamForMatch } from './utils/streamMatch';
 
 const FixturesView = lazy(() => import('./components/FixturesView'));
 
@@ -72,27 +72,20 @@ export default function App() {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
   }, [lang]);
 
-  // Top-nav highlight is derived from the route — single source of truth, no
-  // separate persisted "view" state. Selecting a tab just navigates.
-  const view: View = route.kind === 'live' || route.kind === 'stream' ? 'live' : 'schedule';
-  const onSelectView = useCallback((v: View) => navigate(v === 'live' ? '/live' : '/'), []);
   const backHome = useCallback(() => navigate('/', { replace: true }), []);
 
-  // Backward-compat for pre-route bookmarks: /?view=live → /live,
-  // /?view=schedule → /, /?match=<slug> → /live/<slug> (the old ?match was
-  // always a live stream). Run once on mount.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const legacyMatch = params.get('match');
-    const legacyView = params.get('view');
-    if (legacyMatch) {
-      navigate(`/live/${encodeURIComponent(legacyMatch)}`, { replace: true });
-    } else if (legacyView === 'live') {
-      navigate('/live', { replace: true });
-    } else if (legacyView === 'schedule') {
-      navigate('/', { replace: true });
+  // Cross-reference ESPN fixtures with ppv.to streams (different sources, no
+  // shared id — matched by team-name slug). Slugs of matches whose stream is
+  // live right now drive the schedule's "watch" badge.
+  const watchableSlugs = useMemo(() => {
+    const now = Date.now();
+    const set = new Set<string>();
+    for (const m of wc.matches) {
+      const s = streamForMatch(m, streams.matches);
+      if (s && isStreamLive(s, now)) set.add(m.slug);
     }
-  }, []);
+    return set;
+  }, [wc.matches, streams.matches]);
 
   // Build the content for the current route. WC-data pages wait for the
   // schedule fetch (and surface its error) before deciding anything is
@@ -110,19 +103,9 @@ export default function App() {
           matches={wc.matches}
           groups={wc.groups}
           scorers={wc.scorers}
+          watchableSlugs={watchableSlugs}
         />
       </Suspense>
-    );
-  } else if (route.kind === 'live' || route.kind === 'stream') {
-    content = streams.loading ? (
-      <Loading />
-    ) : streams.error ? (
-      <ErrorState message={streams.error} onRetry={streams.refetch} />
-    ) : (
-      <LiveView
-        matches={streams.matches}
-        initialSlug={route.kind === 'stream' ? route.slug : undefined}
-      />
     );
   } else if (route.kind === 'match') {
     if (wc.loading) {
@@ -132,7 +115,11 @@ export default function App() {
     } else {
       const match = wc.matches.find((m) => m.slug === route.slug);
       content = match ? (
-        <MatchDetailPage match={match} onBack={backHome} />
+        <MatchDetailPage
+          match={match}
+          stream={streamForMatch(match, streams.matches)}
+          onBack={backHome}
+        />
       ) : (
         <NotFound onBack={backHome} />
       );
@@ -172,7 +159,7 @@ export default function App() {
     // SAME scrollbar gutter as the content below — they line up on desktop
     // (classic scrollbar) and mobile (overlay) with no per-platform padding hack.
     <div className="flex flex-col h-dvh overflow-y-auto [scrollbar-gutter:stable_both-edges] bg-night">
-      <Header view={view} setView={onSelectView} />
+      <Header section={route.kind === 'section' ? route.section : undefined} />
       <div className="flex-1 flex flex-col">{content}</div>
       {route.kind === 'section' && <Footer />}
     </div>

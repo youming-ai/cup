@@ -13,8 +13,8 @@ describe('i18n messages', () => {
 
 describe('translate', () => {
   it('returns the translation for the active language', () => {
-    expect(translate('zh', 'nav.live')).toBe('直播');
-    expect(translate('ja', 'nav.live')).toBe('ライブ');
+    expect(translate('zh', 'card.watch')).toBe('观看');
+    expect(translate('ja', 'card.watch')).toBe('視聴');
   });
 
   it('falls back to the key itself when missing in every language', () => {

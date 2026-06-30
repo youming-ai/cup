@@ -79,6 +79,16 @@ export interface WCMatch {
   // matches; lets the bracket resolve penalty-shootout winners where the
   // regulation/ET score is level. Undefined for draws and group games.
   winner?: 'home' | 'away';
+  // How a finished knockout match was decided when not in regulation:
+  // 'aet' = after extra time, 'pens' = decided on penalties. Derived from
+  // ESPN's status.type.name (STATUS_FINAL_AET / STATUS_FINAL_PEN). Undefined
+  // for regulation finishes and group games.
+  finishType?: 'aet' | 'pens';
+  // Penalty-shootout score (ESPN competitor.shootoutScore). Set only when
+  // finishType === 'pens'. The main home/awayScore stays the regulation+ET
+  // aggregate (often level), so these carry the actual decider.
+  homeShootoutScore?: number;
+  awayShootoutScore?: number;
 }
 
 export interface WCStanding {

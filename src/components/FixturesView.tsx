@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useFavorites } from '../hooks/useFavorites';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import { navigate, pathFor, type Section } from '../utils/router';
@@ -14,27 +15,24 @@ const KNOWN_STAGES: Stage[] = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'fina
 // already played?" toggle. Defaults to Upcoming so users land on what's next.
 type StatusFilter = 'upcoming' | 'finished';
 
-// The sub-tabs map 1:1 to section routes; the matches section uses the
-// 'fixtures.schedule' label. Clicking a tab navigates (each section is a URL).
-const SECTION_TABS: { section: Section; labelKey: string }[] = [
-  { section: 'matches', labelKey: 'fixtures.schedule' },
-  { section: 'standings', labelKey: 'fixtures.standings' },
-  { section: 'scorers', labelKey: 'fixtures.scorers' },
-  { section: 'bracket', labelKey: 'fixtures.bracket' },
-];
+const NO_WATCHABLE: ReadonlySet<string> = new Set();
 
 export default function FixturesView({
   section,
   matches,
   groups,
   scorers,
+  watchableSlugs = NO_WATCHABLE,
 }: {
   section: Section;
   matches: WCMatch[];
   groups: WCGroup[];
   scorers: TopScorer[];
+  // Slugs of matches with a ppv.to stream live right now (resolved in App).
+  watchableSlugs?: ReadonlySet<string>;
 }) {
   const t = useT();
+  const { isFavorite, toggle } = useFavorites();
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback((m: WCMatch) => {
@@ -102,26 +100,38 @@ export default function FixturesView({
           : t('common.tbd')}
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-stack sm:gap-card">
-        {list.map((m) => (
-          <MatchCard
-            key={m.id}
-            homeName={m.homeName}
-            awayName={m.awayName}
-            homeFlag={m.homeFlag}
-            awayFlag={m.awayFlag}
-            homeScore={m.homeScore}
-            awayScore={m.awayScore}
-            status={m.status}
-            kickoff={m.kickoff}
-            stage={m.stage}
-            group={m.group}
-            progress={m.progress}
-            homeScorers={m.homeScorers}
-            awayScorers={m.awayScorers}
-            venue={m.venue}
-            onOpen={m.status === 'upcoming' ? undefined : () => openMatch(m)}
-          />
-        ))}
+        {list.map((m) => {
+          const watchable = watchableSlugs.has(m.slug);
+          return (
+            <MatchCard
+              key={m.id}
+              homeName={m.homeName}
+              awayName={m.awayName}
+              homeFlag={m.homeFlag}
+              awayFlag={m.awayFlag}
+              homeScore={m.homeScore}
+              awayScore={m.awayScore}
+              status={m.status}
+              kickoff={m.kickoff}
+              stage={m.stage}
+              group={m.group}
+              progress={m.progress}
+              finishType={m.finishType}
+              homeShootoutScore={m.homeShootoutScore}
+              awayShootoutScore={m.awayShootoutScore}
+              winner={m.winner}
+              watchable={watchable}
+              favorite={isFavorite(`match:${m.id}`)}
+              onToggleFavorite={() => toggle(`match:${m.id}`)}
+              homeScorers={m.homeScorers}
+              awayScorers={m.awayScorers}
+              venue={m.venue}
+              // Clickable when not upcoming, or when watchable (a live stream
+              // exists even if ESPN still shows the pre-match state).
+              onOpen={m.status === 'upcoming' && !watchable ? undefined : () => openMatch(m)}
+            />
+          );
+        })}
       </div>
     </section>
   );
@@ -133,22 +143,6 @@ export default function FixturesView({
     // 1152–1200px band where only the header's max-w is squeezed by its px).
     <div className="ds-page">
       <div className="ds-page-inner">
-        <div className="ds-segmented-blur w-full sm:w-fit overflow-x-auto no-scrollbar">
-          {SECTION_TABS.map(({ section: s, labelKey }) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
-              aria-pressed={section === s}
-              className={`flex-1 sm:flex-none ds-seg-tab ${
-                section === s ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'
-              }`}
-            >
-              {t(labelKey)}
-            </button>
-          ))}
-        </div>
-
         {section === 'standings' ? (
           <StandingsView groups={groups} />
         ) : section === 'scorers' ? (
