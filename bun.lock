@@ -5,13 +5,13 @@
     "": {
       "name": "streamcup-web",
       "dependencies": {
-        "lucide-react": "^1.21.0",
+        "lucide-react": "^1.22.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.1",
-        "@cloudflare/workers-types": "^4.20260625.1",
+        "@cloudflare/workers-types": "^4.20260629.1",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^14.3.1",
         "@types/react": "^18.3.31",
@@ -19,7 +19,7 @@
         "@vitejs/plugin-react": "^4.7.0",
         "autoprefixer": "^10.5.2",
         "jsdom": "^23.2.0",
-        "postcss": "^8.5.15",
+        "postcss": "^8.5.16",
         "tailwindcss": "^3.4.19",
         "typescript": "^5.9.3",
         "vite": "^5.4.21",
@@ -94,7 +94,7 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.1", "", { "os": "win32", "cpu": "x64" }, "sha512-6uxpR9hvaglANkZemeSiN/FhYgkGasrEGn267eXIWvjrjJ2LhDlk251IhjVJq6MXzkV2/bcXwLwSroLyPtqRZg=="],
 
-    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260629.1", "", {}, "sha512-5vq2ErIFVRSQ8Dcw5YOeEoBdZBudqBjHFKTWD3SBGiJR5hD1+/86aRUV/DTpEK9sXXCGOTGgpWBGlPSlW7djVg=="],
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260630.1", "", {}, "sha512-yl+c9vwvko9UZ0frmtsHuwOh3BRHvNjLrfelAp5Akpqe1+Ho1UWekr3nmjJ1D64CH0Yb0K0oRMV4i7npOFzsog=="],
 
     "@csstools/color-helpers": ["@csstools/color-helpers@5.1.0", "", {}, "sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA=="],
 
