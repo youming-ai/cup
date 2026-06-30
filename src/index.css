@@ -31,12 +31,16 @@
   --c-on-scrim: 255 255 255;
   --c-on-accent: 10 14 12;
 
-  /* Radius */
+  /* Radius. Every panel-like container shares one corner radius — the
+     Header's (`panel`, 24px) — so cards, the hero scoreboard and glass
+     surfaces all read as one family. `card`/`hero` alias `panel`; change
+     `panel` to retune them all at once. `micro` (image corners) and `pill`
+     (capsule badges/buttons/tabs) are deliberately their own thing. */
   --r-micro: 3px;
-  --r-sm: 12px;
-  --r-card: 16px;
+  --r-sm: var(--r-panel);
+  --r-card: var(--r-panel);
   --r-panel: 24px;
-  --r-hero: 32px;
+  --r-hero: var(--r-panel);
   --r-pill: 9999px;
 
   /* Spacing — compact page rhythm */

@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useFavorites } from '../hooks/useFavorites';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import { navigate, pathFor, type Section } from '../utils/router';
@@ -32,7 +31,6 @@ export default function FixturesView({
   watchableSlugs?: ReadonlySet<string>;
 }) {
   const t = useT();
-  const { isFavorite, toggle } = useFavorites();
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback((m: WCMatch) => {
@@ -121,8 +119,6 @@ export default function FixturesView({
               awayShootoutScore={m.awayShootoutScore}
               winner={m.winner}
               watchable={watchable}
-              favorite={isFavorite(`match:${m.id}`)}
-              onToggleFavorite={() => toggle(`match:${m.id}`)}
               homeScorers={m.homeScorers}
               awayScorers={m.awayScorers}
               venue={m.venue}
