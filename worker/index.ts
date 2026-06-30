@@ -1,5 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import { type Competition, COMPETITIONS, type Resource, buildUrl } from '../src/competitions';
+
 // Edge cache for the upstream data APIs. The SPA calls same-origin /api/*; this
 // Worker fetches the third-party source and caches the body in KV, so the page
 // is faster, doesn't depend on the upstream's CORS, and survives brief outages.
@@ -46,28 +48,15 @@ interface CachedResult {
   cache: string;
 }
 
-// ESPN's public site API (no key, CORS-open) carries the full 2026 World Cup:
-// scoreboard = all 104 matches (scores, status, venue, scorers); standings =
-// the 12 group tables. KV-cache both: scoreboard refreshes often (live scores),
-// standings change slowly. ppv.to is still fetched browser-side (it IP-blocks
-// datacenter requests).
-const ESPN = 'https://site.api.espn.com/apis';
-const SOURCES: Record<string, { url: string; fresh: number; keep: number }> = {
-  scoreboard: {
-    url: `${ESPN}/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300`,
-    fresh: 60,
-    keep: 86400,
-  },
-  standings: {
-    url: `${ESPN}/v2/sports/soccer/fifa.world/standings?season=2026&level=3`,
-    fresh: 300,
-    keep: 86400,
-  },
-};
-
-const ROUTES: Record<string, string> = {
-  '/api/wc/scoreboard': 'scoreboard',
-  '/api/wc/standings': 'standings',
+// Per-resource cache TTLs (seconds). `fresh` = served without revalidating;
+// `keep` = how long KV retains a copy so a stale one can cover an outage.
+// Scoreboard refreshes often (live scores), standings change slowly, summary
+// is per-event. ppv.to streams are still fetched browser-side (datacenter-IP
+// blocked), so they never touch this Worker.
+const TTL: Record<Resource, { fresh: number; keep: number }> = {
+  scoreboard: { fresh: 60, keep: 86400 },
+  standings: { fresh: 300, keep: 86400 },
+  summary: { fresh: 30, keep: 86400 },
 };
 
 export function json(body: string, status: number, cache: string): Response {
@@ -140,31 +129,48 @@ async function cached(
   return json(result.body, result.status, result.cache);
 }
 
-export async function serve(name: string, env: Env, ctx: ExecutionContext): Promise<Response> {
-  const src = SOURCES[name];
-  return cached(name, src.url, src.fresh, src.keep, env, ctx);
+export async function serve(
+  comp: Competition,
+  resource: 'scoreboard' | 'standings',
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  const { fresh, keep } = TTL[resource];
+  return cached(`${comp.key}:${resource}`, buildUrl(comp, resource), fresh, keep, env, ctx);
 }
 
 export async function serveSummary(
+  comp: Competition,
   eventId: string,
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
   if (!/^\d+$/.test(eventId)) return json('{"error":"bad event id"}', 400, 'MISS');
-  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=${eventId}`;
-  return cached(`summary:${eventId}`, url, 30, 86400, env, ctx);
+  const { fresh, keep } = TTL.summary;
+  return cached(
+    `summary:${comp.key}:${eventId}`,
+    buildUrl(comp, 'summary', eventId),
+    fresh,
+    keep,
+    env,
+    ctx,
+  );
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    const { pathname } = url;
-    if (pathname === '/api/wc/summary') {
-      return serveSummary(url.searchParams.get('event') ?? '', env, ctx);
+    const m = url.pathname.match(/^\/api\/([^/]+)\/(scoreboard|standings|summary)$/);
+    if (m) {
+      const comp = COMPETITIONS[m[1]];
+      if (!comp) return new Response('Not found', { status: 404 });
+      const resource = m[2] as Resource;
+      if (resource === 'summary') {
+        return serveSummary(comp, url.searchParams.get('event') ?? '', env, ctx);
+      }
+      return serve(comp, resource, env, ctx);
     }
-    const name = ROUTES[pathname];
-    if (name) return serve(name, env, ctx);
-    if (pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
+    if (url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
     return env.ASSETS.fetch(request); // static assets + SPA fallback
   },
 };

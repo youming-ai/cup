@@ -2,7 +2,10 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Env, json, serve, serveSummary } from './index';
+import worker, { type Env, json, serve, serveSummary } from './index';
+import { COMPETITIONS } from '../src/competitions';
+
+const WC = COMPETITIONS['fifa.world'];
 
 // ---- json helper ----
 
@@ -32,7 +35,7 @@ describe('json helper', () => {
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
-function mockEnv(kvData?: { body: string; at: number } | null, key = 'standings') {
+function mockEnv(kvData?: { body: string; at: number } | null, key = 'fifa.world:standings') {
   const store = new Map<string, string>();
   if (kvData) {
     store.set(key, JSON.stringify(kvData));
@@ -70,7 +73,7 @@ describe('serve', () => {
     const env = mockEnv({ body: '{"data":"cached"}', at: storedAt });
     const ctx = mockCtx();
 
-    const res = await serve('standings', env as unknown as Env, ctx);
+    const res = await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('HIT');
     const body = await res.text();
@@ -83,7 +86,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    const res = await serve('standings', env as unknown as Env, ctx);
+    const res = await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('MISS');
     const body = await res.text();
@@ -98,7 +101,7 @@ describe('serve', () => {
     const env = mockEnv({ body: '{"data":"old"}', at: storedAt });
     const ctx = mockCtx();
 
-    const res = await serve('standings', env as unknown as Env, ctx);
+    const res = await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('REVALIDATED');
     const body = await res.text();
@@ -113,7 +116,7 @@ describe('serve', () => {
     const env = mockEnv({ body: '{"data":"stale"}', at: storedAt });
     const ctx = mockCtx();
 
-    const res = await serve('standings', env as unknown as Env, ctx);
+    const res = await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('STALE');
     const body = await res.text();
@@ -126,7 +129,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    const res = await serve('standings', env as unknown as Env, ctx);
+    const res = await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(res.status).toBe(502);
     expect(res.headers.get('x-cache')).toBe('MISS');
     const body = await res.text();
@@ -139,7 +142,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    const res = await serve('standings', env as unknown as Env, ctx);
+    const res = await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(res.status).toBe(502);
     expect(res.headers.get('x-cache')).toBe('MISS');
   });
@@ -150,7 +153,7 @@ describe('serve', () => {
     const env = mockEnv(null);
     const ctx = mockCtx();
 
-    await serve('standings', env as unknown as Env, ctx);
+    await serve(WC, 'standings', env as unknown as Env, ctx);
     expect(ctx.waitUntil).toHaveBeenCalled();
     expect((env.CACHE as ReturnType<typeof mockEnv>['CACHE']).put).toHaveBeenCalled();
   });
@@ -172,7 +175,7 @@ describe('serve', () => {
 
     const N = 10;
     const responses = Array.from({ length: N }, () =>
-      serve('standings', env as unknown as Env, ctx),
+      serve(WC, 'standings', env as unknown as Env, ctx),
     );
     gate.resolve();
 
@@ -192,14 +195,14 @@ describe('serveSummary', () => {
 
   it('returns 400 for a non-numeric event id', async () => {
     const env = mockEnv(null);
-    const res = await serveSummary('abc; DROP', env as unknown as Env, mockCtx());
+    const res = await serveSummary(WC, 'abc; DROP', env as unknown as Env, mockCtx());
     expect(res.status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('returns 400 for an empty event id', async () => {
     const env = mockEnv(null);
-    const res = await serveSummary('', env as unknown as Env, mockCtx());
+    const res = await serveSummary(WC, '', env as unknown as Env, mockCtx());
     expect(res.status).toBe(400);
   });
 
@@ -207,15 +210,54 @@ describe('serveSummary', () => {
     fetchMock.mockResolvedValueOnce({ ok: true, text: async () => '{"boxscore":{}}' });
     const env = mockEnv(null);
     const ctx = mockCtx();
-    const res = await serveSummary('760420', env as unknown as Env, ctx);
+    const res = await serveSummary(WC, '760420', env as unknown as Env, ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('x-cache')).toBe('MISS');
     expect(await res.text()).toBe('{"boxscore":{}}');
-    // cached under the per-event key
     expect((env.CACHE as ReturnType<typeof mockEnv>['CACHE']).put).toHaveBeenCalledWith(
-      'summary:760420',
+      'summary:fifa.world:760420',
       expect.any(String),
       expect.objectContaining({ expirationTtl: expect.any(Number) }),
     );
+  });
+});
+
+describe('fetch routing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('404s on an unknown competition key', async () => {
+    const env = mockEnv(null);
+    const res = await worker.fetch(
+      new Request('https://x/api/nope/scoreboard'),
+      env as unknown as Env,
+      mockCtx(),
+    );
+    expect(res.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('routes a known competition scoreboard through serve', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, text: async () => '{"events":[]}' });
+    const env = mockEnv(null);
+    const res = await worker.fetch(
+      new Request('https://x/api/fifa.world/scoreboard'),
+      env as unknown as Env,
+      mockCtx(),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-cache')).toBe('MISS');
+    expect(await res.text()).toBe('{"events":[]}');
+  });
+
+  it('404s on an unknown /api/ path', async () => {
+    const env = mockEnv(null);
+    const res = await worker.fetch(
+      new Request('https://x/api/fifa.world/nonsense'),
+      env as unknown as Env,
+      mockCtx(),
+    );
+    expect(res.status).toBe(404);
   });
 });
