@@ -25,7 +25,7 @@ it('fetches and parses the summary for an event id', async () => {
   });
   const { result } = renderHook(() => useMatchDetail('760420'));
   await waitFor(() => expect(result.current.loading).toBe(false));
-  expect(fetchMock).toHaveBeenCalledWith('/api/wc/summary?event=760420', expect.any(Object));
+  expect(fetchMock).toHaveBeenCalledWith('/api/fifa.world/summary?event=760420', expect.any(Object));
   expect(result.current.detail?.homeId).toBe('1');
   expect(result.current.error).toBeNull();
 });

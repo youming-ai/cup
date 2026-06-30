@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { DEFAULT_COMPETITION } from '../competitions';
 import type { ScorerEntry, TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
 import {
   matchSlug,
@@ -10,7 +11,7 @@ import {
 } from '../utils/wc';
 
 // same-origin Worker that edge-caches ESPN's public API in KV (see worker/index.ts)
-const BASE = '/api/wc';
+const BASE = `/api/${DEFAULT_COMPETITION}`;
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);

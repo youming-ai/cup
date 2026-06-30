@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DEFAULT_COMPETITION } from '../competitions';
 import type { MatchDetail } from '../types';
 import { parseSummary } from '../utils/espn';
 
@@ -23,7 +24,7 @@ export function useMatchDetail(eventId: string | null) {
     setError(null);
     setDetail(null);
 
-    fetch(`/api/wc/summary?event=${eventId}`, { signal: controller.signal })
+    fetch(`/api/${DEFAULT_COMPETITION}/summary?event=${eventId}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load match detail');
         return res.json();
