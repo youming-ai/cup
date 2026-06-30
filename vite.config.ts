@@ -23,7 +23,11 @@ export default defineConfig({
           const event = new URLSearchParams(query).get('event') ?? undefined;
           const full = buildUrl(comp, m[2] as 'scoreboard' | 'standings' | 'summary', event);
           const u = new URL(full);
-          return u.pathname + u.search; // target host is fixed (site.api.espn.com)
+          // ponytail: drops buildUrl's host because every competition is on
+          // site.api.espn.com today (the fixed `target` above). If a future
+          // comp's buildUrl returns a different host (e.g. core.api.espn.com),
+          // derive the target per-request via the proxy `router` option instead.
+          return u.pathname + u.search;
         },
       },
     },
