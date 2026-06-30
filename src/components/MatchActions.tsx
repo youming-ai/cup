@@ -1,35 +1,7 @@
-import { Bell, Star } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { googleCalUrl, icsDataUri } from '../utils/calendar';
 
 type T = (k: string) => string;
-
-export function FavoriteButton({
-  active,
-  onToggle,
-  t,
-  className = '',
-}: {
-  active?: boolean;
-  onToggle: () => void;
-  t: T;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-      aria-pressed={!!active}
-      aria-label={t('card.favorite')}
-      title={t('card.favorite')}
-      className={`p-1.5 rounded-pill hover:bg-overlay/10 transition-colors ${active ? 'text-pitch' : 'text-chalkdim hover:text-chalk'} ${className}`}
-    >
-      <Star className="w-4 h-4" fill={active ? 'currentColor' : 'none'} aria-hidden />
-    </button>
-  );
-}
 
 export function ReminderMenu({ title, start, t }: { title: string; start: Date; t: T }) {
   const event = { title, start };

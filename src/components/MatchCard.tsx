@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { useT } from '../i18n';
 import type { MatchProgress, MatchStatus, ScorerEntry } from '../types';
 import { scorerDisplay } from '../utils/wc';
-import { FavoriteButton, ReminderMenu } from './MatchActions';
+import { ReminderMenu } from './MatchActions';
 
 interface MatchCardProps {
   homeName: string;
@@ -30,10 +30,6 @@ interface MatchCardProps {
   // A matching ppv.to stream is live right now → show a watch badge. The card
   // already deep-links to /match, which hosts the player.
   watchable?: boolean;
-  // Favorite toggle (state owned by the parent via useFavorites). When
-  // onToggleFavorite is provided the card renders its action footer.
-  favorite?: boolean;
-  onToggleFavorite?: () => void;
   onOpen?: () => void;
 }
 
@@ -130,8 +126,6 @@ export default memo(function MatchCard({
   awayShootoutScore,
   winner,
   watchable,
-  favorite,
-  onToggleFavorite,
   onOpen,
 }: MatchCardProps) {
   const t = useT();
@@ -158,7 +152,6 @@ export default memo(function MatchCard({
 
   const clickable = Boolean(onOpen);
   const Clickable = clickable ? 'button' : 'div';
-  const showActions = Boolean(onToggleFavorite);
   return (
     // Outer frame holds the border/radius but NOT overflow-hidden, so the
     // reminder dropdown can spill past the card edge without being clipped.
@@ -267,18 +260,9 @@ export default memo(function MatchCard({
         )}
       </Clickable>
 
-      {showActions && (
+      {status === 'upcoming' && kickoff && (
         <div className="flex items-center justify-end gap-0.5 px-2 py-1 border-t border-line bg-panel2/10 rounded-b-card">
-          {status === 'upcoming' && kickoff && (
-            <ReminderMenu
-              title={`${homeName || tbd} vs ${awayName || tbd}`}
-              start={kickoff}
-              t={t}
-            />
-          )}
-          {onToggleFavorite && (
-            <FavoriteButton active={favorite} onToggle={onToggleFavorite} t={t} />
-          )}
+          <ReminderMenu title={`${homeName || tbd} vs ${awayName || tbd}`} start={kickoff} t={t} />
         </div>
       )}
     </div>

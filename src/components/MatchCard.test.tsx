@@ -253,8 +253,7 @@ describe('MatchCard', () => {
     expect(screen.queryByText('Watch')).not.toBeInTheDocument();
   });
 
-  it('toggles favorite without navigating, and offers a reminder for upcoming matches', () => {
-    const onToggleFavorite = vi.fn();
+  it('offers a reminder for an upcoming match without opening the card', () => {
     const onOpen = vi.fn();
     renderCard({
       homeName: 'Brazil',
@@ -265,17 +264,15 @@ describe('MatchCard', () => {
       kickoff: new Date(2026, 5, 24, 18, 0),
       stage: 'group',
       group: 'C',
-      favorite: false,
-      onToggleFavorite,
       onOpen,
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Favorite' }));
-    expect(onToggleFavorite).toHaveBeenCalledTimes(1);
-    expect(onOpen).not.toHaveBeenCalled(); // favorite control must not open the card
-    expect(screen.getByLabelText('Set a reminder')).toBeInTheDocument();
+    const reminder = screen.getByLabelText('Set a reminder');
+    expect(reminder).toBeInTheDocument();
+    fireEvent.click(reminder);
+    expect(onOpen).not.toHaveBeenCalled(); // reminder control must not open the card
   });
 
-  it('shows favorite but no reminder for a finished match', () => {
+  it('shows no reminder (no action footer) for a finished match', () => {
     renderCard({
       homeName: 'Mexico',
       awayName: 'South Africa',
@@ -285,10 +282,7 @@ describe('MatchCard', () => {
       kickoff: null,
       stage: 'group',
       group: 'A',
-      favorite: true,
-      onToggleFavorite: vi.fn(),
     });
-    expect(screen.getByRole('button', { name: 'Favorite' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Set a reminder')).not.toBeInTheDocument();
   });
 
