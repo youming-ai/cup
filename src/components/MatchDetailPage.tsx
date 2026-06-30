@@ -1,9 +1,10 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useState } from 'react';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import { useT } from '../i18n';
-import type { WCMatch } from '../types';
+import type { Match, WCMatch } from '../types';
 import LineupTab from './matchdetail/LineupTab';
 import PlayByPlayTab from './matchdetail/PlayByPlayTab';
+import Player from './Player';
 import TeamStatsTab from './matchdetail/TeamStatsTab';
 
 type Tab = 'stats' | 'play' | 'lineup';
@@ -11,10 +12,12 @@ type Tab = 'stats' | 'play' | 'lineup';
 function StatusBadge({
   status,
   progress,
+  finishType,
   t,
 }: {
   status: 'upcoming' | 'live' | 'finished';
   progress: WCMatch['progress'];
+  finishType: WCMatch['finishType'];
   t: (k: string) => string;
 }) {
   if (status === 'live') {
@@ -33,19 +36,40 @@ function StatusBadge({
     );
   }
   if (status === 'finished') {
+    // Knockout finishes carry an AET / Pens tag instead of the plain FT.
+    const label =
+      finishType === 'pens'
+        ? t('status.pens')
+        : finishType === 'aet'
+          ? t('status.aet')
+          : t('status.ft');
     return (
       <span className="inline-flex items-center px-3 py-0.5 rounded-pill bg-chalkdim/10 text-chalkdim border border-overlay/10 ds-caption font-bold tracking-wider uppercase select-none">
-        {t('status.ft')}
+        {label}
       </span>
     );
   }
   return null;
 }
 
-export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onBack: () => void }) {
+export default function MatchDetailPage({
+  match,
+  stream,
+  onBack,
+}: {
+  match: WCMatch;
+  // The matching ppv.to stream, already resolved AND liveness-filtered in App
+  // (null unless a stream for this fixture is live now). Keeping the timing in
+  // App means this component stays deterministic given its props.
+  stream?: Match | null;
+  onBack: () => void;
+}) {
   const t = useT();
   const { detail, loading, error, reload } = useMatchDetail(match.id);
   const [tab, setTab] = useState<Tab>('stats');
+  const [iframeUrl, setIframeUrl] = useState('');
+
+  const showPlayer = stream != null;
 
   const homeId = detail?.homeId ?? '';
 
@@ -79,6 +103,15 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
             ← <span>{t('detail.back')}</span>
           </button>
         </div>
+
+        {/* Live stream player (only when a matching ppv.to stream is live) */}
+        {showPlayer && (
+          <Player
+            match={stream}
+            selectedIframeUrl={iframeUrl}
+            setSelectedIframeUrl={setIframeUrl}
+          />
+        )}
 
         {/* Hero Scoreboard (Apple Sports style) */}
         <div className="ds-glass-hero p-card md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
@@ -138,14 +171,35 @@ export default function MatchDetailPage({ match, onBack }: { match: WCMatch; onB
               ) : (
                 <div className="flex flex-col items-center">
                   <div className="flex items-center justify-center gap-card sm:gap-8 font-display text-4xl md:text-6xl font-black text-chalk tabular-nums select-none leading-none">
-                    <span>{match.homeScore ?? 0}</span>
+                    {/* Penalty-shootout score (when decided on pens) sits beside
+                        each team's aggregate as a smaller pitch-colored number. */}
+                    <span>
+                      {match.homeScore ?? 0}
+                      {match.homeShootoutScore != null && (
+                        <sup className="ml-0.5 text-xl md:text-2xl font-bold text-pitch">
+                          ({match.homeShootoutScore})
+                        </sup>
+                      )}
+                    </span>
                     <span className="text-chalkdim/30 text-2xl md:text-3xl font-light font-body select-none">
                       :
                     </span>
-                    <span>{match.awayScore ?? 0}</span>
+                    <span>
+                      {match.awayShootoutScore != null && (
+                        <sup className="mr-0.5 text-xl md:text-2xl font-bold text-pitch">
+                          ({match.awayShootoutScore})
+                        </sup>
+                      )}
+                      {match.awayScore ?? 0}
+                    </span>
                   </div>
                   <div className="mt-3">
-                    <StatusBadge status={match.status} progress={match.progress} t={t} />
+                    <StatusBadge
+                      status={match.status}
+                      progress={match.progress}
+                      finishType={match.finishType}
+                      t={t}
+                    />
                   </div>
                 </div>
               )}

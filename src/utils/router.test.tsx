@@ -12,14 +12,17 @@ describe('parseRoute', () => {
   });
 
   it('parses the section routes', () => {
-    expect(parseRoute('/standings')).toEqual({ kind: 'section', section: 'standings' });
     expect(parseRoute('/scorers')).toEqual({ kind: 'section', section: 'scorers' });
     expect(parseRoute('/bracket')).toEqual({ kind: 'section', section: 'bracket' });
   });
 
-  it('parses /live (list) and /live/<slug> (stream)', () => {
-    expect(parseRoute('/live')).toEqual({ kind: 'live' });
-    expect(parseRoute('/live/echo-1')).toEqual({ kind: 'stream', slug: 'echo-1' });
+  it('treats the removed /standings route as unknown → matches section', () => {
+    expect(parseRoute('/standings')).toEqual(MATCHES);
+  });
+
+  it('treats removed /live routes as unknown → matches section', () => {
+    expect(parseRoute('/live')).toEqual(MATCHES);
+    expect(parseRoute('/live/echo-1')).toEqual(MATCHES);
   });
 
   it('strips a trailing slash', () => {
@@ -60,11 +63,8 @@ describe('pathFor', () => {
   it('round-trips parseRoute → pathFor → parseRoute', () => {
     const cases: Array<ReturnType<typeof parseRoute>> = [
       { kind: 'section', section: 'matches' },
-      { kind: 'section', section: 'standings' },
       { kind: 'section', section: 'scorers' },
       { kind: 'section', section: 'bracket' },
-      { kind: 'live' },
-      { kind: 'stream', slug: 'echo-1' },
       { kind: 'match', slug: 'argentina-vs-france' },
       { kind: 'team', teamId: '464' },
       { kind: 'player', athleteId: '12345' },
@@ -77,7 +77,6 @@ describe('pathFor', () => {
   it('URI-encodes special characters in slugs', () => {
     expect(pathFor({ kind: 'match', slug: 'foo bar' })).toBe('/match/foo%20bar');
     expect(pathFor({ kind: 'team', teamId: 'a/b' })).toBe('/team/a%2Fb');
-    expect(pathFor({ kind: 'stream', slug: 'a b' })).toBe('/live/a%20b');
   });
 });
 
@@ -182,7 +181,7 @@ describe('useRouter', () => {
     render(<Harness onReady={(route) => (captured = route)} />);
     expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
 
-    // A direct navigate() (as FixturesView/LiveView do) updates history and
+    // A direct navigate() (as FixturesView does) updates history and
     // fires the route-change event; useRouter must re-parse off it.
     Object.defineProperty(window, 'location', {
       value: { ...window.location, pathname: '/match/foo' },

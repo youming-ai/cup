@@ -1,3 +1,4 @@
+import { useFavorites } from '../hooks/useFavorites';
 import { useT } from '../i18n';
 import type { TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
 import { navigate } from '../utils/router';
@@ -36,6 +37,7 @@ function teamMatches(matches: WCMatch[], teamId: string): WCMatch[] {
 
 export default function TeamPage({ teamId, groups, matches, scorers, onBack }: TeamPageProps) {
   const t = useT();
+  const { isFavorite, toggle } = useFavorites();
   const found = findStanding(groups, teamId);
   const standing = found?.standing ?? null;
   const groupLetter = found?.group ?? '';
@@ -141,6 +143,8 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
                   stage={m.stage}
                   group={m.group}
                   progress={m.progress}
+                  favorite={isFavorite(`match:${m.id}`)}
+                  onToggleFavorite={() => toggle(`match:${m.id}`)}
                   onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
                 />
               ))}
@@ -159,6 +163,12 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
                   stage={m.stage}
                   group={m.group}
                   progress={m.progress}
+                  finishType={m.finishType}
+                  homeShootoutScore={m.homeShootoutScore}
+                  awayShootoutScore={m.awayShootoutScore}
+                  winner={m.winner}
+                  favorite={isFavorite(`match:${m.id}`)}
+                  onToggleFavorite={() => toggle(`match:${m.id}`)}
                   onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
                 />
               ))}

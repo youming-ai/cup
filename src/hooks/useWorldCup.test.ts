@@ -158,6 +158,99 @@ describe('useWorldCup', () => {
     expect(groupA.standings[0].gd).toBe(2);
   });
 
+  it('captures penalty-shootout score and finishType for a pens match', async () => {
+    const pens = {
+      events: [
+        {
+          id: '760489',
+          date: '2026-07-05T16:00Z',
+          season: { slug: 'round-of-16' },
+          competitions: [
+            {
+              status: {
+                period: 5,
+                displayClock: "120'",
+                type: { state: 'post', name: 'STATUS_FINAL_PEN' },
+              },
+              venue: { fullName: 'X', address: { city: 'Y' } },
+              competitors: [
+                {
+                  homeAway: 'home',
+                  score: '1',
+                  winner: false,
+                  shootoutScore: 3,
+                  team: { id: '1', displayName: 'Germany', logo: 'ger.png' },
+                },
+                {
+                  homeAway: 'away',
+                  score: '1',
+                  winner: true,
+                  shootoutScore: 4,
+                  team: { id: '2', displayName: 'Paraguay', logo: 'par.png' },
+                },
+              ],
+              details: [],
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce(ok(pens)).mockResolvedValueOnce(ok({}));
+    const { result } = renderHook(() => useWorldCup());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const m = result.current.matches[0];
+    expect(m.finishType).toBe('pens');
+    expect(m.homeShootoutScore).toBe(3);
+    expect(m.awayShootoutScore).toBe(4);
+    expect(m.winner).toBe('away');
+  });
+
+  it('marks an extra-time decider as aet with no shootout score', async () => {
+    const aet = {
+      events: [
+        {
+          id: '760490',
+          date: '2026-07-05T20:00Z',
+          season: { slug: 'quarterfinals' },
+          competitions: [
+            {
+              status: {
+                period: 4,
+                displayClock: "120'",
+                type: { state: 'post', name: 'STATUS_FINAL_AET' },
+              },
+              venue: { fullName: 'X', address: { city: 'Y' } },
+              competitors: [
+                {
+                  homeAway: 'home',
+                  score: '2',
+                  winner: true,
+                  team: { id: '1', displayName: 'Spain', logo: 's.png' },
+                },
+                {
+                  homeAway: 'away',
+                  score: '1',
+                  winner: false,
+                  team: { id: '2', displayName: 'Italy', logo: 'i.png' },
+                },
+              ],
+              details: [],
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce(ok(aet)).mockResolvedValueOnce(ok({}));
+    const { result } = renderHook(() => useWorldCup());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const m = result.current.matches[0];
+    expect(m.finishType).toBe('aet');
+    expect(m.homeShootoutScore).toBeUndefined();
+    expect(m.awayShootoutScore).toBeUndefined();
+  });
+
   it('sets error when a request fails', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce(ok(standings));
     const { result } = renderHook(() => useWorldCup());
