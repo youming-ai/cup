@@ -161,3 +161,48 @@ describe('FixturesView status filter', () => {
     expect(screen.getByRole('button', { name: /^Finished\s+2$/ })).toBeInTheDocument();
   });
 });
+
+function setPath(p: string) {
+  Object.defineProperty(window, 'location', {
+    value: { ...window.location, pathname: p },
+    writable: true,
+    configurable: true,
+  });
+}
+const row = (teamId: string, name: string, pts: number) => ({
+  teamId,
+  name,
+  flag: '',
+  mp: 0,
+  w: 0,
+  d: 0,
+  l: 0,
+  gf: 0,
+  ga: 0,
+  gd: 0,
+  pts,
+});
+const league: WCGroup[] = [{ name: 'Premier League', standings: [row('1', 'Arsenal', 9)] }];
+
+it('shows the league table above fixtures for a season competition', () => {
+  setPath('/eng.1');
+  render(
+    <LanguageProvider>
+      <FixturesView section="matches" matches={[]} groups={league} scorers={[]} />
+    </LanguageProvider>,
+  );
+  // league standings surface without needing a group-stage filter
+  expect(screen.getByText('Arsenal')).toBeInTheDocument();
+});
+
+it('falls back to matches when a disabled section is requested (eng.1 bracket)', () => {
+  setPath('/eng.1');
+  render(
+    <LanguageProvider>
+      <FixturesView section="bracket" matches={[]} groups={league} scorers={[]} />
+    </LanguageProvider>,
+  );
+  // Should NOT render the bracket TBD grid; league table is shown instead
+  expect(screen.queryByText('TBD')).not.toBeInTheDocument();
+  expect(screen.getByText('Arsenal')).toBeInTheDocument();
+});

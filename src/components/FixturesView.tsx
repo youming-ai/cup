@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { COMPETITIONS } from '../competitions';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
 import { navigate, pathFor, type Section, useRouter } from '../utils/router';
@@ -33,6 +34,14 @@ export default function FixturesView({
   const t = useT();
   const { route } = useRouter();
   const comp = route.comp;
+  const competition = COMPETITIONS[comp];
+  const shape = competition?.shape ?? 'tournament';
+  const caps = competition?.capabilities;
+  const effectiveSection: Section =
+    (section === 'bracket' && caps && !caps.bracket) ||
+    (section === 'scorers' && caps && !caps.scorers)
+      ? 'matches'
+      : section;
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback(
@@ -144,9 +153,9 @@ export default function FixturesView({
     // 1152–1200px band where only the header's max-w is squeezed by its px).
     <div className="ds-page">
       <div className="ds-page-inner">
-        {section === 'scorers' ? (
+        {effectiveSection === 'scorers' ? (
           <TopScorersView scorers={scorers} />
-        ) : section === 'bracket' ? (
+        ) : effectiveSection === 'bracket' ? (
           <BracketView groups={groups} matches={matches} />
         ) : (
           <>
@@ -195,17 +204,28 @@ export default function FixturesView({
               ))}
             </div>
 
-            {/* Standings belong to the group stage — surface the group tables
-                on top whenever the group filter is active (regardless of the
-                upcoming/finished toggle below). There is no standalone
-                standings page anymore. */}
-            {stage === 'group' && groups.length > 0 && (
+            {/* Season-shape competitions (e.g. a domestic league) have a
+                single always-visible table — there's no group stage to gate
+                it behind. Tournament-shape competitions keep the existing
+                behaviour: standings surface on top only while the group
+                filter is active. */}
+            {shape === 'season' && groups.length > 0 ? (
               <section className="space-y-stack">
                 <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
                   {t('fixtures.standings')}
                 </h3>
-                <StandingsView groups={groups} />
+                <StandingsView groups={groups} mode="league" />
               </section>
+            ) : (
+              stage === 'group' &&
+              groups.length > 0 && (
+                <section className="space-y-stack">
+                  <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
+                    {t('fixtures.standings')}
+                  </h3>
+                  <StandingsView groups={groups} mode="group" />
+                </section>
+              )
             )}
 
             {(() => {
