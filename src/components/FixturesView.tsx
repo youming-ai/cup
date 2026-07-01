@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
-import { navigate, pathFor, type Section } from '../utils/router';
+import { navigate, pathFor, type Section, useRouter } from '../utils/router';
 import BracketView from './BracketView';
 import MatchCard from './MatchCard';
 import StandingsView from './StandingsView';
@@ -31,11 +31,16 @@ export default function FixturesView({
   watchableSlugs?: ReadonlySet<string>;
 }) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
-  const openMatch = useCallback((m: WCMatch) => {
-    navigate(pathFor({ kind: 'match', slug: m.slug }));
-  }, []);
+  const openMatch = useCallback(
+    (m: WCMatch) => {
+      navigate(pathFor({ kind: 'match', comp, slug: m.slug }));
+    },
+    [comp],
+  );
 
   const stages: (Stage | 'all')[] = useMemo(() => {
     const present = new Set<Stage>(matches.map((m) => m.stage));

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { COMPETITIONS, DEFAULT_COMPETITION } from '../competitions';
 
 // One-route-fits-all router built on the History API. No react-router /
 // wouter dep — the surface area is small enough that a single module is
@@ -7,33 +8,35 @@ import { useCallback, useEffect, useState } from 'react';
 // resolve to the SPA at page refresh.
 //
 // Route scheme (every view is addressable — shareable, back/forward, refresh):
-//   /            matches (schedule; group standings live under the group filter)
-//   /scorers     top scorers
-//   /bracket     knockout bracket
-//   /match/<slug>  ESPN fixture detail (hosts the live stream player when one
-//                  matches — there is no separate /live page anymore)
-//   /team/<id>     team page
-//   /player/<id>   player page
+//   /<comp>              matches (schedule; group standings live under the group filter)
+//   /<comp>/scorers      top scorers
+//   /<comp>/bracket      knockout bracket
+//   /<comp>/match/<slug> ESPN fixture detail (hosts the live stream player when one
+//                        matches — there is no separate /live page anymore)
+//   /<comp>/team/<id>    team page
+//   /<comp>/player/<id>  player page
+// Unprefixed legacy paths (pre-multi-comp links) resolve under DEFAULT_COMPETITION.
 
 // The schedule sections (group standings are folded into the matches view).
 export type Section = 'matches' | 'scorers' | 'bracket';
 
+// Every route carries the competition it belongs to (URL first segment).
 export type Route =
-  | { kind: 'section'; section: Section }
-  | { kind: 'match'; slug: string }
-  | { kind: 'team'; teamId: string }
-  | { kind: 'player'; athleteId: string };
+  | { kind: 'section'; comp: string; section: Section }
+  | { kind: 'match'; comp: string; slug: string }
+  | { kind: 'team'; comp: string; teamId: string }
+  | { kind: 'player'; comp: string; athleteId: string };
 
-const SECTION_PATH: Record<Section, string> = {
-  matches: '/',
+// section → path suffix under /<comp> (matches is the competition root).
+const SECTION_SUFFIX: Record<Section, string> = {
+  matches: '',
   scorers: '/scorers',
   bracket: '/bracket',
 };
 
 // decodeURIComponent throws URIError on malformed input (e.g. "/match/%").
-// Path segments are untrusted (anyone can craft a deep link), so decode
-// defensively and treat a bad segment as no match → home fallback, never a
-// thrown error that crashes the React tree.
+// Path segments are untrusted, so decode defensively and treat a bad segment
+// as no match → home fallback, never a thrown error that crashes the tree.
 function safeDecode(segment: string): string | null {
   try {
     return decodeURIComponent(segment);
@@ -42,45 +45,64 @@ function safeDecode(segment: string): string | null {
   }
 }
 
+// Parse the view segments (everything AFTER the competition prefix) into a
+// Route body for the resolved competition. Unknown shapes fall back to the
+// matches section, never throw.
+function parseView(comp: string, seg: string[]): Route {
+  if (seg.length === 0) return { kind: 'section', comp, section: 'matches' };
+  if (seg.length === 1 && seg[0] === 'scorers')
+    return { kind: 'section', comp, section: 'scorers' };
+  if (seg.length === 1 && seg[0] === 'bracket')
+    return { kind: 'section', comp, section: 'bracket' };
+  if (seg.length === 2 && seg[0] === 'match') {
+    const slug = safeDecode(seg[1]!);
+    if (slug !== null) return { kind: 'match', comp, slug };
+  }
+  if (seg.length === 2 && seg[0] === 'team') {
+    const teamId = safeDecode(seg[1]!);
+    if (teamId !== null) return { kind: 'team', comp, teamId };
+  }
+  if (seg.length === 2 && seg[0] === 'player') {
+    const athleteId = safeDecode(seg[1]!);
+    if (athleteId !== null) return { kind: 'player', comp, athleteId };
+  }
+  return { kind: 'section', comp, section: 'matches' };
+}
+
 export function parseRoute(pathname: string): Route {
-  // Normalise: strip query and trailing slash.
+  // Normalise: strip query and trailing slash, split into non-empty segments.
   const path = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
-  if (path === '/' || path === '') return { kind: 'section', section: 'matches' };
-  if (path === '/scorers') return { kind: 'section', section: 'scorers' };
-  if (path === '/bracket') return { kind: 'section', section: 'bracket' };
-
-  const m = path.match(/^\/match\/([^/]+)$/);
-  if (m) {
-    const slug = safeDecode(m[1]!);
-    if (slug !== null) return { kind: 'match', slug };
+  const seg = path.split('/').filter(Boolean);
+  // First segment is the competition when it's a known key; otherwise the
+  // whole path is a legacy (pre-multi-comp) link under the default competition.
+  if (seg.length > 0 && COMPETITIONS[seg[0]!]) {
+    return parseView(seg[0]!, seg.slice(1));
   }
-
-  const t = path.match(/^\/team\/([^/]+)$/);
-  if (t) {
-    const teamId = safeDecode(t[1]!);
-    if (teamId !== null) return { kind: 'team', teamId };
-  }
-
-  const p = path.match(/^\/player\/([^/]+)$/);
-  if (p) {
-    const athleteId = safeDecode(p[1]!);
-    if (athleteId !== null) return { kind: 'player', athleteId };
-  }
-
-  return { kind: 'section', section: 'matches' };
+  return parseView(DEFAULT_COMPETITION, seg);
 }
 
 export function pathFor(route: Route): string {
+  const prefix = `/${route.comp}`;
   switch (route.kind) {
     case 'section':
-      return SECTION_PATH[route.section];
+      return `${prefix}${SECTION_SUFFIX[route.section]}`;
     case 'match':
-      return `/match/${encodeURIComponent(route.slug)}`;
+      return `${prefix}/match/${encodeURIComponent(route.slug)}`;
     case 'team':
-      return `/team/${encodeURIComponent(route.teamId)}`;
+      return `${prefix}/team/${encodeURIComponent(route.teamId)}`;
     case 'player':
-      return `/player/${encodeURIComponent(route.athleteId)}`;
+      return `${prefix}/player/${encodeURIComponent(route.athleteId)}`;
   }
+}
+
+// The canonical (competition-prefixed) URL for a pathname, or null if it's
+// already canonical. Legacy unprefixed links resolve to a real route via
+// parseRoute; this is what lets App redirect them to their prefixed form so
+// shared deep links stay consistent once multiple competitions exist.
+export function canonicalPath(pathname: string): string | null {
+  const normalized = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
+  const canonical = pathFor(parseRoute(pathname));
+  return canonical === normalized ? null : canonical;
 }
 
 // pushState/replaceState do NOT emit `popstate`, so `useRouter` can't see a

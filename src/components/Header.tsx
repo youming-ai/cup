@@ -1,5 +1,5 @@
 import { useT } from '../i18n';
-import { navigate, pathFor, type Section } from '../utils/router';
+import { navigate, pathFor, type Section, useRouter } from '../utils/router';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const SECTION_TABS: { section: Section; labelKey: string }[] = [
@@ -13,6 +13,8 @@ const SECTION_TABS: { section: Section; labelKey: string }[] = [
 // active there.
 export default function Header({ section }: { section?: Section }) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
   return (
     // 吸顶。Header 与内容同处一个滚动容器(见 App.tsx)，共享同一条 scrollbar
     // gutter，内边距与下方内容一致(ds-page)即左右对齐，无需补偿。
@@ -41,7 +43,7 @@ export default function Header({ section }: { section?: Section }) {
                 <button
                   key={s}
                   type="button"
-                  onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
+                  onClick={() => navigate(pathFor({ kind: 'section', comp, section: s }))}
                   aria-pressed={section === s}
                   className={`whitespace-nowrap ds-seg-tab ${
                     section === s ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'

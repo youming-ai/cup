@@ -39,5 +39,5 @@ it('navigates to the section route when a tab is clicked', () => {
   const navSpy = vi.spyOn(router, 'navigate').mockImplementation(() => {});
   renderHeader('matches');
   fireEvent.click(screen.getByRole('button', { name: 'Bracket' }));
-  expect(navSpy).toHaveBeenCalledWith('/bracket');
+  expect(navSpy).toHaveBeenCalledWith('/fifa.world/bracket');
 });

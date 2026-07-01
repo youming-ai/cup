@@ -1,8 +1,8 @@
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { navigate, parseRoute, pathFor, useRouter } from './router';
+import { canonicalPath, navigate, parseRoute, pathFor, useRouter } from './router';
 
-const MATCHES = { kind: 'section', section: 'matches' } as const;
+const MATCHES = { kind: 'section', comp: 'fifa.world', section: 'matches' } as const;
 
 describe('parseRoute', () => {
   it('maps / and empty path to the matches section', () => {
@@ -12,8 +12,16 @@ describe('parseRoute', () => {
   });
 
   it('parses the section routes', () => {
-    expect(parseRoute('/scorers')).toEqual({ kind: 'section', section: 'scorers' });
-    expect(parseRoute('/bracket')).toEqual({ kind: 'section', section: 'bracket' });
+    expect(parseRoute('/scorers')).toEqual({
+      kind: 'section',
+      comp: 'fifa.world',
+      section: 'scorers',
+    });
+    expect(parseRoute('/bracket')).toEqual({
+      kind: 'section',
+      comp: 'fifa.world',
+      section: 'bracket',
+    });
   });
 
   it('treats the removed /standings route as unknown → matches section', () => {
@@ -26,22 +34,31 @@ describe('parseRoute', () => {
   });
 
   it('strips a trailing slash', () => {
-    expect(parseRoute('/match/foo/')).toEqual({ kind: 'match', slug: 'foo' });
+    expect(parseRoute('/match/foo/')).toEqual({ kind: 'match', comp: 'fifa.world', slug: 'foo' });
   });
 
   it('parses /match/<slug>', () => {
-    expect(parseRoute('/match/foo')).toEqual({ kind: 'match', slug: 'foo' });
-    expect(parseRoute('/match/foo?tab=stats')).toEqual({ kind: 'match', slug: 'foo' });
+    expect(parseRoute('/match/foo')).toEqual({ kind: 'match', comp: 'fifa.world', slug: 'foo' });
+    expect(parseRoute('/match/foo?tab=stats')).toEqual({
+      kind: 'match',
+      comp: 'fifa.world',
+      slug: 'foo',
+    });
   });
 
   it('parses /team/<id> and /player/<id>', () => {
-    expect(parseRoute('/team/464')).toEqual({ kind: 'team', teamId: '464' });
-    expect(parseRoute('/player/12345')).toEqual({ kind: 'player', athleteId: '12345' });
+    expect(parseRoute('/team/464')).toEqual({ kind: 'team', comp: 'fifa.world', teamId: '464' });
+    expect(parseRoute('/player/12345')).toEqual({
+      kind: 'player',
+      comp: 'fifa.world',
+      athleteId: '12345',
+    });
   });
 
   it('decodes URI-encoded slugs', () => {
     expect(parseRoute('/match/argentina-vs-france')).toEqual({
       kind: 'match',
+      comp: 'fifa.world',
       slug: 'argentina-vs-france',
     });
   });
@@ -57,26 +74,76 @@ describe('parseRoute', () => {
     expect(parseRoute('/team/%E0%A4%A')).toEqual(MATCHES);
     expect(parseRoute('/live/%C3%28')).toEqual(MATCHES);
   });
+
+  it('parses a competition-prefixed path', () => {
+    expect(parseRoute('/fifa.world')).toEqual(MATCHES);
+    expect(parseRoute('/fifa.world/scorers')).toEqual({
+      kind: 'section',
+      comp: 'fifa.world',
+      section: 'scorers',
+    });
+    expect(parseRoute('/fifa.world/bracket')).toEqual({
+      kind: 'section',
+      comp: 'fifa.world',
+      section: 'bracket',
+    });
+    expect(parseRoute('/fifa.world/match/foo')).toEqual({
+      kind: 'match',
+      comp: 'fifa.world',
+      slug: 'foo',
+    });
+    expect(parseRoute('/fifa.world/team/464')).toEqual({
+      kind: 'team',
+      comp: 'fifa.world',
+      teamId: '464',
+    });
+  });
+
+  it('treats an unknown first segment as a legacy path under the default competition', () => {
+    // 'nba' is not in COMPETITIONS yet → whole path parsed under default comp
+    expect(parseRoute('/nba/scorers')).toEqual(MATCHES);
+  });
 });
 
 describe('pathFor', () => {
   it('round-trips parseRoute → pathFor → parseRoute', () => {
     const cases: Array<ReturnType<typeof parseRoute>> = [
-      { kind: 'section', section: 'matches' },
-      { kind: 'section', section: 'scorers' },
-      { kind: 'section', section: 'bracket' },
-      { kind: 'match', slug: 'argentina-vs-france' },
-      { kind: 'team', teamId: '464' },
-      { kind: 'player', athleteId: '12345' },
+      { kind: 'section', comp: 'fifa.world', section: 'matches' },
+      { kind: 'section', comp: 'fifa.world', section: 'scorers' },
+      { kind: 'section', comp: 'fifa.world', section: 'bracket' },
+      { kind: 'match', comp: 'fifa.world', slug: 'argentina-vs-france' },
+      { kind: 'team', comp: 'fifa.world', teamId: '464' },
+      { kind: 'player', comp: 'fifa.world', athleteId: '12345' },
     ];
     for (const r of cases) {
       expect(parseRoute(pathFor(r))).toEqual(r);
     }
   });
 
-  it('URI-encodes special characters in slugs', () => {
-    expect(pathFor({ kind: 'match', slug: 'foo bar' })).toBe('/match/foo%20bar');
-    expect(pathFor({ kind: 'team', teamId: 'a/b' })).toBe('/team/a%2Fb');
+  it('prefixes the competition and URI-encodes special characters in slugs', () => {
+    expect(pathFor({ kind: 'section', comp: 'fifa.world', section: 'matches' })).toBe(
+      '/fifa.world',
+    );
+    expect(pathFor({ kind: 'match', comp: 'fifa.world', slug: 'foo bar' })).toBe(
+      '/fifa.world/match/foo%20bar',
+    );
+    expect(pathFor({ kind: 'team', comp: 'fifa.world', teamId: 'a/b' })).toBe(
+      '/fifa.world/team/a%2Fb',
+    );
+  });
+});
+
+describe('canonicalPath', () => {
+  it('returns the prefixed path for a legacy (unprefixed) URL', () => {
+    expect(canonicalPath('/scorers')).toBe('/fifa.world/scorers');
+    expect(canonicalPath('/match/foo')).toBe('/fifa.world/match/foo');
+    expect(canonicalPath('/')).toBe('/fifa.world');
+  });
+
+  it('returns null when the path is already canonical', () => {
+    expect(canonicalPath('/fifa.world')).toBeNull();
+    expect(canonicalPath('/fifa.world/scorers')).toBeNull();
+    expect(canonicalPath('/fifa.world/match/foo')).toBeNull();
   });
 });
 
@@ -145,7 +212,7 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'match', slug: 'foo' });
+    expect(captured.route).toEqual({ kind: 'match', comp: 'fifa.world', slug: 'foo' });
   });
 
   it('reacts to popstate events', () => {
@@ -156,7 +223,7 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
+    expect(captured.route).toEqual(MATCHES);
 
     // Simulate back navigation to /match/foo.
     Object.defineProperty(window, 'location', {
@@ -168,7 +235,7 @@ describe('useRouter', () => {
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
 
-    expect(captured.route).toEqual({ kind: 'match', slug: 'foo' });
+    expect(captured.route).toEqual({ kind: 'match', comp: 'fifa.world', slug: 'foo' });
   });
 
   it('reacts to route-change events from a programmatic navigate()', () => {
@@ -179,7 +246,7 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
+    expect(captured.route).toEqual(MATCHES);
 
     // A direct navigate() (as FixturesView does) updates history and
     // fires the route-change event; useRouter must re-parse off it.
@@ -192,7 +259,7 @@ describe('useRouter', () => {
       window.dispatchEvent(new Event('app:routechange'));
     });
 
-    expect(captured.route).toEqual({ kind: 'match', slug: 'foo' });
+    expect(captured.route).toEqual({ kind: 'match', comp: 'fifa.world', slug: 'foo' });
   });
 
   it('exposes a go() that updates the route immediately', () => {
@@ -203,11 +270,11 @@ describe('useRouter', () => {
     });
     let captured!: ReturnType<typeof useRouter>;
     render(<Harness onReady={(route) => (captured = route)} />);
-    expect(captured.route).toEqual({ kind: 'section', section: 'matches' });
+    expect(captured.route).toEqual(MATCHES);
 
     act(() => {
       captured.go('/match/abc');
     });
-    expect(captured.route).toEqual({ kind: 'match', slug: 'abc' });
+    expect(captured.route).toEqual({ kind: 'match', comp: 'fifa.world', slug: 'abc' });
   });
 });
