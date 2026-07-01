@@ -2,6 +2,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useState } from 'react';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import { useT } from '../i18n';
 import type { Match, WCMatch } from '../types';
+import { useRouter } from '../utils/router';
 import LineupTab from './matchdetail/LineupTab';
 import PlayByPlayTab from './matchdetail/PlayByPlayTab';
 import Player from './Player';
@@ -65,7 +66,8 @@ export default function MatchDetailPage({
   onBack: () => void;
 }) {
   const t = useT();
-  const { detail, loading, error, reload } = useMatchDetail(match.id);
+  const { route } = useRouter();
+  const { detail, loading, error, reload } = useMatchDetail(match.id, route.comp);
   const [tab, setTab] = useState<Tab>('stats');
   const [iframeUrl, setIframeUrl] = useState('');
 

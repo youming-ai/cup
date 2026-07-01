@@ -125,7 +125,7 @@ describe('useWorldCup', () => {
   it('normalizes ESPN scoreboard + standings', async () => {
     fetchMock.mockResolvedValueOnce(ok(scoreboard)).mockResolvedValueOnce(ok(standings));
 
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBeNull();
@@ -196,7 +196,7 @@ describe('useWorldCup', () => {
       ],
     };
     fetchMock.mockResolvedValueOnce(ok(pens)).mockResolvedValueOnce(ok({}));
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const m = result.current.matches[0];
@@ -242,7 +242,7 @@ describe('useWorldCup', () => {
       ],
     };
     fetchMock.mockResolvedValueOnce(ok(aet)).mockResolvedValueOnce(ok({}));
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const m = result.current.matches[0];
@@ -253,21 +253,21 @@ describe('useWorldCup', () => {
 
   it('sets error when a request fails', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce(ok(standings));
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe('Failed to load World Cup data');
   });
 
   it('sets error when fetch throws (network failure)', async () => {
     fetchMock.mockRejectedValue(new TypeError('Network error'));
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBeTruthy();
   });
 
   it('tolerates missing/empty payloads without throwing', async () => {
     fetchMock.mockResolvedValueOnce(ok({})).mockResolvedValueOnce(ok({}));
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBeNull();
     expect(result.current.matches).toEqual([]);
@@ -289,7 +289,7 @@ describe('useWorldCup', () => {
       });
     });
 
-    const { result } = renderHook(() => useWorldCup());
+    const { result } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(firstSignal?.aborted).toBe(false);
 
@@ -314,7 +314,7 @@ describe('useWorldCup', () => {
       });
     });
 
-    const { unmount } = renderHook(() => useWorldCup());
+    const { unmount } = renderHook(() => useWorldCup('fifa.world'));
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(firstSignal?.aborted).toBe(false);
 

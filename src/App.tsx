@@ -65,8 +65,8 @@ function NotFound({ onBack }: { onBack: () => void }) {
 export default function App() {
   const { lang } = useLang();
   const streams = useStreams();
-  const wc = useWorldCup();
   const { route } = useRouter();
+  const wc = useWorldCup(route.comp);
 
   useEffect(() => {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
