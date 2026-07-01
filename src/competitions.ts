@@ -37,6 +37,23 @@ export const COMPETITIONS: Record<string, Competition> = {
     shape: 'tournament',
     capabilities: { bracket: true, scorers: true, leaders: false, lineups: true, boxscore: false },
   },
+  'eng.1': {
+    key: 'eng.1',
+    sport: 'soccer',
+    league: 'eng.1',
+    label: 'comp.eng1',
+    // 赛季交替期（2026 年中）：2025 = 2025-26 赛季，standings 返回满员联赛表；
+    // scoreboard 无 dates → ESPN 返回当前窗口（2026-27 upcoming）。见 spec §7。
+    season: 2025,
+    shape: 'season',
+    capabilities: {
+      bracket: false,
+      scorers: false,
+      leaders: false,
+      lineups: true,
+      boxscore: false,
+    },
+  },
 };
 
 export const DEFAULT_COMPETITION = 'fifa.world';

@@ -29,3 +29,27 @@ describe('registry', () => {
     expect(COMPETITIONS[DEFAULT_COMPETITION].sport).toBe('soccer');
   });
 });
+
+describe('eng.1 (season-shape league)', () => {
+  const pl = COMPETITIONS['eng.1'];
+
+  it('is registered as a season-shape soccer league', () => {
+    expect(pl).toBeDefined();
+    expect(pl.sport).toBe('soccer');
+    expect(pl.shape).toBe('season');
+  });
+
+  it('hides bracket and scorers via capabilities', () => {
+    expect(pl.capabilities.bracket).toBe(false);
+    expect(pl.capabilities.scorers).toBe(false);
+  });
+
+  it('builds a standings URL with no level and a scoreboard URL with no dates', () => {
+    expect(buildUrl(pl, 'standings')).toBe(
+      'https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings?season=2025',
+    );
+    expect(buildUrl(pl, 'scoreboard')).toBe(
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?limit=300',
+    );
+  });
+});

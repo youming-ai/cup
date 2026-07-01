@@ -6,6 +6,8 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   'brand.subtitle': 'World Cup 2026',
+  'comp.fifa.world': 'World Cup',
+  'comp.eng1': 'Premier League',
   'common.loading': 'Loading…',
   'common.error': 'Failed to load data',
   'common.retry': 'Retry',
@@ -104,6 +106,8 @@ const en: Dict = {
 
 const zh: Dict = {
   'brand.subtitle': '2026 世界杯',
+  'comp.fifa.world': '世界杯',
+  'comp.eng1': '英超',
   'common.loading': '加载中…',
   'common.error': '数据加载失败',
   'common.retry': '重试',
@@ -202,6 +206,8 @@ const zh: Dict = {
 
 const ja: Dict = {
   'brand.subtitle': 'ワールドカップ2026',
+  'comp.fifa.world': 'ワールドカップ',
+  'comp.eng1': 'プレミアリーグ',
   'common.loading': '読み込み中…',
   'common.error': 'データの読み込みに失敗しました',
   'common.retry': '再試行',
@@ -300,6 +306,8 @@ const ja: Dict = {
 
 const ko: Dict = {
   'brand.subtitle': '2026 월드컵',
+  'comp.fifa.world': '월드컵',
+  'comp.eng1': '프리미어리그',
   'common.loading': '불러오는 중…',
   'common.error': '데이터를 불러오지 못했습니다',
   'common.retry': '다시 시도',
