@@ -31,15 +31,16 @@ function group(letter: string, teams: ReturnType<typeof standing>[]): WCGroup {
 }
 
 describe('BracketView', () => {
-  it('renders 6 round columns', () => {
+  it('renders the symmetric round columns (both sides + Final + 3rd)', () => {
     render(
       <LanguageProvider>
         <BracketView groups={[]} matches={[]} />
       </LanguageProvider>,
     );
-    // R32, R16, QF, SF, 3rd, Final → 6 round headers
+    // Symmetric layout: R32/R16/QF/SF each appear on both sides (8 headers)
+    // + the central Final (1) + the 3rd-place heading (1) → 10 headers.
     const headers = screen.getAllByRole('heading', { level: 3 });
-    expect(headers).toHaveLength(6);
+    expect(headers).toHaveLength(10);
   });
 
   it('renders TBD placeholders for all slots when no data is provided', () => {
