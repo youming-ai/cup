@@ -41,3 +41,33 @@ it('navigates to the section route when a tab is clicked', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Bracket' }));
   expect(navSpy).toHaveBeenCalledWith('/fifa.world/bracket');
 });
+
+function setPath(pathname: string) {
+  Object.defineProperty(window, 'location', {
+    value: { ...window.location, pathname },
+    writable: true,
+    configurable: true,
+  });
+}
+
+it('shows bracket and scorers tabs for the World Cup', () => {
+  setPath('/fifa.world');
+  render(
+    <LanguageProvider>
+      <Header section="matches" />
+    </LanguageProvider>,
+  );
+  expect(screen.getByText('Bracket')).toBeInTheDocument();
+  expect(screen.getByText('Scorers')).toBeInTheDocument();
+});
+
+it('hides bracket and scorers tabs for a season league (eng.1)', () => {
+  setPath('/eng.1');
+  render(
+    <LanguageProvider>
+      <Header section="matches" />
+    </LanguageProvider>,
+  );
+  expect(screen.queryByText('Bracket')).not.toBeInTheDocument();
+  expect(screen.queryByText('Scorers')).not.toBeInTheDocument();
+});
