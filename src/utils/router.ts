@@ -100,6 +100,9 @@ export function pathFor(route: Route): string {
 // parseRoute; this is what lets App redirect them to their prefixed form so
 // shared deep links stay consistent once multiple competitions exist.
 export function canonicalPath(pathname: string): string | null {
+  // Compares path only; a query string is intentionally dropped on redirect
+  // (routes carry no query — parseRoute already ignores `?…`), so a rewrite
+  // never loops on an unmatched query.
   const normalized = pathname.split('?')[0]?.replace(/\/+$/, '') || '/';
   const canonical = pathFor(parseRoute(pathname));
   return canonical === normalized ? null : canonical;
