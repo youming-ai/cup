@@ -7,7 +7,7 @@ import TeamPage from './components/TeamPage';
 import { useStreams } from './hooks/useStreams';
 import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
-import { navigate, useRouter } from './utils/router';
+import { canonicalPath, navigate, pathFor, useRouter } from './utils/router';
 import { indexStreams, liveStreamForMatch } from './utils/streamMatch';
 
 const FixturesView = lazy(() => import('./components/FixturesView'));
@@ -72,7 +72,22 @@ export default function App() {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
   }, [lang]);
 
-  const backHome = useCallback(() => navigate('/', { replace: true }), []);
+  const backHome = useCallback(
+    () =>
+      navigate(pathFor({ kind: 'section', comp: route.comp, section: 'matches' }), {
+        replace: true,
+      }),
+    [route.comp],
+  );
+
+  // Legacy (pre-multi-comp) links like /scorers or /match/<slug> still resolve
+  // (parseRoute maps them under the default competition); rewrite the URL to
+  // its canonical /<comp>/... form so shared deep links stay consistent.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: route change is the re-check trigger
+  useEffect(() => {
+    const c = canonicalPath(window.location.pathname);
+    if (c) navigate(c, { replace: true });
+  }, [route]);
 
   // Cross-reference ESPN fixtures with ppv.to streams (different sources, no
   // shared id — matched by canonical team-name slug). Index the streams once,

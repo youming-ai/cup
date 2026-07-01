@@ -1,6 +1,6 @@
 import { useT } from '../i18n';
 import type { TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
-import { navigate } from '../utils/router';
+import { navigate, pathFor, useRouter } from '../utils/router';
 import MatchCard from './MatchCard';
 
 interface TeamPageProps {
@@ -36,6 +36,8 @@ function teamMatches(matches: WCMatch[], teamId: string): WCMatch[] {
 
 export default function TeamPage({ teamId, groups, matches, scorers, onBack }: TeamPageProps) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
   const found = findStanding(groups, teamId);
   const standing = found?.standing ?? null;
   const groupLetter = found?.group ?? '';
@@ -141,7 +143,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
                   stage={m.stage}
                   group={m.group}
                   progress={m.progress}
-                  onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
+                  onOpen={() => navigate(pathFor({ kind: 'match', comp, slug: m.slug }))}
                 />
               ))}
               {finished.length > 0 && <SubHeader>{t('team.results')}</SubHeader>}
@@ -163,7 +165,7 @@ export default function TeamPage({ teamId, groups, matches, scorers, onBack }: T
                   homeShootoutScore={m.homeShootoutScore}
                   awayShootoutScore={m.awayShootoutScore}
                   winner={m.winner}
-                  onOpen={() => navigate(`/match/${encodeURIComponent(m.slug)}`)}
+                  onOpen={() => navigate(pathFor({ kind: 'match', comp, slug: m.slug }))}
                 />
               ))}
             </div>

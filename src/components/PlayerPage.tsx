@@ -1,6 +1,6 @@
 import { useT } from '../i18n';
 import type { ScorerEntry, TopScorer, WCGroup, WCMatch } from '../types';
-import { navigate } from '../utils/router';
+import { navigate, pathFor, useRouter } from '../utils/router';
 import { scorerDisplay } from '../utils/wc';
 
 interface PlayerPageProps {
@@ -60,6 +60,8 @@ export default function PlayerPage({
   onBack,
 }: PlayerPageProps) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
   const topScorerEntry = scorers.find((s) => s.athleteId === athleteId);
   const goals = playerGoals(matches, athleteId);
   // Fallback team (player not in the top-scorers feed): use the side they
@@ -114,7 +116,7 @@ export default function PlayerPage({
             {teamId && (
               <button
                 type="button"
-                onClick={() => navigate(`/team/${encodeURIComponent(teamId)}`)}
+                onClick={() => navigate(pathFor({ kind: 'team', comp, teamId }))}
                 className="font-mono text-[11px] uppercase tracking-[0.18em] text-chalkdim hover:text-pitch transition-colors"
               >
                 {teamName}
@@ -158,7 +160,9 @@ export default function PlayerPage({
                       </span>
                       <button
                         type="button"
-                        onClick={() => navigate(`/match/${encodeURIComponent(g.match.slug)}`)}
+                        onClick={() =>
+                          navigate(pathFor({ kind: 'match', comp, slug: g.match.slug }))
+                        }
                         className="font-display text-sm text-chalk hover:text-pitch transition-colors truncate text-left"
                       >
                         {g.match.homeName} vs {g.match.awayName}

@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { type ResolvedBracketMatch, type ResolvedTeam, useBracket } from '../hooks/useBracket';
 import { useT } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
-import { navigate } from '../utils/router';
+import { navigate, pathFor, useRouter } from '../utils/router';
 
 const VISUAL_ORDERS: Record<string, number[]> = {
   R32: [1, 6, 0, 2, 10, 11, 8, 9, 3, 5, 4, 7, 13, 15, 12, 14],
@@ -49,6 +49,8 @@ export default function BracketView({
   matches: WCMatch[];
 }) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
   const { resolved } = useBracket(groups, matches);
   const thirdPlaceMatch = resolved.find((m) => m.round === '3rd');
 
@@ -90,7 +92,7 @@ export default function BracketView({
                   {idx > 0 && <Connector parentCount={count * 2} />}
                   <div className="flex flex-col justify-around h-full w-48 shrink-0 py-2">
                     {orderedMatches.map((m) => (
-                      <BracketCell key={m.index} match={m} t={t} />
+                      <BracketCell key={m.index} match={m} t={t} comp={comp} />
                     ))}
                   </div>
                 </Fragment>
@@ -105,17 +107,25 @@ export default function BracketView({
           <h3 className="ds-caption uppercase tracking-[0.18em] text-chalkdim mb-2">
             {t('bracket.3rd')}
           </h3>
-          <BracketCell match={thirdPlaceMatch} t={t} />
+          <BracketCell match={thirdPlaceMatch} t={t} comp={comp} />
         </div>
       )}
     </div>
   );
 }
 
-function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string) => string }) {
+function BracketCell({
+  match,
+  t,
+  comp,
+}: {
+  match: ResolvedBracketMatch;
+  t: (k: string) => string;
+  comp: string;
+}) {
   const onClick = () => {
     if (match.match) {
-      navigate(`/match/${encodeURIComponent(match.match.slug)}`);
+      navigate(pathFor({ kind: 'match', comp, slug: match.match.slug }));
     }
   };
   return (
