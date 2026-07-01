@@ -265,4 +265,52 @@ describe('StandingsView', () => {
     expect(screen.queryByRole('img', { name: /Last 5 matches/ })).not.toBeInTheDocument();
     expect(screen.getByText('Form')).toBeInTheDocument();
   });
+
+  // ---- League (season) single-table mode ----
+
+  describe('league mode', () => {
+    const league: WCGroup[] = [
+      {
+        name: 'English Premier League',
+        standings: [
+          team({ teamId: '1', name: 'Arsenal', pts: 9 }),
+          team({ teamId: '2', name: 'Chelsea', pts: 6 }),
+        ],
+      },
+    ];
+
+    it('renders teams without the qualification legend', () => {
+      render(
+        <LanguageProvider>
+          <StandingsView groups={league} mode="league" />
+        </LanguageProvider>,
+      );
+      expect(screen.getByText('Arsenal')).toBeInTheDocument();
+      // WC-only "advance (top 2)" legend must not render in league mode
+      expect(screen.queryByText('Top 2 advance')).not.toBeInTheDocument();
+      expect(screen.queryByText('8 best third-placed teams advance')).not.toBeInTheDocument();
+    });
+
+    it('does not prefix the card header with "Group"', () => {
+      render(
+        <LanguageProvider>
+          <StandingsView groups={league} mode="league" />
+        </LanguageProvider>,
+      );
+      expect(screen.getAllByText('English Premier League')).toHaveLength(2); // visible span + sr-only caption
+      expect(screen.queryByText(/^Group /)).not.toBeInTheDocument();
+    });
+
+    it('does not apply direct/third qualification highlighting to rows', () => {
+      render(
+        <LanguageProvider>
+          <StandingsView groups={league} mode="league" />
+        </LanguageProvider>,
+      );
+      const rows = screen.getAllByRole('row');
+      // rows[0] = thead, rows[1-2] = tbody rows (Arsenal, Chelsea)
+      expect(rows[1].className).not.toContain('bg-pitch');
+      expect(rows[2].className).not.toContain('bg-pitch');
+    });
+  });
 });
