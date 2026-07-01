@@ -103,6 +103,13 @@ describe('parseRoute', () => {
     // 'nba' is not in COMPETITIONS yet → whole path parsed under default comp
     expect(parseRoute('/nba/scorers')).toEqual(MATCHES);
   });
+
+  it('does not let an inherited Object.prototype name spoof a known competition', () => {
+    // A bare truthy index (COMPETITIONS[seg[0]]) would resolve these to
+    // Object.prototype members and wrongly treat them as a known competition.
+    expect(parseRoute('/constructor/scorers')).toEqual(MATCHES);
+    expect(parseRoute('/toString')).toEqual(MATCHES);
+  });
 });
 
 describe('pathFor', () => {

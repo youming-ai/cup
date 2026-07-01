@@ -162,8 +162,8 @@ export default {
     const url = new URL(request.url);
     const m = url.pathname.match(/^\/api\/([^/]+)\/(scoreboard|standings|summary)$/);
     if (m) {
+      if (!Object.hasOwn(COMPETITIONS, m[1])) return new Response('Not found', { status: 404 });
       const comp = COMPETITIONS[m[1]];
-      if (!comp) return new Response('Not found', { status: 404 });
       const resource = m[2] as Resource;
       if (resource === 'summary') {
         return serveSummary(comp, url.searchParams.get('event') ?? '', env, ctx);

@@ -238,6 +238,19 @@ describe('fetch routing', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('404s on a prototype-name competition key', async () => {
+    // A bare truthy index (COMPETITIONS[m[1]]) would resolve 'constructor' to
+    // Object.prototype.constructor and wrongly treat it as a known competition.
+    const env = mockEnv(null);
+    const res = await worker.fetch(
+      new Request('https://x/api/constructor/scoreboard'),
+      env as unknown as Env,
+      mockCtx(),
+    );
+    expect(res.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('routes a known competition scoreboard through serve', async () => {
     fetchMock.mockResolvedValueOnce({ ok: true, text: async () => '{"events":[]}' });
     const env = mockEnv(null);

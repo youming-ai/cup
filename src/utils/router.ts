@@ -75,7 +75,7 @@ export function parseRoute(pathname: string): Route {
   const seg = path.split('/').filter(Boolean);
   // First segment is the competition when it's a known key; otherwise the
   // whole path is a legacy (pre-multi-comp) link under the default competition.
-  if (seg.length > 0 && COMPETITIONS[seg[0]!]) {
+  if (seg.length > 0 && Object.hasOwn(COMPETITIONS, seg[0]!)) {
     return parseView(seg[0]!, seg.slice(1));
   }
   return parseView(DEFAULT_COMPETITION, seg);
