@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
+import * as router from '../utils/router';
 import FixturesView from './FixturesView';
 
 function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
@@ -205,4 +206,17 @@ it('falls back to matches when a disabled section is requested (eng.1 bracket)',
   // Should NOT render the bracket TBD grid; league table is shown instead
   expect(screen.queryByText('TBD')).not.toBeInTheDocument();
   expect(screen.getByText('Arsenal')).toBeInTheDocument();
+});
+
+it('rewrites the URL to the competition root when a disabled section is deep-linked', () => {
+  setPath('/eng.1/bracket');
+  const navSpy = vi.spyOn(router, 'navigate').mockImplementation(() => {});
+  render(
+    <LanguageProvider>
+      <FixturesView section="bracket" matches={[]} groups={league} scorers={[]} />
+    </LanguageProvider>,
+  );
+  // render falls back to matches AND the URL is made honest via replace
+  expect(navSpy).toHaveBeenCalledWith('/eng.1', { replace: true });
+  navSpy.mockRestore();
 });

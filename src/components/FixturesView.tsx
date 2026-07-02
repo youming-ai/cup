@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { COMPETITIONS } from '../competitions';
 import { useT } from '../i18n';
 import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
@@ -42,6 +42,14 @@ export default function FixturesView({
     (section === 'scorers' && caps && !caps.scorers)
       ? 'matches'
       : section;
+  // URL honesty: when a deep link hits a section this competition doesn't
+  // have (e.g. /eng.1/bracket), the render falls back to matches above —
+  // rewrite the URL to match so the Header highlight and shared links agree.
+  useEffect(() => {
+    if (effectiveSection !== section) {
+      navigate(pathFor({ kind: 'section', comp, section: effectiveSection }), { replace: true });
+    }
+  }, [effectiveSection, section, comp]);
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback(
