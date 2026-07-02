@@ -6,6 +6,8 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   'brand.subtitle': 'World Cup 2026',
+  'comp.fifa.world': 'World Cup',
+  'comp.eng1': 'Premier League',
   'common.loading': 'Loading…',
   'common.error': 'Failed to load data',
   'common.retry': 'Retry',
@@ -69,6 +71,7 @@ const en: Dict = {
     'Disclaimer: We only link to streams available on the internet. We do not host any content.',
   'footer.copyright': '© {year} StreamCup. All rights reserved.',
   'common.changeLanguage': 'Change language',
+  'common.changeCompetition': 'Change competition',
   'theme.system': 'System theme',
   'theme.dark': 'Dark theme',
   'theme.light': 'Light theme',
@@ -104,6 +107,8 @@ const en: Dict = {
 
 const zh: Dict = {
   'brand.subtitle': '2026 世界杯',
+  'comp.fifa.world': '世界杯',
+  'comp.eng1': '英超',
   'common.loading': '加载中…',
   'common.error': '数据加载失败',
   'common.retry': '重试',
@@ -167,6 +172,7 @@ const zh: Dict = {
     '免责声明：本站仅提供互联网公开直播源的链接，不托管、存储或上传任何视频内容。',
   'footer.copyright': '© {year} StreamCup. 保留所有权利。',
   'common.changeLanguage': '切换语言',
+  'common.changeCompetition': '切换赛事',
   'theme.system': '跟随系统主题',
   'theme.dark': '深色主题',
   'theme.light': '浅色主题',
@@ -202,6 +208,8 @@ const zh: Dict = {
 
 const ja: Dict = {
   'brand.subtitle': 'ワールドカップ2026',
+  'comp.fifa.world': 'ワールドカップ',
+  'comp.eng1': 'プレミアリーグ',
   'common.loading': '読み込み中…',
   'common.error': 'データの読み込みに失敗しました',
   'common.retry': '再試行',
@@ -265,6 +273,7 @@ const ja: Dict = {
     '免責事項：当サイトはインターネット上で公開されている配信へのリンクのみを提供しており、コンテンツのホストや保存は行っておりません。',
   'footer.copyright': '© {year} StreamCup. 全著作権所有。',
   'common.changeLanguage': '言語を変更',
+  'common.changeCompetition': '大会を変更',
   'theme.system': 'システムテーマ',
   'theme.dark': 'ダークテーマ',
   'theme.light': 'ライトテーマ',
@@ -300,6 +309,8 @@ const ja: Dict = {
 
 const ko: Dict = {
   'brand.subtitle': '2026 월드컵',
+  'comp.fifa.world': '월드컵',
+  'comp.eng1': '프리미어리그',
   'common.loading': '불러오는 중…',
   'common.error': '데이터를 불러오지 못했습니다',
   'common.retry': '다시 시도',
@@ -363,6 +374,7 @@ const ko: Dict = {
     '면책 조항: 본 사이트는 인터넷에 공개된 스트림 링크만 제공하며, 어떠한 콘텐츠도 직접 호스트하거나 저장하지 않습니다.',
   'footer.copyright': '© {year} StreamCup. 모든 권리 보유.',
   'common.changeLanguage': '언어 변경',
+  'common.changeCompetition': '대회 변경',
   'theme.system': '시스템 테마',
   'theme.dark': '다크 테마',
   'theme.light': '라이트 테마',

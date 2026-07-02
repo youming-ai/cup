@@ -47,7 +47,13 @@ function FormPill({ form }: { form?: string }) {
   );
 }
 
-export default function StandingsView({ groups }: { groups: WCGroup[] }) {
+export default function StandingsView({
+  groups,
+  mode = 'group',
+}: {
+  groups: WCGroup[];
+  mode?: 'group' | 'league';
+}) {
   const t = useT();
 
   // WC2026 出线：每组前 2 名 + 跨组 8 个成绩最好的第三名 → 32 强。
@@ -65,28 +71,32 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
   return (
     <div className="space-y-section">
       {/* 出线图例 */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 ds-caption uppercase tracking-wider text-chalkdim">
-        <span className="flex items-center gap-1.5">
-          <span className="w-1 h-3 bg-pitch" />
-          {t('standings.advanceTop2')}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-1 h-3 bg-pitch/40" />
-          {t('standings.advanceThird')}
-        </span>
-      </div>
+      {mode === 'group' && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 ds-caption uppercase tracking-wider text-chalkdim">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1 h-3 bg-pitch" />
+            {t('standings.advanceTop2')}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1 h-3 bg-pitch/40" />
+            {t('standings.advanceThird')}
+          </span>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-card">
+      <div
+        className={`grid grid-cols-1 gap-3 sm:gap-card ${mode === 'group' ? 'sm:grid-cols-2' : ''}`}
+      >
         {groups.map((g) => (
           <div key={g.name} className="ds-glass overflow-hidden">
             <div className="px-4 py-3 border-b border-overlay/5 bg-overlay/[0.02]">
               <span className="font-display font-bold text-lg text-chalk">
-                {t('common.group')} {g.name}
+                {mode === 'group' ? `${t('common.group')} ${g.name}` : g.name}
               </span>
             </div>
             <table className="w-full text-sm">
               <caption className="sr-only">
-                {t('common.group')} {g.name}
+                {mode === 'group' ? `${t('common.group')} ${g.name}` : g.name}
               </caption>
               <thead>
                 <tr className="text-chalkdim ds-caption uppercase">
@@ -119,7 +129,13 @@ export default function StandingsView({ groups }: { groups: WCGroup[] }) {
               <tbody>
                 {g.standings.map((s, i) => {
                   const qual =
-                    i < 2 ? 'direct' : i === 2 && bestThirdIds.has(s.teamId) ? 'third' : 'none';
+                    mode === 'league'
+                      ? 'none'
+                      : i < 2
+                        ? 'direct'
+                        : i === 2 && bestThirdIds.has(s.teamId)
+                          ? 'third'
+                          : 'none';
                   return (
                     <tr
                       key={s.teamId}

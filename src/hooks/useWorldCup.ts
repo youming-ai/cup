@@ -9,9 +9,6 @@ import {
   statusFromState,
 } from '../utils/wc';
 
-// same-origin Worker that edge-caches ESPN's public API in KV (see worker/index.ts)
-const BASE = '/api/wc';
-
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
@@ -39,7 +36,8 @@ function teamLogo(team: Record<string, unknown>): string {
   return logos.length ? str(obj(logos[0]).href) : '';
 }
 
-export function useWorldCup() {
+export function useWorldCup(comp: string) {
+  const BASE = `/api/${comp}`;
   const [matches, setMatches] = useState<WCMatch[]>([]);
   const [groups, setGroups] = useState<WCGroup[]>([]);
   const [scorers, setScorers] = useState<TopScorer[]>([]);
@@ -318,7 +316,7 @@ export function useWorldCup() {
         initialRef.current = false;
       }
     }
-  }, []);
+  }, [BASE]);
 
   useEffect(() => {
     fetchAll();

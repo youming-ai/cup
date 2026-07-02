@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
+import * as router from '../utils/router';
 import FixturesView from './FixturesView';
 
 function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
@@ -160,4 +161,62 @@ describe('FixturesView status filter', () => {
     expect(screen.getAllByText('Mexico').length).toBe(1);
     expect(screen.getByRole('button', { name: /^Finished\s+2$/ })).toBeInTheDocument();
   });
+});
+
+function setPath(p: string) {
+  Object.defineProperty(window, 'location', {
+    value: { ...window.location, pathname: p },
+    writable: true,
+    configurable: true,
+  });
+}
+const row = (teamId: string, name: string, pts: number) => ({
+  teamId,
+  name,
+  flag: '',
+  mp: 0,
+  w: 0,
+  d: 0,
+  l: 0,
+  gf: 0,
+  ga: 0,
+  gd: 0,
+  pts,
+});
+const league: WCGroup[] = [{ name: 'Premier League', standings: [row('1', 'Arsenal', 9)] }];
+
+it('shows the league table above fixtures for a season competition', () => {
+  setPath('/eng.1');
+  render(
+    <LanguageProvider>
+      <FixturesView section="matches" matches={[]} groups={league} scorers={[]} />
+    </LanguageProvider>,
+  );
+  // league standings surface without needing a group-stage filter
+  expect(screen.getByText('Arsenal')).toBeInTheDocument();
+});
+
+it('falls back to matches when a disabled section is requested (eng.1 bracket)', () => {
+  setPath('/eng.1');
+  render(
+    <LanguageProvider>
+      <FixturesView section="bracket" matches={[]} groups={league} scorers={[]} />
+    </LanguageProvider>,
+  );
+  // Should NOT render the bracket TBD grid; league table is shown instead
+  expect(screen.queryByText('TBD')).not.toBeInTheDocument();
+  expect(screen.getByText('Arsenal')).toBeInTheDocument();
+});
+
+it('rewrites the URL to the competition root when a disabled section is deep-linked', () => {
+  setPath('/eng.1/bracket');
+  const navSpy = vi.spyOn(router, 'navigate').mockImplementation(() => {});
+  render(
+    <LanguageProvider>
+      <FixturesView section="bracket" matches={[]} groups={league} scorers={[]} />
+    </LanguageProvider>,
+  );
+  // render falls back to matches AND the URL is made honest via replace
+  expect(navSpy).toHaveBeenCalledWith('/eng.1', { replace: true });
+  navSpy.mockRestore();
 });

@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { type ResolvedBracketMatch, type ResolvedTeam, useBracket } from '../hooks/useBracket';
 import { useT } from '../i18n';
 import type { WCGroup, WCMatch } from '../types';
-import { navigate } from '../utils/router';
+import { navigate, pathFor, useRouter } from '../utils/router';
 
 // Visual (top-to-bottom) ordering of match indices within each round, so the
 // tree lines connect adjacent cells. Each round's list is split down the
@@ -93,17 +93,19 @@ function Connector({ leftCount, rightCount }: { leftCount: number; rightCount: n
 function Column({
   col,
   byIndex,
+  comp,
   t,
 }: {
   col: Col;
   byIndex: Map<number, ResolvedBracketMatch>;
+  comp: string;
   t: (k: string) => string;
 }) {
   const cells = col.indices.map((i) => byIndex.get(i)).filter(Boolean) as ResolvedBracketMatch[];
   return (
     <div className="flex flex-col justify-around h-full flex-1 min-w-0 py-1">
       {cells.map((m) => (
-        <BracketCell key={m.index} match={m} t={t} />
+        <BracketCell key={m.index} match={m} comp={comp} t={t} />
       ))}
     </div>
   );
@@ -117,6 +119,8 @@ export default function BracketView({
   matches: WCMatch[];
 }) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
   const { resolved } = useBracket(groups, matches);
   const byIndex = new Map(resolved.map((m) => [m.index, m]));
   const finalMatch = byIndex.get(VISUAL_ORDERS.Final[0]!);
@@ -157,19 +161,19 @@ export default function BracketView({
                 // push the Final off-center).
                 <div className="flex flex-col justify-center items-center h-full flex-1 min-w-0 py-1">
                   <div className="relative w-full">
-                    {finalMatch && <BracketCell match={finalMatch} t={t} />}
+                    {finalMatch && <BracketCell match={finalMatch} comp={comp} t={t} />}
                     {thirdPlace && (
                       <div className="absolute top-full inset-x-0 mt-4">
                         <h3 className="ds-caption uppercase tracking-[0.18em] text-chalkdim/70 mb-1 text-center">
                           {t('bracket.3rd')}
                         </h3>
-                        <BracketCell match={thirdPlace} t={t} />
+                        <BracketCell match={thirdPlace} comp={comp} t={t} />
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <Column col={col} byIndex={byIndex} t={t} />
+                <Column col={col} byIndex={byIndex} comp={comp} t={t} />
               )}
             </Fragment>
           ))}
@@ -179,10 +183,18 @@ export default function BracketView({
   );
 }
 
-function BracketCell({ match, t }: { match: ResolvedBracketMatch; t: (k: string) => string }) {
+function BracketCell({
+  match,
+  comp,
+  t,
+}: {
+  match: ResolvedBracketMatch;
+  comp: string;
+  t: (k: string) => string;
+}) {
   const onClick = () => {
     if (match.match) {
-      navigate(`/match/${encodeURIComponent(match.match.slug)}`);
+      navigate(pathFor({ kind: 'match', comp, slug: match.match.slug }));
     }
   };
   return (

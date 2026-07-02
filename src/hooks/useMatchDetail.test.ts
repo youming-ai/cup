@@ -10,7 +10,7 @@ beforeEach(() => {
 });
 
 it('does not fetch when eventId is null', () => {
-  renderHook(() => useMatchDetail(null));
+  renderHook(() => useMatchDetail(null, 'fifa.world'));
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
@@ -23,16 +23,19 @@ it('fetches and parses the summary for an event id', async () => {
       gameInfo: { attendance: 100 },
     }),
   });
-  const { result } = renderHook(() => useMatchDetail('760420'));
+  const { result } = renderHook(() => useMatchDetail('760420', 'fifa.world'));
   await waitFor(() => expect(result.current.loading).toBe(false));
-  expect(fetchMock).toHaveBeenCalledWith('/api/wc/summary?event=760420', expect.any(Object));
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/fifa.world/summary?event=760420',
+    expect.any(Object),
+  );
   expect(result.current.detail?.homeId).toBe('1');
   expect(result.current.error).toBeNull();
 });
 
 it('surfaces an error when the request fails', async () => {
   fetchMock.mockResolvedValueOnce({ ok: false });
-  const { result } = renderHook(() => useMatchDetail('1'));
+  const { result } = renderHook(() => useMatchDetail('1', 'fifa.world'));
   await waitFor(() => expect(result.current.loading).toBe(false));
   expect(result.current.error).toBeTruthy();
   expect(result.current.detail).toBeNull();
@@ -47,7 +50,7 @@ it('refetches on reload() and populates detail on success', async () => {
       gameInfo: {},
     }),
   });
-  const { result } = renderHook(() => useMatchDetail('1'));
+  const { result } = renderHook(() => useMatchDetail('1', 'fifa.world'));
   await waitFor(() => expect(result.current.loading).toBe(false));
   expect(result.current.error).toBeTruthy();
   expect(fetchMock).toHaveBeenCalledTimes(1);

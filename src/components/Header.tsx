@@ -1,5 +1,7 @@
+import { COMPETITIONS } from '../competitions';
 import { useT } from '../i18n';
-import { navigate, pathFor, type Section } from '../utils/router';
+import { navigate, pathFor, type Section, useRouter } from '../utils/router';
+import CompetitionSwitcher from './CompetitionSwitcher';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const SECTION_TABS: { section: Section; labelKey: string }[] = [
@@ -13,6 +15,12 @@ const SECTION_TABS: { section: Section; labelKey: string }[] = [
 // active there.
 export default function Header({ section }: { section?: Section }) {
   const t = useT();
+  const { route } = useRouter();
+  const comp = route.comp;
+  const caps = COMPETITIONS[comp]?.capabilities;
+  const visibleTabs = SECTION_TABS.filter(
+    ({ section }) => section === 'matches' || (caps ? caps[section] : true),
+  );
   return (
     // 吸顶。Header 与内容同处一个滚动容器(见 App.tsx)，共享同一条 scrollbar
     // gutter，内边距与下方内容一致(ds-page)即左右对齐，无需补偿。
@@ -32,16 +40,20 @@ export default function Header({ section }: { section?: Section }) {
             />
           </h1>
 
+          <div className="order-1 shrink-0">
+            <CompetitionSwitcher />
+          </div>
+
           <div className="order-3 w-full sm:order-2 sm:w-auto sm:flex-1 flex justify-center min-w-0">
             <nav
               aria-label={t('nav.mainLabel')}
               className="ds-segmented max-w-full overflow-x-auto no-scrollbar"
             >
-              {SECTION_TABS.map(({ section: s, labelKey }) => (
+              {visibleTabs.map(({ section: s, labelKey }) => (
                 <button
                   key={s}
                   type="button"
-                  onClick={() => navigate(pathFor({ kind: 'section', section: s }))}
+                  onClick={() => navigate(pathFor({ kind: 'section', comp, section: s }))}
                   aria-pressed={section === s}
                   className={`whitespace-nowrap ds-seg-tab ${
                     section === s ? 'ds-seg-tab-active' : 'ds-seg-tab-inactive'
