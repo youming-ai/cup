@@ -96,7 +96,9 @@ export function seasonForDate(sport: Sport, d: Date): number {
 export function buildUrl(c: Competition, resource: Resource, event?: string): string {
   const path = `sports/${c.sport}/${c.league}`;
   if (resource === 'standings') {
-    const q = new URLSearchParams({ season: String(c.season ?? seasonForDate(c.sport, new Date())) });
+    const q = new URLSearchParams({
+      season: String(c.season ?? seasonForDate(c.sport, new Date())),
+    });
     if (c.standingsLevel) q.set('level', String(c.standingsLevel));
     return `${ESPN}/v2/${path}/standings?${q}`;
   }
