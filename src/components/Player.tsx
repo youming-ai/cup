@@ -33,7 +33,7 @@ function qualityBadge(label: string): string | null {
 //   - alwaysLive matches are treated as `live`
 //   - now past endsAt = `finished`; before startsAt = `upcoming`
 //   - 35-60min into a non-alwaysLive window = likely HT (heuristic)
-// The detailed HT/FT state for ESPN-backed matches lives on `WCMatch.progress`
+// The detailed HT/FT state for ESPN-backed matches lives on `CompMatch.progress`
 // (MatchCard); this overlay is intentionally simpler.
 function playerStatus(match: Match): 'live' | 'ht' | 'finished' | 'upcoming' {
   if (match.alwaysLive) return 'live';

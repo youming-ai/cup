@@ -1,14 +1,15 @@
-import { type KeyboardEvent as ReactKeyboardEvent, useState } from 'react';
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useState } from 'react';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import { useT } from '../i18n';
-import type { Match, WCMatch } from '../types';
+import type { Match, CompMatch } from '../types';
 import { useRouter } from '../utils/router';
+import BoxscoreTab from './matchdetail/BoxscoreTab';
 import LineupTab from './matchdetail/LineupTab';
 import PlayByPlayTab from './matchdetail/PlayByPlayTab';
 import Player from './Player';
 import TeamStatsTab from './matchdetail/TeamStatsTab';
 
-type Tab = 'stats' | 'play' | 'lineup';
+type Tab = 'stats' | 'play' | 'lineup' | 'boxscore';
 
 function StatusBadge({
   status,
@@ -17,8 +18,8 @@ function StatusBadge({
   t,
 }: {
   status: 'upcoming' | 'live' | 'finished';
-  progress: WCMatch['progress'];
-  finishType: WCMatch['finishType'];
+  progress: CompMatch['progress'];
+  finishType: CompMatch['finishType'];
   t: (k: string) => string;
 }) {
   if (status === 'live') {
@@ -58,7 +59,7 @@ export default function MatchDetailPage({
   stream,
   onBack,
 }: {
-  match: WCMatch;
+  match: CompMatch;
   // The matching ppv.to stream, already resolved AND liveness-filtered in App
   // (null unless a stream for this fixture is live now). Keeping the timing in
   // App means this component stays deterministic given its props.
@@ -75,16 +76,27 @@ export default function MatchDetailPage({
 
   const homeId = detail?.homeId ?? '';
 
+  const tabs: Tab[] =
+    detail?.kind === 'basketball' ? ['boxscore', 'stats'] : ['stats', 'play', 'lineup'];
+
+  // Reset to the current sport's primary tab whenever detail.kind changes —
+  // covers both landing on a fresh detail (e.g. basketball should open on
+  // 'boxscore', not carry over the 'stats' initial state) and switching sport
+  // away from a tab the new kind doesn't have (e.g. soccer 'lineup').
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tabs is derived from detail
+  useEffect(() => {
+    setTab(tabs[0]!);
+  }, [detail?.kind]);
+
   // Wrap tab navigation in a button-onclick trap so keyboard users can
-  // Tab between the three tab buttons without leaving the page header.
+  // Tab between the tab buttons without leaving the page header.
   const onTabKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const order: Tab[] = ['stats', 'play', 'lineup'];
-    const i = order.indexOf(tab);
+    const i = tabs.indexOf(tab);
     const next =
       e.key === 'ArrowRight'
-        ? order[(i + 1) % order.length]
-        : order[(i + order.length - 1) % order.length];
+        ? tabs[(i + 1) % tabs.length]
+        : tabs[(i + tabs.length - 1) % tabs.length];
     if (next) setTab(next);
   };
 
@@ -121,13 +133,15 @@ export default function MatchDetailPage({
           <div className="absolute top-0 right-0 w-32 h-32 bg-pitch/5 rounded-pill blur-3xl pointer-events-none select-none" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-live/5 rounded-pill blur-3xl pointer-events-none select-none" />
           {/* Stage/Group Label */}
-          <div className="text-center mb-4 shrink-0">
-            <span className="ds-caption uppercase tracking-[0.2em] text-chalkdim">
-              {match.stage === 'group'
-                ? `${t('common.group')} ${match.group}`
-                : t(`stage.${match.stage}`)}
-            </span>
-          </div>
+          {match.stage && (
+            <div className="text-center mb-4 shrink-0">
+              <span className="ds-caption uppercase tracking-[0.2em] text-chalkdim">
+                {match.stage === 'group'
+                  ? `${t('common.group')} ${match.group ?? ''}`
+                  : t(`stage.${match.stage}`)}
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between w-full max-w-2xl gap-card">
             {/* Home Team */}
@@ -234,7 +248,7 @@ export default function MatchDetailPage({
           onKeyDown={onTabKey}
           className="ds-segmented-blur w-full"
         >
-          {(['stats', 'play', 'lineup'] as const).map((k) => (
+          {tabs.map((k) => (
             <button
               key={k}
               type="button"
@@ -250,7 +264,9 @@ export default function MatchDetailPage({
                   ? 'detail.stats'
                   : k === 'play'
                     ? 'detail.playByPlay'
-                    : 'detail.lineup',
+                    : k === 'lineup'
+                      ? 'detail.lineup'
+                      : 'detail.boxscore',
               )}
             </button>
           ))}
@@ -273,7 +289,7 @@ export default function MatchDetailPage({
                 {t('common.retry')}
               </button>
             </div>
-          ) : detail ? (
+          ) : detail && detail.kind === 'soccer' ? (
             <>
               {tab === 'stats' && <TeamStatsTab stats={detail.stats} />}
               {tab === 'play' && (
@@ -284,6 +300,21 @@ export default function MatchDetailPage({
                 />
               )}
               {tab === 'lineup' && <LineupTab lineups={detail.lineups} homeId={homeId} />}
+              {(detail.venue || detail.attendance) && (
+                <div className="pt-card mt-card border-t border-overlay/5 ds-caption text-chalkdim space-y-1.5">
+                  {detail.venue && <div>{detail.venue}</div>}
+                  {detail.attendance && (
+                    <div>
+                      {t('detail.attendance')}: {detail.attendance.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : detail && detail.kind === 'basketball' ? (
+            <>
+              {tab === 'boxscore' && <BoxscoreTab tables={detail.playerTables} />}
+              {tab === 'stats' && <TeamStatsTab stats={detail.teamStats} />}
               {(detail.venue || detail.attendance) && (
                 <div className="pt-card mt-card border-t border-overlay/5 ds-caption text-chalkdim space-y-1.5">
                   {detail.venue && <div>{detail.venue}</div>}

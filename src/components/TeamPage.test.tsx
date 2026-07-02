@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import type { TopScorer, WCMatch, WCStanding } from '../types';
+import type { TopScorer, CompMatch, WCStanding } from '../types';
 import TeamPage from './TeamPage';
 
 function standing(overrides: Partial<WCStanding> & { teamId: string; name: string }): WCStanding {
@@ -19,7 +19,7 @@ function standing(overrides: Partial<WCStanding> & { teamId: string; name: strin
   };
 }
 
-function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
+function match(overrides: Partial<CompMatch> & { id: string }): CompMatch {
   return {
     homeName: 'Mexico',
     awayName: 'Canada',

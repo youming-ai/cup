@@ -1,19 +1,25 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { ConferenceTable } from '../adapters/types';
 import { LanguageProvider } from '../i18n';
-import type { WCGroup, WCMatch } from '../types';
+import type { WCGroup, CompMatch } from '../types';
 import * as router from '../utils/router';
 import FixturesView from './FixturesView';
 
-function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
+function renderView(matches: CompMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
   return render(
     <LanguageProvider>
-      <FixturesView section="matches" matches={matches} groups={groups} scorers={scorers} />
+      <FixturesView
+        section="matches"
+        matches={matches}
+        standings={{ kind: 'soccer', groups }}
+        scorers={scorers}
+      />
     </LanguageProvider>,
   );
 }
 
-function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
+function match(overrides: Partial<CompMatch> & { id: string }): CompMatch {
   return {
     homeName: 'Mexico',
     awayName: 'Canada',
@@ -189,7 +195,12 @@ it('shows the league table above fixtures for a season competition', () => {
   setPath('/eng.1');
   render(
     <LanguageProvider>
-      <FixturesView section="matches" matches={[]} groups={league} scorers={[]} />
+      <FixturesView
+        section="matches"
+        matches={[]}
+        standings={{ kind: 'soccer', groups: league }}
+        scorers={[]}
+      />
     </LanguageProvider>,
   );
   // league standings surface without needing a group-stage filter
@@ -200,7 +211,12 @@ it('falls back to matches when a disabled section is requested (eng.1 bracket)',
   setPath('/eng.1');
   render(
     <LanguageProvider>
-      <FixturesView section="bracket" matches={[]} groups={league} scorers={[]} />
+      <FixturesView
+        section="bracket"
+        matches={[]}
+        standings={{ kind: 'soccer', groups: league }}
+        scorers={[]}
+      />
     </LanguageProvider>,
   );
   // Should NOT render the bracket TBD grid; league table is shown instead
@@ -213,10 +229,39 @@ it('rewrites the URL to the competition root when a disabled section is deep-lin
   const navSpy = vi.spyOn(router, 'navigate').mockImplementation(() => {});
   render(
     <LanguageProvider>
-      <FixturesView section="bracket" matches={[]} groups={league} scorers={[]} />
+      <FixturesView
+        section="bracket"
+        matches={[]}
+        standings={{ kind: 'soccer', groups: league }}
+        scorers={[]}
+      />
     </LanguageProvider>,
   );
   // render falls back to matches AND the URL is made honest via replace
   expect(navSpy).toHaveBeenCalledWith('/eng.1', { replace: true });
   navSpy.mockRestore();
+});
+
+const conferences: ConferenceTable[] = [
+  {
+    name: 'Eastern Conference',
+    rows: [{ teamId: '2', name: 'Boston Celtics', logo: '', w: 30, l: 12, pct: '.714', gb: '-' }],
+  },
+];
+
+it('renders conference standings and hides stage chips for a basketball season comp', () => {
+  setPath('/nba');
+  render(
+    <LanguageProvider>
+      <FixturesView
+        section="matches"
+        matches={[]}
+        standings={{ kind: 'basketball', conferences }}
+        scorers={[]}
+      />
+    </LanguageProvider>,
+  );
+  expect(screen.getByText('Boston Celtics')).toBeInTheDocument();
+  // season shape → no stage filter chips (no lone "Group stage")
+  expect(screen.queryByRole('button', { name: 'Group stage' })).not.toBeInTheDocument();
 });

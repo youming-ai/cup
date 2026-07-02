@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Match, WCMatch } from '../types';
+import type { Match, CompMatch } from '../types';
 import { indexStreams, isStreamLive, liveStreamForMatch, streamForMatch } from './streamMatch';
 
-function wc(partial: Partial<WCMatch> = {}): WCMatch {
+function wc(partial: Partial<CompMatch> = {}): CompMatch {
   return {
     id: '760488',
     homeName: 'Netherlands',

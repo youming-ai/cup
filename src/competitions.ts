@@ -53,16 +53,41 @@ export const COMPETITIONS: Record<string, Competition> = {
       boxscore: false,
     },
   },
+  nba: {
+    key: 'nba',
+    sport: 'basketball',
+    league: 'nba',
+    label: 'comp.nba',
+    // season 省略 → buildUrl 用 seasonForDate('basketball', …) 按请求时刻推导
+    // （赛季制 10 月翻转，键为结束年）。scoreboard 无 dates → ESPN 返回当日窗口，
+    // off-season（7–9 月）当日为空由现有空态处理。见 spec §3。
+    shape: 'season',
+    capabilities: {
+      bracket: false,
+      scorers: false,
+      leaders: false,
+      lineups: false,
+      boxscore: true,
+    },
+  },
 };
 
 export const DEFAULT_COMPETITION = 'fifa.world';
 
 const ESPN = 'https://site.api.espn.com/apis';
 
-// ESPN keys a cross-year club season (e.g. 2025-26) by its STARTING year.
-// European seasons roll over in August: Jan–Jul still belongs to the season
-// that kicked off the previous calendar year.
-export function seasonForDate(d: Date): number {
+// ESPN keys a cross-year season by different endpoints per sport:
+// - Soccer (European clubs): by STARTING year, rolls over in August
+//   (Jan–Jul still belongs to the season that kicked off the previous year).
+// - Basketball (NBA): by ENDING year, rolls over in October
+//   (2025-26 season = 2026). Jul–Sep is off-season → the just-ended season's
+//   ending year (still the current calendar year).
+export function seasonForDate(sport: Sport, d: Date): number {
+  if (sport === 'basketball') {
+    // Oct–Dec → next calendar year is the ending year; Jan–Sep → current year.
+    return d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear();
+  }
+  // soccer (and any other cross-year league defaulting to soccer semantics)
   return d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
 }
 
@@ -71,7 +96,9 @@ export function seasonForDate(d: Date): number {
 export function buildUrl(c: Competition, resource: Resource, event?: string): string {
   const path = `sports/${c.sport}/${c.league}`;
   if (resource === 'standings') {
-    const q = new URLSearchParams({ season: String(c.season ?? seasonForDate(new Date())) });
+    const q = new URLSearchParams({
+      season: String(c.season ?? seasonForDate(c.sport, new Date())),
+    });
     if (c.standingsLevel) q.set('level', String(c.standingsLevel));
     return `${ESPN}/v2/${path}/standings?${q}`;
   }

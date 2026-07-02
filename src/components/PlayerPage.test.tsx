@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import type { ScorerEntry, WCGroup, WCMatch } from '../types';
+import type { ScorerEntry, WCGroup, CompMatch } from '../types';
 import PlayerPage from './PlayerPage';
 
 function scorer(
@@ -13,7 +13,7 @@ function scorer(
   return { playerId, name, minute, tag };
 }
 
-function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
+function match(overrides: Partial<CompMatch> & { id: string }): CompMatch {
   return {
     homeName: 'Mexico',
     awayName: 'Canada',

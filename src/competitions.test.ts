@@ -47,7 +47,7 @@ describe('eng.1 (season-shape league)', () => {
   it('builds a standings URL with no level and a scoreboard URL with no dates', () => {
     // season is derived at request time (no hardcoded year) — assert via the same helper
     expect(buildUrl(pl, 'standings')).toBe(
-      `https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings?season=${seasonForDate(new Date())}`,
+      `https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings?season=${seasonForDate('soccer', new Date())}`,
     );
     expect(buildUrl(pl, 'scoreboard')).toBe(
       'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?limit=300',
@@ -56,9 +56,50 @@ describe('eng.1 (season-shape league)', () => {
 });
 
 describe('seasonForDate', () => {
-  it('rolls the season over in August (ESPN keys cross-year seasons by starting year)', () => {
-    expect(seasonForDate(new Date(2026, 7, 1))).toBe(2026); // Aug 1 → new season
-    expect(seasonForDate(new Date(2026, 6, 31))).toBe(2025); // Jul 31 → still 2025-26
-    expect(seasonForDate(new Date(2027, 0, 15))).toBe(2026); // mid-season January
+  it('soccer rolls over in August (ESPN keys cross-year seasons by starting year)', () => {
+    expect(seasonForDate('soccer', new Date(2026, 7, 1))).toBe(2026); // Aug 1 → new season
+    expect(seasonForDate('soccer', new Date(2026, 6, 31))).toBe(2025); // Jul 31 → still 2025-26
+    expect(seasonForDate('soccer', new Date(2027, 0, 15))).toBe(2026); // mid-season January
+  });
+
+  it('basketball rolls over in October and keys by the ENDING year', () => {
+    expect(seasonForDate('basketball', new Date(2026, 9, 1))).toBe(2027); // Oct 1 2026 → 2026-27 → 2027
+    expect(seasonForDate('basketball', new Date(2026, 8, 30))).toBe(2026); // Sep 30 → off-season → just-ended 2025-26 → 2026
+    expect(seasonForDate('basketball', new Date(2027, 0, 15))).toBe(2027); // mid-season January → 2027
+    expect(seasonForDate('basketball', new Date(2027, 5, 20))).toBe(2027); // June (finals) → 2027
+  });
+});
+
+describe('nba (season-shape basketball)', () => {
+  const nba = COMPETITIONS.nba;
+
+  it('is registered as a season-shape basketball league', () => {
+    expect(nba).toBeDefined();
+    expect(nba.sport).toBe('basketball');
+    expect(nba.shape).toBe('season');
+    expect(nba.league).toBe('nba');
+    expect(nba.label).toBe('comp.nba');
+  });
+
+  it('exposes only the boxscore capability', () => {
+    expect(nba.capabilities).toEqual({
+      bracket: false,
+      scorers: false,
+      leaders: false,
+      lineups: false,
+      boxscore: true,
+    });
+  });
+
+  it('builds NBA URLs: basketball path, derived season, no level, no dates', () => {
+    expect(buildUrl(nba, 'standings')).toBe(
+      `https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season=${seasonForDate('basketball', new Date())}`,
+    );
+    expect(buildUrl(nba, 'scoreboard')).toBe(
+      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?limit=300',
+    );
+    expect(buildUrl(nba, 'summary', '401585')).toBe(
+      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=401585',
+    );
   });
 });

@@ -100,8 +100,8 @@ describe('parseRoute', () => {
   });
 
   it('treats an unknown first segment as a legacy path under the default competition', () => {
-    // 'nba' is not in COMPETITIONS yet → whole path parsed under default comp
-    expect(parseRoute('/nba/scorers')).toEqual(MATCHES);
+    // 'xyz' is not in COMPETITIONS → whole path parsed under default comp
+    expect(parseRoute('/xyz/scorers')).toEqual(MATCHES);
   });
 
   it('does not let an inherited Object.prototype name spoof a known competition', () => {

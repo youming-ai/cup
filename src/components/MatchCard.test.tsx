@@ -384,3 +384,34 @@ describe('MatchCard', () => {
     expect(screen.queryByText('Estadio')).not.toBeInTheDocument();
   });
 });
+
+describe('MatchCard statusText', () => {
+  it('shows ESPN statusText for a finished match instead of a stage chip', () => {
+    renderCard({
+      homeName: 'Los Angeles Lakers',
+      awayName: 'Boston Celtics',
+      homeScore: 112,
+      awayScore: 108,
+      status: 'finished',
+      kickoff: new Date('2026-01-15T00:30:00Z'),
+      statusText: 'Final',
+    });
+    // statusText surfaces on the card
+    expect(screen.getByText('Final')).toBeInTheDocument();
+    // no stage/group chip when neither is provided (season sport)
+    expect(screen.queryByText(/^Group /)).not.toBeInTheDocument();
+  });
+
+  it('shows statusText for a live match', () => {
+    renderCard({
+      homeName: 'Warriors',
+      awayName: 'Suns',
+      homeScore: 54,
+      awayScore: 50,
+      status: 'live',
+      kickoff: new Date('2026-01-16T00:00:00Z'),
+      statusText: 'Q3 4:12',
+    });
+    expect(screen.getByText('Q3 4:12')).toBeInTheDocument();
+  });
+});

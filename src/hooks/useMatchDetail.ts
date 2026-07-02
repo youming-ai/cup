@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { MatchDetail } from '../types';
-import { parseSummary } from '../utils/espn';
+import { ADAPTERS } from '../adapters';
+import type { MatchDetail } from '../adapters/types';
+import { COMPETITIONS } from '../competitions';
 
 export function useMatchDetail(eventId: string | null, comp: string) {
   const [detail, setDetail] = useState<MatchDetail | null>(null);
@@ -30,7 +31,10 @@ export function useMatchDetail(eventId: string | null, comp: string) {
       })
       .then((json) => {
         if (controller.signal.aborted) return;
-        setDetail(parseSummary(json));
+        const sport = COMPETITIONS[comp].sport;
+        const adapter = ADAPTERS[sport];
+        if (!adapter) throw new Error(`No adapter for sport: ${sport}`);
+        setDetail(adapter.transformSummary(json));
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError'))
