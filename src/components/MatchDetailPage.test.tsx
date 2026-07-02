@@ -15,10 +15,19 @@ const liveStream: Match = {
   alwaysLive: true,
 };
 
+function setPath(pathname: string) {
+  Object.defineProperty(window, 'location', {
+    value: { ...window.location, pathname },
+    writable: true,
+    configurable: true,
+  });
+}
+
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 beforeEach(() => {
   fetchMock.mockReset();
+  setPath('/fifa.world');
 });
 
 const match: CompMatch = {
@@ -150,4 +159,89 @@ it('shows an i18n error with a retry button that refetches', async () => {
   fireEvent.click(screen.getByText('Retry'));
   await waitFor(() => expect(screen.getByText('Shots')).toBeInTheDocument());
   expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+const nbaMatch: CompMatch = {
+  id: '401585',
+  homeName: 'Los Angeles Lakers',
+  awayName: 'Boston Celtics',
+  homeFlag: '',
+  awayFlag: '',
+  homeId: '13',
+  awayId: '2',
+  homeScore: 112,
+  awayScore: 108,
+  kickoff: new Date('2026-01-15T00:30Z'),
+  status: 'finished',
+  statusText: 'Final',
+  homeScorers: [],
+  awayScorers: [],
+  venue: '',
+  slug: 'los-angeles-lakers-vs-boston-celtics-401585',
+};
+
+function nbaSummaryJson() {
+  return {
+    header: {
+      competitions: [
+        {
+          competitors: [
+            { homeAway: 'home', team: { id: '13' } },
+            { homeAway: 'away', team: { id: '2' } },
+          ],
+        },
+      ],
+    },
+    boxscore: {
+      teams: [{ team: { id: '13' }, statistics: [{ label: 'REB', displayValue: '45' }] }],
+      players: [
+        {
+          team: { id: '13', displayName: 'Los Angeles Lakers' },
+          statistics: [
+            {
+              labels: ['MIN', 'PTS'],
+              athletes: [
+                {
+                  starter: true,
+                  didNotPlay: false,
+                  athlete: { displayName: 'L. James' },
+                  stats: ['38', '30'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    gameInfo: {},
+  };
+}
+
+it('shows Boxscore + Stats tabs for an NBA match (no Lineup / Play-By-Play)', async () => {
+  setPath('/nba');
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => nbaSummaryJson() });
+  render(
+    <LanguageProvider>
+      <MatchDetailPage match={nbaMatch} onBack={vi.fn()} />
+    </LanguageProvider>,
+  );
+  // Boxscore tab renders the player once the summary resolves
+  expect(await screen.findByText('L. James')).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Box Score' })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Stats' })).toBeInTheDocument();
+  expect(screen.queryByRole('tab', { name: 'Lineup' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('tab', { name: 'Play-By-Play' })).not.toBeInTheDocument();
+});
+
+it('shows the NBA statusText and no stage label in the hero', async () => {
+  setPath('/nba');
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => nbaSummaryJson() });
+  render(
+    <LanguageProvider>
+      <MatchDetailPage match={nbaMatch} onBack={vi.fn()} />
+    </LanguageProvider>,
+  );
+  await screen.findByText('L. James');
+  // no soccer stage/group chip in the hero (nbaMatch has no stage)
+  expect(screen.queryByText(/^Group /)).not.toBeInTheDocument();
 });
