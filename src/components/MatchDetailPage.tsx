@@ -273,7 +273,7 @@ export default function MatchDetailPage({
                 {t('common.retry')}
               </button>
             </div>
-          ) : detail ? (
+          ) : detail && detail.kind === 'soccer' ? (
             <>
               {tab === 'stats' && <TeamStatsTab stats={detail.stats} />}
               {tab === 'play' && (

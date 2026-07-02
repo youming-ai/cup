@@ -4,8 +4,8 @@ import Header from './components/Header';
 import MatchDetailPage from './components/MatchDetailPage';
 import PlayerPage from './components/PlayerPage';
 import TeamPage from './components/TeamPage';
+import { useCompetition } from './hooks/useCompetition';
 import { useStreams } from './hooks/useStreams';
-import { useWorldCup } from './hooks/useWorldCup';
 import { translate, useLang, useT } from './i18n';
 import { canonicalPath, navigate, pathFor, useRouter } from './utils/router';
 import { indexStreams, liveStreamForMatch } from './utils/streamMatch';
@@ -66,7 +66,8 @@ export default function App() {
   const { lang } = useLang();
   const streams = useStreams();
   const { route } = useRouter();
-  const wc = useWorldCup(route.comp);
+  const wc = useCompetition(route.comp);
+  const groups = wc.standings.kind === 'soccer' ? wc.standings.groups : [];
 
   useEffect(() => {
     document.title = `StreamCup — ${translate(lang, 'brand.subtitle')}`;
@@ -116,7 +117,7 @@ export default function App() {
         <FixturesView
           section={route.section}
           matches={wc.matches}
-          groups={wc.groups}
+          groups={groups}
           scorers={wc.scorers}
           watchableSlugs={watchableSlugs}
         />
@@ -147,7 +148,7 @@ export default function App() {
     ) : (
       <TeamPage
         teamId={route.teamId}
-        groups={wc.groups}
+        groups={groups}
         matches={wc.matches}
         scorers={wc.scorers}
         onBack={backHome}
@@ -161,7 +162,7 @@ export default function App() {
     ) : (
       <PlayerPage
         athleteId={route.athleteId}
-        groups={wc.groups}
+        groups={groups}
         matches={wc.matches}
         scorers={wc.scorers}
         onBack={backHome}

@@ -146,17 +146,6 @@ export interface TeamLineup {
   formation: string; // e.g. "4-3-3"
   players: LineupPlayer[];
 }
-export interface MatchDetail {
-  homeId: string;
-  awayId: string;
-  stats: TeamStatRow[];
-  allPlays: PlayEvent[];
-  keyPlays: PlayEvent[];
-  lineups: TeamLineup[]; // [home, away]
-  venue: string;
-  attendance: number | null;
-}
-
 // Tournament top scorers, aggregated from the per-team `leaders` array
 // in ESPN's scoreboard response. One row per distinct player.
 export interface TopScorer {

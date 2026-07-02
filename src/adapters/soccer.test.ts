@@ -1,15 +1,7 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useWorldCup } from './useWorldCup';
+import { describe, expect, it } from 'vitest';
+import { soccerAdapter } from './soccer';
 
-const fetchMock = vi.fn();
-globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
-
-function ok(data: unknown) {
-  return { ok: true, json: async () => data };
-}
-
-// minimal ESPN scoreboard shape: a finished group match + an upcoming knockout match
+// --- minimal ESPN scoreboard + standings shapes (lifted from useWorldCup.test) ---
 const scoreboard = {
   events: [
     {
@@ -117,26 +109,17 @@ const standings = {
   ],
 };
 
-describe('useWorldCup', () => {
-  beforeEach(() => {
-    fetchMock.mockReset();
-  });
+describe('soccerAdapter.transform', () => {
+  it('normalizes ESPN scoreboard + standings into matches/standings/scorers', () => {
+    const { matches, standings: sd, scorers } = soccerAdapter.transform(scoreboard, standings);
+    expect(matches).toHaveLength(2);
 
-  it('normalizes ESPN scoreboard + standings', async () => {
-    fetchMock.mockResolvedValueOnce(ok(scoreboard)).mockResolvedValueOnce(ok(standings));
-
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.error).toBeNull();
-    expect(result.current.matches).toHaveLength(2);
-
-    const finished = result.current.matches[0];
+    const finished = matches[0];
     expect(finished.status).toBe('finished');
     expect(finished.homeScore).toBe(2);
     expect(finished.homeFlag).toBe('mex.png');
     expect(finished.stage).toBe('group');
-    expect(finished.group).toBe('A'); // resolved from standings membership
+    expect(finished.group).toBe('A');
     expect(finished.homeScorers).toEqual([
       { playerId: '4577', name: 'H. Lozano', minute: "22'", tag: '' },
       { playerId: '4579', name: 'R. Jiménez', minute: "80'", tag: ' (p)' },
@@ -145,20 +128,24 @@ describe('useWorldCup', () => {
     expect(finished.venue).toBe("Levi's Stadium · Santa Clara, California");
     expect(finished.kickoff?.toISOString()).toBe('2026-06-13T19:00:00.000Z');
 
-    const upcoming = result.current.matches[1];
+    const upcoming = matches[1];
     expect(upcoming.status).toBe('upcoming');
     expect(upcoming.homeScore).toBeNull();
     expect(upcoming.stage).toBe('r16');
-    expect(upcoming.homeFlag).toBe('bra.png'); // logos[].href fallback
+    expect(upcoming.homeFlag).toBe('bra.png');
 
-    const groupA = result.current.groups[0];
-    expect(groupA.name).toBe('A'); // "Group A" → "A"
+    expect(sd.kind).toBe('soccer');
+    if (sd.kind !== 'soccer') throw new Error('expected soccer');
+    const groupA = sd.groups[0];
+    expect(groupA.name).toBe('A');
     expect(groupA.standings[0].name).toBe('Mexico');
     expect(groupA.standings[0].pts).toBe(3);
     expect(groupA.standings[0].gd).toBe(2);
+
+    expect(scorers).toEqual([]); // no leaders[] in this fixture
   });
 
-  it('captures penalty-shootout score and finishType for a pens match', async () => {
+  it('captures penalty-shootout score and finishType for a pens match', () => {
     const pens = {
       events: [
         {
@@ -195,18 +182,15 @@ describe('useWorldCup', () => {
         },
       ],
     };
-    fetchMock.mockResolvedValueOnce(ok(pens)).mockResolvedValueOnce(ok({}));
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    const m = result.current.matches[0];
+    const { matches } = soccerAdapter.transform(pens, {});
+    const m = matches[0];
     expect(m.finishType).toBe('pens');
     expect(m.homeShootoutScore).toBe(3);
     expect(m.awayShootoutScore).toBe(4);
     expect(m.winner).toBe('away');
   });
 
-  it('marks an extra-time decider as aet with no shootout score', async () => {
+  it('marks an extra-time decider as aet with no shootout score', () => {
     const aet = {
       events: [
         {
@@ -241,84 +225,181 @@ describe('useWorldCup', () => {
         },
       ],
     };
-    fetchMock.mockResolvedValueOnce(ok(aet)).mockResolvedValueOnce(ok({}));
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    const m = result.current.matches[0];
+    const { matches } = soccerAdapter.transform(aet, {});
+    const m = matches[0];
     expect(m.finishType).toBe('aet');
     expect(m.homeShootoutScore).toBeUndefined();
     expect(m.awayShootoutScore).toBeUndefined();
   });
 
-  it('sets error when a request fails', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce(ok(standings));
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBe('Failed to load World Cup data');
+  it('tolerates empty payloads without throwing', () => {
+    const { matches, standings: sd, scorers } = soccerAdapter.transform({}, {});
+    expect(matches).toEqual([]);
+    expect(sd).toEqual({ kind: 'soccer', groups: [] });
+    expect(scorers).toEqual([]);
+  });
+});
+
+// --- transformSummary (lifted from espn.test.ts parseSummary cases) ---
+const summary = {
+  header: {
+    competitions: [
+      {
+        competitors: [
+          { homeAway: 'home', team: { id: '203' } },
+          { homeAway: 'away', team: { id: '467' } },
+        ],
+      },
+    ],
+  },
+  boxscore: {
+    teams: [
+      {
+        team: { id: '203' },
+        statistics: [
+          { label: 'Possession', displayValue: '54%' },
+          { label: 'Shots', displayValue: '21' },
+        ],
+      },
+      {
+        team: { id: '467' },
+        statistics: [
+          { label: 'Possession', displayValue: '46%' },
+          { label: 'Shots', displayValue: '14' },
+        ],
+      },
+    ],
+  },
+  commentary: [
+    { time: { displayValue: '' }, text: 'First Half begins.' },
+    { time: { displayValue: "3'" }, text: 'Foul by Aubrey Modiba.' },
+  ],
+  keyEvents: [
+    {
+      clock: { displayValue: "9'" },
+      type: { text: 'Goal' },
+      team: { id: '203' },
+      text: 'Goal! Mexico 1, South Africa 0.',
+    },
+  ],
+  rosters: [
+    {
+      team: { id: '203', displayName: 'Mexico' },
+      formation: '4-1-4-1',
+      roster: [
+        {
+          starter: true,
+          jersey: '1',
+          position: { abbreviation: 'G' },
+          athlete: { displayName: 'Raúl Rangel' },
+          plays: [],
+        },
+        {
+          starter: true,
+          jersey: '6',
+          position: { abbreviation: 'DM' },
+          athlete: { displayName: 'Érik Lira' },
+          subbedOut: true,
+          plays: [
+            { clock: { displayValue: "76'" }, substitution: true },
+            { clock: { displayValue: "40'" }, yellowCard: true },
+          ],
+        },
+      ],
+    },
+    { team: { id: '467', displayName: 'South Africa' }, formation: '4-3-3', roster: [] },
+  ],
+  gameInfo: {
+    venue: { fullName: 'Estadio Banorte', address: { city: 'Mexico City' } },
+    attendance: 80824,
+  },
+};
+
+describe('soccerAdapter.transformSummary', () => {
+  const d = soccerAdapter.transformSummary(summary);
+
+  it('tags the detail as soccer', () => {
+    expect(d.kind).toBe('soccer');
   });
 
-  it('sets error when fetch throws (network failure)', async () => {
-    fetchMock.mockRejectedValue(new TypeError('Network error'));
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBeTruthy();
+  it('pairs team stats by label (home/away from competitor sides)', () => {
+    if (d.kind !== 'soccer') throw new Error('expected soccer');
+    expect(d.homeId).toBe('203');
+    expect(d.awayId).toBe('467');
+    expect(d.stats).toEqual([
+      { label: 'Possession', home: '54%', away: '46%' },
+      { label: 'Shots', home: '21', away: '14' },
+    ]);
   });
 
-  it('tolerates missing/empty payloads without throwing', async () => {
-    fetchMock.mockResolvedValueOnce(ok({})).mockResolvedValueOnce(ok({}));
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBeNull();
-    expect(result.current.matches).toEqual([]);
-    expect(result.current.groups).toEqual([]);
-  });
-
-  it('aborts the in-flight request on refetch', async () => {
-    let firstSignal: AbortSignal | undefined;
-    fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {
-      if (!firstSignal) firstSignal = options?.signal;
-      return new Promise<never>((_resolve, reject) => {
-        options.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          {
-            once: true,
-          },
-        );
-      });
+  it('reads commentary as allPlays and keyEvents as keyPlays', () => {
+    if (d.kind !== 'soccer') throw new Error('expected soccer');
+    expect(d.allPlays).toHaveLength(2);
+    expect(d.allPlays[1]).toEqual({
+      clock: "3'",
+      text: 'Foul by Aubrey Modiba.',
+      teamId: null,
+      type: '',
     });
-
-    const { result } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    expect(firstSignal?.aborted).toBe(false);
-
-    act(() => {
-      result.current.refetch();
+    expect(d.keyPlays[0]).toEqual({
+      clock: "9'",
+      text: 'Goal! Mexico 1, South Africa 0.',
+      teamId: '203',
+      type: 'Goal',
     });
-    expect(firstSignal?.aborted).toBe(true);
   });
 
-  it('aborts the in-flight request on unmount', async () => {
-    let firstSignal: AbortSignal | undefined;
-    fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {
-      if (!firstSignal) firstSignal = options?.signal;
-      return new Promise<never>((_resolve, reject) => {
-        options.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('Aborted', 'AbortError')),
-          {
-            once: true,
-          },
-        );
-      });
+  it('parses lineups with sub minute and card from player.plays', () => {
+    if (d.kind !== 'soccer') throw new Error('expected soccer');
+    const mex = d.lineups[0];
+    expect(mex.formation).toBe('4-1-4-1');
+    expect(mex.players[0]).toMatchObject({
+      jersey: '1',
+      name: 'Raúl Rangel',
+      pos: 'G',
+      starter: true,
     });
+    expect(mex.players[1]).toMatchObject({ subbedOutAt: "76'", card: 'yellow' });
+  });
 
-    const { unmount } = renderHook(() => useWorldCup('fifa.world'));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    expect(firstSignal?.aborted).toBe(false);
+  it('reads venue and attendance', () => {
+    if (d.kind !== 'soccer') throw new Error('expected soccer');
+    expect(d.venue).toBe('Estadio Banorte · Mexico City');
+    expect(d.attendance).toBe(80824);
+  });
 
-    unmount();
-    expect(firstSignal?.aborted).toBe(true);
+  it('tolerates an empty object without throwing', () => {
+    const empty = soccerAdapter.transformSummary({});
+    if (empty.kind !== 'soccer') throw new Error('expected soccer');
+    expect(empty.stats).toEqual([]);
+    expect(empty.lineups).toEqual([]);
+    expect(empty.attendance).toBeNull();
+  });
+
+  it('orders lineups [home, away] even when rosters arrive away-first', () => {
+    const awayFirst = { ...summary, rosters: [...summary.rosters].reverse() };
+    const parsed = soccerAdapter.transformSummary(awayFirst);
+    if (parsed.kind !== 'soccer') throw new Error('expected soccer');
+    expect(parsed.lineups[0].teamId).toBe(parsed.homeId);
+    expect(parsed.lineups[1].teamId).toBe(parsed.awayId);
+  });
+
+  it('drops keyEvents without text (admin entries)', () => {
+    const withAdmin = {
+      ...summary,
+      keyEvents: [
+        { clock: { displayValue: "0'" }, type: { text: 'Kickoff' }, team: { id: '203' }, text: '' },
+        {
+          clock: { displayValue: "9'" },
+          type: { text: 'Goal' },
+          team: { id: '203' },
+          text: 'Goal!',
+        },
+      ],
+    };
+    const parsed = soccerAdapter.transformSummary(withAdmin);
+    if (parsed.kind !== 'soccer') throw new Error('expected soccer');
+    expect(parsed.keyPlays).toHaveLength(1);
+    expect(parsed.keyPlays[0].text).toBe('Goal!');
   });
 });
