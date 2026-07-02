@@ -1,7 +1,7 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useState } from 'react';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import { useT } from '../i18n';
-import type { Match, WCMatch } from '../types';
+import type { Match, CompMatch } from '../types';
 import { useRouter } from '../utils/router';
 import LineupTab from './matchdetail/LineupTab';
 import PlayByPlayTab from './matchdetail/PlayByPlayTab';
@@ -17,8 +17,8 @@ function StatusBadge({
   t,
 }: {
   status: 'upcoming' | 'live' | 'finished';
-  progress: WCMatch['progress'];
-  finishType: WCMatch['finishType'];
+  progress: CompMatch['progress'];
+  finishType: CompMatch['finishType'];
   t: (k: string) => string;
 }) {
   if (status === 'live') {
@@ -58,7 +58,7 @@ export default function MatchDetailPage({
   stream,
   onBack,
 }: {
-  match: WCMatch;
+  match: CompMatch;
   // The matching ppv.to stream, already resolved AND liveness-filtered in App
   // (null unless a stream for this fixture is live now). Keeping the timing in
   // App means this component stays deterministic given its props.

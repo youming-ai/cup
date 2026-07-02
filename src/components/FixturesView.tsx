@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { COMPETITIONS } from '../competitions';
 import { useT } from '../i18n';
-import type { Stage, TopScorer, WCGroup, WCMatch } from '../types';
+import type { Stage, TopScorer, WCGroup, CompMatch } from '../types';
 import { navigate, pathFor, type Section, useRouter } from '../utils/router';
 import BracketView from './BracketView';
 import MatchCard from './MatchCard';
@@ -25,7 +25,7 @@ export default function FixturesView({
   watchableSlugs = NO_WATCHABLE,
 }: {
   section: Section;
-  matches: WCMatch[];
+  matches: CompMatch[];
   groups: WCGroup[];
   scorers: TopScorer[];
   // Slugs of matches with a ppv.to stream live right now (resolved in App).
@@ -53,14 +53,16 @@ export default function FixturesView({
   const [stage, setStage] = useState<Stage | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming');
   const openMatch = useCallback(
-    (m: WCMatch) => {
+    (m: CompMatch) => {
       navigate(pathFor({ kind: 'match', comp, slug: m.slug }));
     },
     [comp],
   );
 
   const stages: (Stage | 'all')[] = useMemo(() => {
-    const present = new Set<Stage>(matches.map((m) => m.stage));
+    const present = new Set<Stage>(
+      matches.map((m) => m.stage).filter((s): s is Stage => s !== undefined),
+    );
     return ['all', ...KNOWN_STAGES.filter((s) => present.has(s))] as (Stage | 'all')[];
   }, [matches]);
 
@@ -83,8 +85,8 @@ export default function FixturesView({
   // 已完赛在后(日期倒序，最近的在上)，两段分开。
   const { upcoming, finished } = useMemo(() => {
     const filtered = stage === 'all' ? matches : matches.filter((m) => m.stage === stage);
-    const group = (list: WCMatch[]) => {
-      const map = new Map<string, WCMatch[]>();
+    const group = (list: CompMatch[]) => {
+      const map = new Map<string, CompMatch[]>();
       for (const m of list) {
         const k = m.kickoff;
         const key = k
@@ -107,7 +109,7 @@ export default function FixturesView({
     };
   }, [matches, stage]);
 
-  const renderDay = ([key, list]: [string, WCMatch[]]) => (
+  const renderDay = ([key, list]: [string, CompMatch[]]) => (
     <section key={key} className="space-y-stack">
       <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
         {list[0].kickoff

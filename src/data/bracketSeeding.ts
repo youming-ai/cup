@@ -2,7 +2,7 @@
 // format. We hardcode the slot structure because ESPN does NOT expose
 // bracket linking (no parentMatchId / bracketId fields), and the
 // pairing rules are the same for every World Cup edition. The hook
-// (src/hooks/useBracket.ts) attaches live WCMatch results onto each
+// (src/hooks/useBracket.ts) attaches live CompMatch results onto each
 // SEEDING row at render time.
 
 export type BracketSlot =

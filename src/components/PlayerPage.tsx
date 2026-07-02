@@ -1,12 +1,12 @@
 import { useT } from '../i18n';
-import type { ScorerEntry, TopScorer, WCGroup, WCMatch } from '../types';
+import type { ScorerEntry, TopScorer, WCGroup, CompMatch } from '../types';
 import { navigate, pathFor, useRouter } from '../utils/router';
 import { scorerDisplay } from '../utils/wc';
 
 interface PlayerPageProps {
   athleteId: string;
   groups: WCGroup[];
-  matches: WCMatch[];
+  matches: CompMatch[];
   scorers: TopScorer[];
   onBack: () => void;
 }
@@ -15,7 +15,7 @@ interface PlayerPageProps {
 // context. We build this by walking all matches and collecting entries
 // whose playerId matches.
 interface PlayerGoal {
-  match: WCMatch;
+  match: CompMatch;
   entry: ScorerEntry;
   side: 'home' | 'away';
 }
@@ -23,7 +23,7 @@ interface PlayerGoal {
 // All matches where this player scored, sorted by match kickoff (oldest
 // first). Returns goals + the match alongside so the page can render
 // "Match X — Y — goal 67'" entries.
-function playerGoals(matches: WCMatch[], athleteId: string): PlayerGoal[] {
+function playerGoals(matches: CompMatch[], athleteId: string): PlayerGoal[] {
   const goals: PlayerGoal[] = [];
   for (const m of matches) {
     for (const entry of m.homeScorers) {

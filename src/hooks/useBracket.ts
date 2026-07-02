@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { type BracketMatch, type BracketSlot, ROUNDS, SEEDING } from '../data/bracketSeeding';
-import type { WCGroup, WCMatch } from '../types';
+import type { WCGroup, CompMatch } from '../types';
 
 // One resolved bracket cell. Either we have a real team (label + id)
 // or a TBD placeholder (when the seed is not yet qualified, or the
@@ -17,7 +17,7 @@ export interface ResolvedBracketMatch {
   round: BracketMatch['round'];
   home: ResolvedTeam | null;
   away: ResolvedTeam | null;
-  match: WCMatch | null; // populated when this round has a WCMatch with results
+  match: CompMatch | null; // populated when this round has a CompMatch with results
   winner: 'home' | 'away' | null;
 }
 
@@ -65,7 +65,7 @@ export function assignThirds(
 // penalty shootouts where the regulation/ET score is level); falls back to
 // the score. A level score with no recorded winner stays undetermined (null)
 // rather than defaulting to the away side.
-export function winnerOf(m: WCMatch): 'home' | 'away' | null {
+export function winnerOf(m: CompMatch): 'home' | 'away' | null {
   if (m.status !== 'finished' || m.homeScore == null || m.awayScore == null) return null;
   if (m.winner) return m.winner;
   if (m.homeScore > m.awayScore) return 'home';
@@ -97,12 +97,16 @@ function placeTeam(
   return null;
 }
 
-// Match the SEEDING R32 row to a real WCMatch by team group. Each
-// r32 WCMatch in our data has a home team with `group` set to the
+// Match the SEEDING R32 row to a real CompMatch by team group. Each
+// r32 CompMatch in our data has a home team with `group` set to the
 // home team's group letter; the away team's group letter isn't on
-// WCMatch today, so we match by (homeGroup, awayGroup) from the
+// CompMatch today, so we match by (homeGroup, awayGroup) from the
 // SEEDING place codes.
-function r32MatchFor(groups: WCGroup[], matches: WCMatch[], seeding: BracketMatch): WCMatch | null {
+function r32MatchFor(
+  groups: WCGroup[],
+  matches: CompMatch[],
+  seeding: BracketMatch,
+): CompMatch | null {
   if (seeding.round !== 'R32') return null;
   if (seeding.home.kind !== 'place' || seeding.away.kind !== 'place') return null;
   // The home side is a single-group position like '1A' or '2A'.
@@ -118,7 +122,7 @@ function r32MatchFor(groups: WCGroup[], matches: WCMatch[], seeding: BracketMatc
   for (const m of matches) {
     if (m.stage !== 'r32') continue;
     if (m.group !== homeGroup) continue;
-    // The away team's group letter isn't on WCMatch. Look up the away
+    // The away team's group letter isn't on CompMatch. Look up the away
     // team by name match in any group matching the expected away group.
     for (const g of groups) {
       if (g.name !== awayGroup) continue;
@@ -130,16 +134,17 @@ function r32MatchFor(groups: WCGroup[], matches: WCMatch[], seeding: BracketMatc
   return null;
 }
 
-// Find the WCMatch for a 'winner' slot by looking up the WCMatch at
+// Find the CompMatch for a 'winner' slot by looking up the CompMatch at
 // the target stage and matching the two team names against the
 // resolved home/away teams from previous round matches.
 function bracketMatchForStage(
-  matches: WCMatch[],
+  matches: CompMatch[],
   target: BracketMatch,
   home: ResolvedTeam | null,
   away: ResolvedTeam | null,
-): WCMatch | null {
-  const stage = target.round === '3rd' ? 'third' : (target.round.toLowerCase() as WCMatch['stage']);
+): CompMatch | null {
+  const stage =
+    target.round === '3rd' ? 'third' : (target.round.toLowerCase() as CompMatch['stage']);
   for (const m of matches) {
     if (m.stage !== stage) continue;
     if (home && (m.homeName === home.label || m.awayName === home.label)) {
@@ -151,7 +156,7 @@ function bracketMatchForStage(
   return null;
 }
 
-export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
+export function useBracket(groups: WCGroup[], matches: CompMatch[]) {
   return useMemo(() => {
     const bestThirds = bestThirdIds(groups);
     const thirdAssign = assignThirds(groups, bestThirds);
@@ -173,20 +178,20 @@ export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
       };
     });
 
-    // For R32: also try to attach the actual WCMatch. The hook iterates
+    // For R32: also try to attach the actual CompMatch. The hook iterates
     // rounds, so we can resolve winner slots progressively. But the
     // simplest approach: do a second pass to attach matches + winners.
     for (let i = 0; i < resolved.length; i++) {
       const bm = SEEDING[i]!;
       const r = resolved[i]!;
-      // Attach the actual WCMatch when one exists.
+      // Attach the actual CompMatch when one exists.
       if (bm.round === 'R32') {
         r.match = r32MatchFor(groups, matches, bm);
       } else {
         // R16 / QF / SF / 3rd / Final: look up by stage + team names.
         r.match = bracketMatchForStage(matches, bm, r.home, r.away);
       }
-      // Determine the winner if the WCMatch has been played.
+      // Determine the winner if the CompMatch has been played.
       if (r.match) r.winner = winnerOf(r.match);
     }
 
@@ -212,7 +217,7 @@ export function useBracket(groups: WCGroup[], matches: WCMatch[]) {
       };
       r.home = resolveWinner(bm.home);
       r.away = resolveWinner(bm.away);
-      // Re-attach the WCMatch (now that we have team names resolved
+      // Re-attach the CompMatch (now that we have team names resolved
       // from previous rounds, the lookup can succeed even when the
       // r32 winner wasn't a 'place' seed).
       if (bm.round === 'R32') {

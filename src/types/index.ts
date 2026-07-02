@@ -51,7 +51,7 @@ export interface ScorerEntry {
   tag: '' | ' (p)' | ' (OG)';
 }
 
-export interface WCMatch {
+export interface CompMatch {
   id: string;
   homeName: string;
   awayName: string;
@@ -61,10 +61,10 @@ export interface WCMatch {
   awayId: string; // ESPN team id for the away side
   homeScore: number | null;
   awayScore: number | null;
-  group: string;
+  group?: string; // was required; NBA doesn't provide a group
   kickoff: Date | null;
   status: MatchStatus;
-  stage: Stage;
+  stage?: Stage; // was required; NBA doesn't provide a stage
   homeScorers: ScorerEntry[];
   awayScorers: ScorerEntry[];
   venue: string; // "Estadio Azteca · Mexico City" or '' when unknown
@@ -72,6 +72,10 @@ export interface WCMatch {
   // by the /match/[slug] route to deep-link directly to a match detail
   // page. Derived in useWorldCup from the team names via slugify().
   slug: string;
+  // NBA uses ESPN's status.type.shortDetail ("Final" / "Q4 2:14" / "OT");
+  // soccer leaves this unset and keeps using the progress/finishType logic
+  // below. UI prefers this when present rather than inventing period text.
+  statusText?: string;
   // Optional richer status (only set when not 'upcoming'). For 'finished' this
   // carries the FT clock; for 'live' it carries the current minute or HT.
   progress?: MatchProgress;

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import type { Match, WCMatch } from '../types';
+import type { Match, CompMatch } from '../types';
 import MatchDetailPage from './MatchDetailPage';
 
 const liveStream: Match = {
@@ -21,7 +21,7 @@ beforeEach(() => {
   fetchMock.mockReset();
 });
 
-const match: WCMatch = {
+const match: CompMatch = {
   id: '760420',
   homeName: 'Mexico',
   awayName: 'South Africa',
@@ -103,7 +103,7 @@ it('does not render a player when no live stream is provided', async () => {
 
 it('shows the penalty-shootout score and a Pens badge for a pens match', async () => {
   fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const pensMatch: WCMatch = {
+  const pensMatch: CompMatch = {
     ...match,
     homeScore: 1,
     awayScore: 1,
@@ -126,7 +126,7 @@ it('shows the penalty-shootout score and a Pens badge for a pens match', async (
 
 it('shows an AET badge for an extra-time decider', async () => {
   fetchMock.mockResolvedValueOnce({ ok: true, json: async () => summaryJson() });
-  const aetMatch: WCMatch = { ...match, stage: 'qf', finishType: 'aet' };
+  const aetMatch: CompMatch = { ...match, stage: 'qf', finishType: 'aet' };
   render(
     <LanguageProvider>
       <MatchDetailPage match={aetMatch} onBack={vi.fn()} />

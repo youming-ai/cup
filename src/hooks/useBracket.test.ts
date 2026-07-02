@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { WCGroup, WCMatch } from '../types';
+import type { WCGroup, CompMatch } from '../types';
 import { assignThirds, winnerOf } from './useBracket';
 
 const LETTERS = 'ABCDEFGHIJKL'.split('');
@@ -24,7 +24,7 @@ function groupWithThird(letter: string): WCGroup {
 
 const ALL_GROUPS: WCGroup[] = LETTERS.map(groupWithThird);
 
-function match(o: Partial<WCMatch>): WCMatch {
+function match(o: Partial<CompMatch>): CompMatch {
   return {
     id: '1',
     homeName: 'H',

@@ -1,4 +1,4 @@
-import type { Match, WCMatch } from '../types';
+import type { Match, CompMatch } from '../types';
 import { slugify } from './helpers';
 
 // ESPN and ppv.to spell some nations differently (ESPN uses "Türkiye",
@@ -42,7 +42,7 @@ export function indexStreams(streams: Match[]): Map<string, Match> {
 // Finished fixtures never resolve: matching on names alone would otherwise tag
 // the already-played leg of a rematch (same two teams in the group stage and a
 // knockout) whose later leg is the one actually streaming.
-export function streamForMatch(match: WCMatch, bySlug: Map<string, Match>): Match | null {
+export function streamForMatch(match: CompMatch, bySlug: Map<string, Match>): Match | null {
   if (match.status === 'finished') return null;
   const a = normalizePairSlug(slugify(`${match.homeName}-vs-${match.awayName}`));
   const b = normalizePairSlug(slugify(`${match.awayName}-vs-${match.homeName}`));
@@ -66,7 +66,7 @@ export function isStreamLive(stream: Match, now: number): boolean {
 // the single resolution used by both the schedule "watch" badge and the
 // match-page player, so timing lives in one place.
 export function liveStreamForMatch(
-  match: WCMatch,
+  match: CompMatch,
   bySlug: Map<string, Match>,
   now: number,
 ): Match | null {

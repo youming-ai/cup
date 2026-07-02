@@ -13,15 +13,15 @@ interface MatchCardProps {
   awayScore: number | null;
   status: MatchStatus;
   kickoff: Date | null;
-  stage: string;
-  group: string;
+  stage?: string;
+  group?: string;
   homeScorers?: ScorerEntry[];
   awayScorers?: ScorerEntry[];
   venue?: string;
   // Optional richer progress (clock + displayClock + period). When omitted
   // the card renders the legacy 3-state pill (live / ft / upcoming).
   progress?: MatchProgress;
-  // Knockout decider (see WCMatch): tags the pill AET/Pens and, for pens,
+  // Knockout decider (see CompMatch): tags the pill AET/Pens and, for pens,
   // resolves the winner the level aggregate score can't.
   finishType?: 'aet' | 'pens';
   homeShootoutScore?: number;
@@ -130,7 +130,11 @@ export default memo(function MatchCard({
 }: MatchCardProps) {
   const t = useT();
   const tbd = t('common.tbd');
-  const stageLabel = stage === 'group' ? `${t('common.group')} ${group}` : t(`stage.${stage}`);
+  const stageLabel = !stage
+    ? ''
+    : stage === 'group'
+      ? `${t('common.group')} ${group ?? ''}`
+      : t(`stage.${stage}`);
 
   // finished: brighten the winner, dim the loser. Prefer ESPN's explicit
   // winner (set on knockout games) so a pens win resolves where the
@@ -171,9 +175,11 @@ export default memo(function MatchCard({
       >
         <div className="flex items-center justify-between gap-2 px-3 pt-2 pb-1.5 border-b border-line bg-panel2/10">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="ds-caption uppercase tracking-[0.18em] text-chalkdim truncate">
-              {stageLabel}
-            </span>
+            {stageLabel && (
+              <span className="ds-caption uppercase tracking-[0.18em] text-chalkdim truncate">
+                {stageLabel}
+              </span>
+            )}
             {venue && (
               <span className="ds-caption text-chalkdim/60 truncate hidden sm:inline" title={venue}>
                 · {venue}

@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '../i18n';
-import type { WCGroup, WCMatch } from '../types';
+import type { WCGroup, CompMatch } from '../types';
 import * as router from '../utils/router';
 import FixturesView from './FixturesView';
 
-function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
+function renderView(matches: CompMatch[], groups: WCGroup[] = [], scorers: never[] = []) {
   return render(
     <LanguageProvider>
       <FixturesView section="matches" matches={matches} groups={groups} scorers={scorers} />
@@ -13,7 +13,7 @@ function renderView(matches: WCMatch[], groups: WCGroup[] = [], scorers: never[]
   );
 }
 
-function match(overrides: Partial<WCMatch> & { id: string }): WCMatch {
+function match(overrides: Partial<CompMatch> & { id: string }): CompMatch {
   return {
     homeName: 'Mexico',
     awayName: 'Canada',

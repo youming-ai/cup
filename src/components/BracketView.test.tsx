@@ -86,7 +86,7 @@ describe('BracketView', () => {
     expect(screen.getByText('M104')).toBeInTheDocument();
   });
 
-  it('does not navigate on cell click when no WCMatch is attached', () => {
+  it('does not navigate on cell click when no CompMatch is attached', () => {
     // jsdom's window.location is read-only; just verify clicking a TBD
     // cell doesn't crash and the click handler is a no-op.
     const spy = vi.spyOn(window.history, 'pushState');

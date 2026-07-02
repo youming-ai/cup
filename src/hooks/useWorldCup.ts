@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ScorerEntry, TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
+import type { ScorerEntry, TopScorer, WCGroup, CompMatch, WCStanding } from '../types';
 import {
   matchSlug,
   parseScore,
@@ -38,14 +38,14 @@ function teamLogo(team: Record<string, unknown>): string {
 
 export function useWorldCup(comp: string) {
   const BASE = `/api/${comp}`;
-  const [matches, setMatches] = useState<WCMatch[]>([]);
+  const [matches, setMatches] = useState<CompMatch[]>([]);
   const [groups, setGroups] = useState<WCGroup[]>([]);
   const [scorers, setScorers] = useState<TopScorer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cacheRef = useRef<{
-    matches: WCMatch[];
+    matches: CompMatch[];
     groups: WCGroup[];
     scorers: TopScorer[];
     ts: number;
@@ -116,7 +116,7 @@ export function useWorldCup(comp: string) {
       // first 5 chars of any form we see; the most-recent one is the one
       // attached to the team's latest event in the data.
       const teamForm = new Map<string, string>();
-      const ms: WCMatch[] = arr(obj(sbJson).events).map((rawEvent): WCMatch => {
+      const ms: CompMatch[] = arr(obj(sbJson).events).map((rawEvent): CompMatch => {
         const ev = obj(rawEvent);
         const comp = obj(arr(ev.competitions)[0]);
         const competitors = arr(comp.competitors).map(obj);

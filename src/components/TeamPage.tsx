@@ -1,12 +1,12 @@
 import { useT } from '../i18n';
-import type { TopScorer, WCGroup, WCMatch, WCStanding } from '../types';
+import type { TopScorer, WCGroup, CompMatch, WCStanding } from '../types';
 import { navigate, pathFor, useRouter } from '../utils/router';
 import MatchCard from './MatchCard';
 
 interface TeamPageProps {
   teamId: string;
   groups: WCGroup[];
-  matches: WCMatch[];
+  matches: CompMatch[];
   scorers: TopScorer[];
   onBack: () => void;
 }
@@ -28,7 +28,7 @@ function findStanding(
 // All matches where the team is on either side, sorted by kickoff
 // (upcoming first when there are scheduled matches, otherwise just date
 // order). Finished matches group naturally by date.
-function teamMatches(matches: WCMatch[], teamId: string): WCMatch[] {
+function teamMatches(matches: CompMatch[], teamId: string): CompMatch[] {
   return matches
     .filter((m) => m.homeId === teamId || m.awayId === teamId)
     .sort((a, b) => (a.kickoff?.getTime() ?? 0) - (b.kickoff?.getTime() ?? 0));
