@@ -121,6 +121,91 @@ describe('useStreams (football only)', () => {
     expect(result.current.matches).toHaveLength(0);
   });
 
+  const altPayload = [
+    {
+      category: 'Events',
+      events: [
+        {
+          name: 'USA vs Bosnia-Herzegovina',
+          logo: 'l.jpg',
+          time: '2026-07-01T20:00',
+          streams: [
+            { name: 'FOX USA', url: 'https://vileembeds.pages.dev/embed/fox-usa' },
+            { name: 'Telemundo', url: 'https://vileembeds.pages.dev/embed/telemundo-usa' },
+            { name: 'Bad', url: 'https://evil.example/embed' },
+          ],
+        },
+        { name: 'No trusted urls', streams: [{ name: 'x', url: 'https://evil.example/e' }] },
+      ],
+    },
+    {
+      category: '24/7',
+      events: [{ name: 'ABC', streams: [{ name: 'ABC', url: 'https://vileembeds.pages.dev/abc' }] }],
+    },
+  ];
+
+  it('merges the alt source after ppv and adapts its shape', async () => {
+    const ppvPayload = {
+      streams: [
+        {
+          category: 'Football',
+          streams: [
+            {
+              id: 5,
+              name: 'Mexico vs. Canada',
+              iframe: 'https://embedindia.st/embed/wc/mex-can',
+              viewers: '1',
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: async () => (String(url).includes('ppv.st') ? ppvPayload : altPayload),
+      }),
+    );
+
+    const { result } = renderHook(() => useStreams());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBeNull();
+    // ppv match first, then the one alt event with a trusted url; Replays/24-7
+    // categories and untrusted-only events are dropped.
+    expect(result.current.matches.map((m) => m.name)).toEqual([
+      'Mexico vs. Canada',
+      'USA vs Bosnia-Herzegovina',
+    ]);
+    const alt = result.current.matches[1];
+    expect(alt.iframe).toBe('https://vileembeds.pages.dev/embed/fox-usa');
+    expect(alt.substreams).toEqual([
+      {
+        name: 'Telemundo',
+        source_tag: 'Telemundo',
+        iframe: 'https://vileembeds.pages.dev/embed/telemundo-usa',
+      },
+    ]);
+    // 20:00 New York (EDT, UTC-4) → 00:00 UTC next day
+    expect(alt.startsAt).toBe(Date.parse('2026-07-02T00:00:00Z') / 1000);
+    expect(alt.slug).toBe('usa-vs-bosnia-herzegovina');
+  });
+
+  it('falls back to the alt source alone when ppv is down', async () => {
+    fetchMock.mockImplementation((url: string) =>
+      String(url).includes('ppv.st')
+        ? Promise.reject(new TypeError('Network request failed'))
+        : Promise.resolve({ ok: true, json: async () => altPayload }),
+    );
+
+    const { result } = renderHook(() => useStreams());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.matches).toHaveLength(1);
+    expect(result.current.matches[0].name).toBe('USA vs Bosnia-Herzegovina');
+  });
+
   it('aborts the in-flight request when refetch is called', async () => {
     let firstSignal: AbortSignal | undefined;
     fetchMock.mockImplementation((_url: string, options: { signal?: AbortSignal }) => {

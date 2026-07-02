@@ -8,7 +8,7 @@ const liveStream: Match = {
   id: 1,
   name: 'Netherlands vs. Morocco',
   category_name: 'Football',
-  iframe: 'https://ppv.to/embed/123',
+  iframe: 'https://ppv.st/embed/123',
   viewers: '7',
   substreams: [],
   slug: 'netherlands-vs-morocco',
