@@ -1,4 +1,5 @@
 import type { Sport } from '../competitions';
+import { basketballAdapter } from './basketball';
 import { soccerAdapter } from './soccer';
 import type { SportAdapter } from './types';
 
@@ -7,6 +8,8 @@ import type { SportAdapter } from './types';
 // (single source of truth, same as buildUrl).
 export const ADAPTERS: Partial<Record<Sport, SportAdapter>> & {
   soccer: SportAdapter;
+  basketball: SportAdapter;
 } = {
   soccer: soccerAdapter,
+  basketball: basketballAdapter,
 };
