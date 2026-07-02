@@ -12,7 +12,7 @@ export interface Competition {
   sport: Sport;
   league: string; // ESPN league slug
   label: string; // i18n key (wired into the switcher in Phase 2)
-  season: number;
+  season?: number; // fixed season year; omit for cross-year leagues → derived per request (seasonForDate)
   dates?: string; // scoreboard date window — tournaments need it, season comps omit it
   standingsLevel?: number; // soccer standings depth (World Cup = 3 → the group tables)
   shape: 'tournament' | 'season';
@@ -42,9 +42,8 @@ export const COMPETITIONS: Record<string, Competition> = {
     sport: 'soccer',
     league: 'eng.1',
     label: 'comp.eng1',
-    // 赛季交替期（2026 年中）：2025 = 2025-26 赛季，standings 返回满员联赛表；
-    // scoreboard 无 dates → ESPN 返回当前窗口（2026-27 upcoming）。见 spec §7。
-    season: 2025,
+    // season 省略 → buildUrl 用 seasonForDate 按请求时刻推导（跨年赛季 8 月翻转），
+    // 避免写死年份的时间引信。scoreboard 无 dates → ESPN 返回当前窗口。见 spec §7。
     shape: 'season',
     capabilities: {
       bracket: false,
@@ -60,12 +59,19 @@ export const DEFAULT_COMPETITION = 'fifa.world';
 
 const ESPN = 'https://site.api.espn.com/apis';
 
+// ESPN keys a cross-year club season (e.g. 2025-26) by its STARTING year.
+// European seasons roll over in August: Jan–Jul still belongs to the season
+// that kicked off the previous calendar year.
+export function seasonForDate(d: Date): number {
+  return d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
+}
+
 // ESPN quirk: standings lives under /apis/v2/ (NO `site/`); scoreboard and
 // summary live under /apis/site/v2/. See docs/espn-api.md §2 & §9.
 export function buildUrl(c: Competition, resource: Resource, event?: string): string {
   const path = `sports/${c.sport}/${c.league}`;
   if (resource === 'standings') {
-    const q = new URLSearchParams({ season: String(c.season) });
+    const q = new URLSearchParams({ season: String(c.season ?? seasonForDate(new Date())) });
     if (c.standingsLevel) q.set('level', String(c.standingsLevel));
     return `${ESPN}/v2/${path}/standings?${q}`;
   }

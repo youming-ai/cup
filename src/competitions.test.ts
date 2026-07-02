@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildUrl, COMPETITIONS, DEFAULT_COMPETITION } from './competitions';
+import { buildUrl, COMPETITIONS, DEFAULT_COMPETITION, seasonForDate } from './competitions';
 
 describe('buildUrl', () => {
   const wc = COMPETITIONS[DEFAULT_COMPETITION];
@@ -45,11 +45,20 @@ describe('eng.1 (season-shape league)', () => {
   });
 
   it('builds a standings URL with no level and a scoreboard URL with no dates', () => {
+    // season is derived at request time (no hardcoded year) — assert via the same helper
     expect(buildUrl(pl, 'standings')).toBe(
-      'https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings?season=2025',
+      `https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings?season=${seasonForDate(new Date())}`,
     );
     expect(buildUrl(pl, 'scoreboard')).toBe(
       'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?limit=300',
     );
+  });
+});
+
+describe('seasonForDate', () => {
+  it('rolls the season over in August (ESPN keys cross-year seasons by starting year)', () => {
+    expect(seasonForDate(new Date(2026, 7, 1))).toBe(2026); // Aug 1 → new season
+    expect(seasonForDate(new Date(2026, 6, 31))).toBe(2025); // Jul 31 → still 2025-26
+    expect(seasonForDate(new Date(2027, 0, 15))).toBe(2026); // mid-season January
   });
 });

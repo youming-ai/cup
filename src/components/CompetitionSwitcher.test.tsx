@@ -31,4 +31,15 @@ describe('CompetitionSwitcher', () => {
     expect(navSpy).toHaveBeenCalledWith('/eng.1');
     navSpy.mockRestore();
   });
+
+  it('moves focus to the selected option when opened', () => {
+    render(
+      <LanguageProvider>
+        <CompetitionSwitcher />
+      </LanguageProvider>,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    const selected = screen.getByRole('option', { selected: true });
+    expect(selected).toHaveFocus();
+  });
 });

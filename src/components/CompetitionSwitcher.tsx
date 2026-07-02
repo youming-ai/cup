@@ -25,6 +25,14 @@ export default function CompetitionSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // 打开时把焦点移到当前选中的选项（与 LanguageSwitcher 行为一致）
+  useEffect(() => {
+    if (isOpen) {
+      const selected = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+      selected?.focus();
+    }
+  }, [isOpen]);
+
   const close = useCallback(() => {
     setIsOpen(false);
     triggerRef.current?.focus();
@@ -58,6 +66,14 @@ export default function CompetitionSwitcher() {
           e.preventDefault();
           items[(idx - 1 + items.length) % items.length]?.focus();
           break;
+        case 'Home':
+          e.preventDefault();
+          items[0]?.focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          items[items.length - 1]?.focus();
+          break;
       }
     },
     [isOpen, close],
@@ -85,12 +101,15 @@ export default function CompetitionSwitcher() {
           ref={listRef}
           role="listbox"
           aria-label={t('common.changeCompetition')}
+          aria-activedescendant={`comp-opt-${route.comp}`}
           className="absolute left-0 mt-2 min-w-[10rem] border border-line bg-panel shadow-float rounded-card overflow-hidden py-1 z-50 focus:outline-none"
+          tabIndex={0}
           onKeyDown={handleKeyDown}
         >
           {comps.map((c) => (
             <div
               key={c.key}
+              id={`comp-opt-${c.key}`}
               role="option"
               aria-selected={route.comp === c.key}
               tabIndex={0}
