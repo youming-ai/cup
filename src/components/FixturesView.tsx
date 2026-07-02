@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { StandingsData } from '../adapters/types';
 import { COMPETITIONS } from '../competitions';
 import { useT } from '../i18n';
-import type { Stage, TopScorer, WCGroup, CompMatch } from '../types';
+import type { Stage, TopScorer, CompMatch } from '../types';
 import { navigate, pathFor, type Section, useRouter } from '../utils/router';
 import BracketView from './BracketView';
+import ConferenceStandings from './ConferenceStandings';
 import MatchCard from './MatchCard';
 import StandingsView from './StandingsView';
 import TopScorersView from './TopScorersView';
@@ -20,13 +22,13 @@ const NO_WATCHABLE: ReadonlySet<string> = new Set();
 export default function FixturesView({
   section,
   matches,
-  groups,
+  standings,
   scorers,
   watchableSlugs = NO_WATCHABLE,
 }: {
   section: Section;
   matches: CompMatch[];
-  groups: WCGroup[];
+  standings: StandingsData;
   scorers: TopScorer[];
   // Slugs of matches with a ppv.to stream live right now (resolved in App).
   watchableSlugs?: ReadonlySet<string>;
@@ -34,6 +36,7 @@ export default function FixturesView({
   const t = useT();
   const { route } = useRouter();
   const comp = route.comp;
+  const groups = standings.kind === 'soccer' ? standings.groups : [];
   const competition = COMPETITIONS[comp];
   const shape = competition?.shape ?? 'tournament';
   const caps = competition?.capabilities;
@@ -137,6 +140,7 @@ export default function FixturesView({
               kickoff={m.kickoff}
               stage={m.stage}
               group={m.group}
+              statusText={m.statusText}
               progress={m.progress}
               finishType={m.finishType}
               homeShootoutScore={m.homeShootoutScore}
@@ -200,26 +204,38 @@ export default function FixturesView({
               ))}
             </div>
 
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {stages.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setStage(s)}
-                  aria-pressed={stage === s}
-                  className={`ds-chip ${stage === s ? 'ds-chip-active' : 'ds-chip-inactive'}`}
-                >
-                  {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
-                </button>
-              ))}
-            </div>
+            {shape !== 'season' && (
+              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                {stages.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStage(s)}
+                    aria-pressed={stage === s}
+                    className={`ds-chip ${stage === s ? 'ds-chip-active' : 'ds-chip-inactive'}`}
+                  >
+                    {s === 'all' ? t('filter.all') : t(`stage.${s}`)}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Season-shape competitions (e.g. a domestic league) have a
                 single always-visible table — there's no group stage to gate
                 it behind. Tournament-shape competitions keep the existing
                 behaviour: standings surface on top only while the group
-                filter is active. */}
-            {shape === 'season' && groups.length > 0 ? (
+                filter is active. Basketball comps render conference tables
+                instead of the soccer group/league StandingsView. */}
+            {standings.kind === 'basketball' ? (
+              standings.conferences.length > 0 && (
+                <section className="space-y-stack">
+                  <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
+                    {t('fixtures.standings')}
+                  </h3>
+                  <ConferenceStandings conferences={standings.conferences} />
+                </section>
+              )
+            ) : shape === 'season' && groups.length > 0 ? (
               <section className="space-y-stack">
                 <h3 className="font-mono text-xs tracking-[0.2em] text-chalkdim uppercase">
                   {t('fixtures.standings')}

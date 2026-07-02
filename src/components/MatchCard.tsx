@@ -27,6 +27,10 @@ interface MatchCardProps {
   homeShootoutScore?: number;
   awayShootoutScore?: number;
   winner?: 'home' | 'away';
+  // ESPN-provided status line for non-soccer sports (e.g. "Final", "Q4 2:14",
+  // "OT"). When present on a live/finished card it replaces the derived
+  // StatusPill/ClockLabel — we don't synthesize period text for other sports.
+  statusText?: string;
   // A matching ppv.to stream is live right now → show a watch badge. The card
   // already deep-links to /match, which hosts the player.
   watchable?: boolean;
@@ -125,6 +129,7 @@ export default memo(function MatchCard({
   homeShootoutScore,
   awayShootoutScore,
   winner,
+  statusText,
   watchable,
   onOpen,
 }: MatchCardProps) {
@@ -237,8 +242,20 @@ export default memo(function MatchCard({
                 >{`${homeScore ?? 0}${homeSO} : ${awaySObefore}${awayScore ?? 0}`}</span>
               </span>
             )}
-            <StatusPill status={status} progress={progress} finishType={finishType} t={t} />
-            <ClockLabel progress={progress} />
+            {statusText && status !== 'upcoming' ? (
+              <span
+                className={`ds-caption tracking-widest ${
+                  status === 'live' ? 'text-live' : 'text-chalkdim'
+                }`}
+              >
+                {statusText}
+              </span>
+            ) : (
+              <>
+                <StatusPill status={status} progress={progress} finishType={finishType} t={t} />
+                <ClockLabel progress={progress} />
+              </>
+            )}
           </div>
 
           <div className="flex flex-col items-center gap-1 min-w-0">

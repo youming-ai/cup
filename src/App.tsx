@@ -117,7 +117,7 @@ export default function App() {
         <FixturesView
           section={route.section}
           matches={wc.matches}
-          groups={groups}
+          standings={wc.standings}
           scorers={wc.scorers}
           watchableSlugs={watchableSlugs}
         />
